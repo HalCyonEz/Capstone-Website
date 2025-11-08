@@ -13,9 +13,7 @@
 <body class="bg-gray-50 font-sans">
     <div class="flex flex-col sm:flex-row h-screen">
         
-        <!-- SIDEBAR (hidden on mobile, visible on sm+) -->
         <div class="w-64 bg-white border-r border-gray-200 flex-col hidden sm:flex" id="sidebar">
-            <!-- Logo Section -->
             <div class="p-4 flex items-center space-x-2">
                 <div class="bg-blue-100 p-2 rounded-lg">
                     <i data-feather="users" class="text-blue-600"></i>
@@ -61,15 +59,12 @@
             </div>
         </div>
 
-        <!-- HAMBURGER (only on mobile) -->
         <button class="sm:hidden fixed top-4 left-4 z-50 p-2 bg-white border rounded-full" id="sidebar-toggle">
             <i data-feather="menu"></i>
         </button>
 
-        <!-- MOBILE SIDEBAR OVERLAY -->
         <div class="fixed inset-0 bg-black bg-opacity-50 z-40 flex sm:hidden" id="mobile-sidebar" style="display: none;">
             <div class="w-64 bg-white h-full shadow-lg p-4 overflow-auto">
-                <!-- Logo Section -->
                 <div class="p-4 flex items-center space-x-2">
                     <div class="bg-blue-100 p-2 rounded-lg">
                         <i data-feather="users" class="text-blue-600"></i>
@@ -116,29 +111,25 @@
             </div>
         </div>
 
-        <!-- Main Content -->
         <div class="flex-1 overflow-auto">
             <div class="p-6">
-                <!-- Header -->
                 <div class="mb-6">
                     <h1 class="text-2xl font-bold text-gray-800 mb-1">Solo Parent Members</h1>
                     <p class="text-gray-500 text-sm">Manage and view member information.</p>
                 </div>
 
-                <!-- Stats Card -->
                 <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100 mb-6">
                     <div class="flex justify-between items-center">
                         <div>
                             <p class="text-sm font-medium text-gray-500">Total Verified Members</p>
-                            <p class="text-2xl font-bold mt-1">1,482</p>
+                            <p id="total-verified-members" class="text-2xl font-bold mt-1">...</p>
                         </div>
                         <div class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-                            ↑ 1.5%
+                            <span id="total-verified-percent">...</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Search and Filters -->
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                     <div class="relative w-full md:w-96">                        
                         <input type="text" class="pl-10 pr-4 py-2 border border-gray-200 rounded-md w-full focus:ring-1 focus:ring-blue-500 focus:border-blue-500" placeholder="Search by name, ID...">
@@ -162,7 +153,6 @@
                     </div>
                 </div>
 
-                <!-- Members Table -->
                 <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
@@ -176,124 +166,21 @@
                                     <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-10 w-10">
-                                                <img class="h-10 w-10 rounded-full" src="https://i.pravatar.cc/200?img=5" alt="">
-                                            </div>
-                                            <div class="ml-4">
-                                                <div class="text-sm font-medium text-gray-900">Maria Santos</div>
-                                                <div class="text-sm text-gray-500">Widow</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">Manila, Barangay 1</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">SP-2023-00142</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">Educational Assistance</div>
-                                        <div class="text-xs text-gray-500">Jan 15, 2023</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Verified</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <div class="flex justify-end space-x-2">
-                                            <a href="#" class="text-blue-600 hover:text-blue-900">
-                                                <i data-feather="eye" class="w-4 h-4"></i>
-                                            </a>
-                                            <a href="#" class="text-blue-600 hover:text-blue-900">
-                                                <i data-feather="edit" class="w-4 h-4"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-10 w-10">
-                                                <img class="h-10 w-10 rounded-full" src="https://i.pravatar.cc/200?img=6" alt="">
-                                            </div>
-                                            <div class="ml-4">
-                                                <div class="text-sm font-medium text-gray-900">Juan Dela Cruz</div>
-                                                <div class="text-sm text-gray-500">Spouse detained</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">Quezon City, Barangay 2</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">SP-2023-00328</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-400">None</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <div class="flex justify-end space-x-2">
-                                            <a href="#" class="text-blue-600 hover:text-blue-900">
-                                                <i data-feather="eye" class="w-4 h-4"></i>
-                                            </a>
-                                            <a href="#" class="text-blue-600 hover:text-blue-900">
-                                                <i data-feather="edit" class="w-4 h-4"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-10 w-10">
-                                                <img class="h-10 w-10 rounded-full" src="https://i.pravatar.cc/200?img=7" alt="">
-                                            </div>
-                                            <div class="ml-4">
-                                                <div class="text-sm font-medium text-gray-900">Ana Reyes</div>
-                                                <div class="text-sm text-gray-500">Pregnant woman</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">Makati, Barangay 3</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">SP-2023-00267</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">Medical Assistance</div>
-                                        <div class="text-xs text-gray-500">Mar 22, 2023</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Verified</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <div class="flex justify-end space-x-2">
-                                            <a href="#" class="text-blue-600 hover:text-blue-900">
-                                                <i data-feather="eye" class="w-4 h-4"></i>
-                                            </a>
-                                            <a href="#" class="text-blue-600 hover:text-blue-900">
-                                                <i data-feather="edit" class="w-4 h-4"></i>
-                                            </a>
-                                        </div>
+                            <tbody id="members-table-body" class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                                        Loading members...
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
 
-                    <!-- Pagination -->
                     <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
                         <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                             <div>
                                 <p class="text-sm text-gray-700">
-                                    Showing <span class="font-medium">1</span> to <span class="font-medium">10</span> of <span class="font-medium">1,482</span> results
+                                    Showing <span class="font-medium">1</span> to <span class="font-medium">10</span> of <span id="pagination-total" class="font-medium">...</span> results
                                 </p>
                             </div>
                             <div>
@@ -312,7 +199,7 @@
                                         3
                                     </a>
                                     <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                        <span class="sr-only">Next</span>
+                                       <span class="sr-only">Next</span>
                                         <i data-feather="chevron-right" class="h-5 w-5"></i>
                                     </a>
                                 </nav>

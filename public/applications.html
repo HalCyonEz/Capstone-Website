@@ -12,7 +12,6 @@
 </head>
 <body class="bg-gray-50 font-sans">
     <div class="flex flex-col sm:flex-row h-screen">
-        <!-- SIDEBAR: hidden on mobile, visible on sm+ -->
         <div class="w-64 bg-white border-r border-gray-200 flex-col hidden sm:flex" id="sidebar">
             <div class="p-4 flex items-center space-x-2">
                 <div class="bg-blue-100 p-2 rounded-lg">
@@ -51,12 +50,10 @@
             </div>
         </div>
         
-        <!-- HAMBURGER: only on mobile -->
         <button class="sm:hidden fixed top-4 left-4 z-50 p-2 bg-white border rounded-full" id="sidebar-toggle">
             <i data-feather="menu"></i>
         </button>
         
-        <!-- MOBILE SIDEBAR OVERLAY -->
         <div class="fixed inset-0 bg-black bg-opacity-50 z-40 flex sm:hidden" id="mobile-sidebar" style="display: none;">
             <div class="w-64 bg-white h-full shadow-lg p-4 overflow-auto">
                 <div class="p-4 flex items-center space-x-2">
@@ -97,16 +94,13 @@
             </div>
         </div>
 
-        <!-- Main Content -->
         <div class="flex-1 overflow-auto">
             <div class="p-6">
-                <!-- Header -->
                 <div class="mb-6">
                     <h1 class="text-2xl font-bold text-gray-800 mb-1">Solo Parent Applications</h1>
                     <p class="text-gray-500 text-sm">Manage and track all submitted applications.</p>
                 </div>
 
-                <!-- Search and Filters -->
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                     <div class="relative w-full md:w-96">
                         <input type="text" class="pl-10 pr-4 py-2 border border-gray-200 rounded-md w-full focus:ring-1 focus:ring-blue-500 focus:border-blue-500" placeholder="Search by name or ID...">
@@ -120,7 +114,6 @@
                     </div>
                 </div>
 
-                <!-- Applications Table -->
                 <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
@@ -136,13 +129,16 @@
                                     <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <!-- Firestore will populate rows here dynamically via script.js -->
-                                <!-- Static rows removed - table will be populated by JavaScript -->
+                            <tbody id="applications-table-body" class="bg-white divide-y divide-gray-200">
+                                
+                                <tr>
+                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                                        Loading applications...
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
-                    <!-- Pagination -->
                     <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
                         <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                             <div>
@@ -169,7 +165,7 @@
                                         <span class="sr-only">Next</span>
                                         <i data-feather="chevron-right" class="h-5 w-5"></i>
                                     </a>
-                                </nav>
+                                 </nav>
                             </div>
                         </div>
                     </div>
