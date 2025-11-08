@@ -11,56 +11,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="bg-gray-50 font-sans">
-        <div class="flex flex-col sm:flex-row h-screen">
+    <div class="flex flex-col sm:flex-row h-screen">
         <!-- SIDEBAR: hidden on mobile, visible on sm+ -->
-    <div class="w-64 bg-white border-r border-gray-200 flex-col hidden sm:flex" id="sidebar">
-        <!-- Sidebar content (copy your current sidebar here) -->
-        <div class="p-4 flex items-center space-x-2">
-            <div class="bg-blue-100 p-2 rounded-lg">
-                <i data-feather="users" class="text-blue-600"></i>
-            </div>
-            <span class="font-bold text-gray-800">SPDA System</span>
-        </div>
-        <nav class="flex-1 px-2 space-y-1">
-            <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-blue-100">
-                <i data-feather="home" class="mr-3"></i> Dashboard
-            </a>
-            <a href="categories.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-blue-100">
-                <i data-feather="bar-chart-2" class="mr-3"></i> Categories
-            </a>
-            <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-blue-100">
-                <i data-feather="users" class="mr-3"></i> Members
-            </a>
-            <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-blue-100">
-                <i data-feather="file-text" class="mr-3"></i> Applications
-            </a>
-            <a href="events.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-blue-600 hover:bg-blue-100">
-                <i data-feather="calendar" class="mr-3"></i> Events
-            </a>
-        </nav>
-        <div class="p-4 border-t border-gray-200">
-            <div class="flex items-center space-x-3">
-                <img src="http://static.photos/people/200x200/1" class="w-10 h-10 rounded-full" alt="Admin">
-                <div>
-                    <p class="text-sm font-medium text-gray-900">Admin Name</p>
-                    <p class="text-xs text-gray-500">System Administrator</p>
-                </div>
-            </div>
-            <button class="mt-4 w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                <i data-feather="log-out" class="mr-2"></i> Log Out
-            </button>
-        </div>
-    </div>
-    
-    <!-- HAMBURGER: only on mobile -->
-    <button class="sm:hidden fixed top-4 left-4 z-50 p-2 bg-white border rounded-full" id="sidebar-toggle">
-        <i data-feather="menu"></i>
-    </button>
-    
-    <!-- MOBILE SIDEBAR OVERLAY -->
-    <div class="fixed inset-0 bg-black bg-opacity-50 z-40 flex sm:hidden" id="mobile-sidebar" style="display: none;">
-        <div class="w-64 bg-white h-full shadow-lg p-4 overflow-auto">
-            <!-- Sidebar content (duplicate it for mobile here) -->
+        <div class="w-64 bg-white border-r border-gray-200 flex-col hidden sm:flex" id="sidebar">
             <div class="p-4 flex items-center space-x-2">
                 <div class="bg-blue-100 p-2 rounded-lg">
                     <i data-feather="users" class="text-blue-600"></i>
@@ -68,25 +21,25 @@
                 <span class="font-bold text-gray-800">SPDA System</span>
             </div>
             <nav class="flex-1 px-2 space-y-1">
-                <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-blue-100">
+                <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
                     <i data-feather="home" class="mr-3"></i> Dashboard
                 </a>
-                <a href="categories.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-blue-100">
+                <a href="categories.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
                     <i data-feather="bar-chart-2" class="mr-3"></i> Categories
                 </a>
-                <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-blue-100">
+                <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
                     <i data-feather="users" class="mr-3"></i> Members
                 </a>
-                <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-blue-100">
+                <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
                     <i data-feather="file-text" class="mr-3"></i> Applications
                 </a>
-                <a href="events.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-blue-600 hover:bg-blue-100">
+                <a href="events.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
                     <i data-feather="calendar" class="mr-3"></i> Events
                 </a>
             </nav>
             <div class="p-4 border-t border-gray-200">
                 <div class="flex items-center space-x-3">
-                    <img src="http://static.photos/people/200x200/1" class="w-10 h-10 rounded-full" alt="Admin">
+                    <img src="https://static.photos/people/200x200/1" class="w-10 h-10 rounded-full" alt="Admin">
                     <div>
                         <p class="text-sm font-medium text-gray-900">Admin Name</p>
                         <p class="text-xs text-gray-500">System Administrator</p>
@@ -97,7 +50,52 @@
                 </button>
             </div>
         </div>
-    </div>
+        
+        <!-- HAMBURGER: only on mobile -->
+        <button class="sm:hidden fixed top-4 left-4 z-50 p-2 bg-white border rounded-full" id="sidebar-toggle">
+            <i data-feather="menu"></i>
+        </button>
+        
+        <!-- MOBILE SIDEBAR OVERLAY -->
+        <div class="fixed inset-0 bg-black bg-opacity-50 z-40 flex sm:hidden" id="mobile-sidebar" style="display: none;">
+            <div class="w-64 bg-white h-full shadow-lg p-4 overflow-auto">
+                <div class="p-4 flex items-center space-x-2">
+                    <div class="bg-blue-100 p-2 rounded-lg">
+                        <i data-feather="users" class="text-blue-600"></i>
+                    </div>
+                    <span class="font-bold text-gray-800">SPDA System</span>
+                </div>
+                <nav class="flex-1 px-2 space-y-1">
+                    <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                        <i data-feather="home" class="mr-3"></i> Dashboard
+                    </a>
+                    <a href="categories.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                        <i data-feather="bar-chart-2" class="mr-3"></i> Categories
+                    </a>
+                    <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                        <i data-feather="users" class="mr-3"></i> Members
+                    </a>
+                    <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                        <i data-feather="file-text" class="mr-3"></i> Applications
+                    </a>
+                    <a href="events.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                        <i data-feather="calendar" class="mr-3"></i> Events
+                    </a>
+                </nav>
+                <div class="p-4 border-t border-gray-200">
+                    <div class="flex items-center space-x-3">
+                        <img src="https://static.photos/people/200x200/1" class="w-10 h-10 rounded-full" alt="Admin">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">Admin Name</p>
+                            <p class="text-xs text-gray-500">System Administrator</p>
+                        </div>
+                    </div>
+                    <button class="mt-4 w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        <i data-feather="log-out" class="mr-2"></i> Log Out
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <!-- Main Content -->
         <div class="flex-1 overflow-auto">
@@ -152,8 +150,7 @@
                 <!-- Active Events -->
                 <div class="space-y-4">
                     <h2 class="text-lg font-semibold text-gray-800 mb-4">Active Events</h2>
-                    
-                    <!-- Event Card 1 -->
+                     <!-- Event Card 1 -->
                     <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
                         <div class="flex justify-between items-start">
                             <div class="flex items-start gap-4">
