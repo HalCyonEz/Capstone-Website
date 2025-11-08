@@ -11,56 +11,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="bg-gray-50 font-sans">
-        <div class="flex flex-col sm:flex-row h-screen">
+    <div class="flex flex-col sm:flex-row h-screen">
         <!-- SIDEBAR: hidden on mobile, visible on sm+ -->
-    <div class="w-64 bg-white border-r border-gray-200 flex-col hidden sm:flex" id="sidebar">
-        <!-- Sidebar content (copy your current sidebar here) -->
-        <div class="p-4 flex items-center space-x-2">
-            <div class="bg-blue-100 p-2 rounded-lg">
-                <i data-feather="users" class="text-blue-600"></i>
-            </div>
-            <span class="font-bold text-gray-800">SPDA System</span>
-        </div>
-        <nav class="flex-1 px-2 space-y-1">
-            <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-blue-100">
-                <i data-feather="home" class="mr-3"></i> Dashboard
-            </a>
-            <a href="categories.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-blue-100">
-                <i data-feather="bar-chart-2" class="mr-3"></i> Categories
-            </a>
-            <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-blue-600 hover:bg-blue-100">
-                <i data-feather="users" class="mr-3"></i> Members
-            </a>
-            <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-blue-100">
-                <i data-feather="file-text" class="mr-3"></i> Applications
-            </a>
-            <a href="events.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-blue-100">
-                <i data-feather="calendar" class="mr-3"></i> Events
-            </a>
-        </nav>
-        <div class="p-4 border-t border-gray-200">
-            <div class="flex items-center space-x-3">
-                <img src="http://static.photos/people/200x200/1" class="w-10 h-10 rounded-full" alt="Admin">
-                <div>
-                    <p class="text-sm font-medium text-gray-900">Admin Name</p>
-                    <p class="text-xs text-gray-500">System Administrator</p>
-                </div>
-            </div>
-            <button class="mt-4 w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                <i data-feather="log-out" class="mr-2"></i> Log Out
-            </button>
-        </div>
-    </div>
-    
-    <!-- HAMBURGER: only on mobile -->
-    <button class="sm:hidden fixed top-4 left-4 z-50 p-2 bg-white border rounded-full" id="sidebar-toggle">
-        <i data-feather="menu"></i>
-    </button>
-    
-    <!-- MOBILE SIDEBAR OVERLAY -->
-    <div class="fixed inset-0 bg-black bg-opacity-50 z-40 flex sm:hidden" id="mobile-sidebar" style="display: none;">
-        <div class="w-64 bg-white h-full shadow-lg p-4 overflow-auto">
-            <!-- Sidebar content (duplicate it for mobile here) -->
+        <div class="w-64 bg-white border-r border-gray-200 flex-col hidden sm:flex" id="sidebar">
             <div class="p-4 flex items-center space-x-2">
                 <div class="bg-blue-100 p-2 rounded-lg">
                     <i data-feather="users" class="text-blue-600"></i>
@@ -68,25 +21,25 @@
                 <span class="font-bold text-gray-800">SPDA System</span>
             </div>
             <nav class="flex-1 px-2 space-y-1">
-                <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-blue-600 hover:bg-blue-100">
+                <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
                     <i data-feather="home" class="mr-3"></i> Dashboard
                 </a>
-                <a href="categories.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-blue-100">
+                <a href="categories.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
                     <i data-feather="bar-chart-2" class="mr-3"></i> Categories
                 </a>
-                <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-blue-100">
+                <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
                     <i data-feather="users" class="mr-3"></i> Members
                 </a>
-                <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-blue-100">
+                <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
                     <i data-feather="file-text" class="mr-3"></i> Applications
                 </a>
-                <a href="events.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-blue-100">
+                <a href="events.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
                     <i data-feather="calendar" class="mr-3"></i> Events
                 </a>
             </nav>
             <div class="p-4 border-t border-gray-200">
                 <div class="flex items-center space-x-3">
-                    <img src="http://static.photos/people/200x200/1" class="w-10 h-10 rounded-full" alt="Admin">
+                    <img src="https://static.photos/people/200x200/1" class="w-10 h-10 rounded-full" alt="Admin">
                     <div>
                         <p class="text-sm font-medium text-gray-900">Admin Name</p>
                         <p class="text-xs text-gray-500">System Administrator</p>
@@ -97,7 +50,52 @@
                 </button>
             </div>
         </div>
-    </div>
+        
+        <!-- HAMBURGER: only on mobile -->
+        <button class="sm:hidden fixed top-4 left-4 z-50 p-2 bg-white border rounded-full" id="sidebar-toggle">
+            <i data-feather="menu"></i>
+        </button>
+        
+        <!-- MOBILE SIDEBAR OVERLAY -->
+        <div class="fixed inset-0 bg-black bg-opacity-50 z-40 flex sm:hidden" id="mobile-sidebar" style="display: none;">
+            <div class="w-64 bg-white h-full shadow-lg p-4 overflow-auto">
+                <div class="p-4 flex items-center space-x-2">
+                    <div class="bg-blue-100 p-2 rounded-lg">
+                        <i data-feather="users" class="text-blue-600"></i>
+                    </div>
+                    <span class="font-bold text-gray-800">SPDA System</span>
+                </div>
+                <nav class="flex-1 px-2 space-y-1">
+                    <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                        <i data-feather="home" class="mr-3"></i> Dashboard
+                    </a>
+                    <a href="categories.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                        <i data-feather="bar-chart-2" class="mr-3"></i> Categories
+                    </a>
+                    <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                        <i data-feather="users" class="mr-3"></i> Members
+                    </a>
+                    <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                        <i data-feather="file-text" class="mr-3"></i> Applications
+                    </a>
+                    <a href="events.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                        <i data-feather="calendar" class="mr-3"></i> Events
+                    </a>
+                </nav>
+                <div class="p-4 border-t border-gray-200">
+                    <div class="flex items-center space-x-3">
+                        <img src="https://static.photos/people/200x200/1" class="w-10 h-10 rounded-full" alt="Admin">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">Admin Name</p>
+                            <p class="text-xs text-gray-500">System Administrator</p>
+                        </div>
+                    </div>
+                    <button class="mt-4 w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        <i data-feather="log-out" class="mr-2"></i> Log Out
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <!-- Main Content -->
         <div class="flex-1 overflow-auto">
@@ -134,13 +132,12 @@
                             <option>Inactive</option>
                         </select>
                         <select class="border border-gray-200 rounded-md px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm">
-                            <option>Sort by: Name</option>
-                            <option>Sort by: Recent</option>
-                            <option>Sort by: Status</option>
+                            <option>Sort by Name</option>
+                            <option>Sort by Recent</option>
+                            <option>Sort by Status</option>
                         </select>
                         <button class="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1 px-3 py-2">
-                            <i data-feather="filter" class="w-4 h-4"></i>
-                            More Filters
+                            <i data-feather="filter" class="w-4 h-4"></i> More Filters
                         </button>
                     </div>
                 </div>
@@ -154,7 +151,7 @@
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Full Name</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solo Parent ID</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gov't Project Received</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Govt Project Received</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                     <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
@@ -164,7 +161,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0 h-10 w-10">
-                                                <img class="h-10 w-10 rounded-full" src="http://static.photos/people/200x200/5" alt="">
+                                                <img class="h-10 w-10 rounded-full" src="https://static.photos/people/200x200/5" alt="">
                                             </div>
                                             <div class="ml-4">
                                                 <div class="text-sm font-medium text-gray-900">Maria Santos</div>
@@ -200,7 +197,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0 h-10 w-10">
-                                                <img class="h-10 w-10 rounded-full" src="http://static.photos/people/200x200/6" alt="">
+                                                <img class="h-10 w-10 rounded-full" src="https://static.photos/people/200x200/6" alt="">
                                             </div>
                                             <div class="ml-4">
                                                 <div class="text-sm font-medium text-gray-900">Juan Dela Cruz</div>
@@ -212,104 +209,4 @@
                                         <div class="text-sm text-gray-900">Quezon City, Barangay 2</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">SP-2023-00328</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-400">None</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <div class="flex justify-end space-x-2">
-                                            <a href="#" class="text-blue-600 hover:text-blue-900">
-                                                <i data-feather="eye" class="w-4 h-4"></i>
-                                            </a>
-                                            <a href="#" class="text-blue-600 hover:text-blue-900">
-                                                <i data-feather="edit" class="w-4 h-4"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-10 w-10">
-                                                <img class="h-10 w-10 rounded-full" src="http://static.photos/people/200x200/7" alt="">
-                                            </div>
-                                            <div class="ml-4">
-                                                <div class="text-sm font-medium text-gray-900">Ana Reyes</div>
-                                                <div class="text-sm text-gray-500">Pregnant woman</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">Makati, Barangay 3</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">SP-2023-00267</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">Medical Assistance</div>
-                                        <div class="text-xs text-gray-500">Mar 22, 2023</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Verified</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <div class="flex justify-end space-x-2">
-                                            <a href="#" class="text-blue-600 hover:text-blue-900">
-                                                <i data-feather="eye" class="w-4 h-4"></i>
-                                            </a>
-                                            <a href="#" class="text-blue-600 hover:text-blue-900">
-                                                <i data-feather="edit" class="w-4 h-4"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <!-- More rows... -->
-                            </tbody>
-                        </table>
-                    </div>
-                    <!-- Pagination -->
-                    <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-                        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                            <div>
-                                <p class="text-sm text-gray-700">
-                                    Showing <span class="font-medium">1</span> to <span class="font-medium">10</span> of <span class="font-medium">1,482</span> results
-                                </p>
-                            </div>
-                            <div>
-                                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                                    <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                        <span class="sr-only">Previous</span>
-                                        <i data-feather="chevron-left" class="h-5 w-5"></i>
-                                    </a>
-                                    <a href="#" aria-current="page" class="z-10 bg-blue-50 border-blue-500 text-blue-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
-                                        1
-                                    </a>
-                                    <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
-                                        2
-                                    </a>
-                                    <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
-                                        3
-                                    </a>
-                                    <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                        <span class="sr-only">Next</span>
-                                        <i data-feather="chevron-right" class="h-5 w-5"></i>
-                                    </a>
-                                </nav>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        feather.replace();
-    </script>
-    <script type="module" src="script.js"></script>
-</body>
-</html>
+                                        <div class="text-sm text-gray
