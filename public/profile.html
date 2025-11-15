@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPDA Member Profile</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- ✅ ADDED: Print-specific styles -->
+    <style>
+        @media print {
+            /* Hide everything by default */
+            body > * {
+                visibility: hidden;
+            }
+            #sidebar, #sidebar-toggle, #mobile-sidebar {
+                display: none;
+            }
+            
+            /* Show only the main content area */
+            .flex-1.overflow-auto {
+                visibility: visible;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: auto;
+                overflow: visible; /* Show all content, not just scrolled */
+                padding: 0;
+                margin: 0;
+            }
+            
+            /* Tweak the content for printing */
+            .p-6 {
+                padding: 1rem !important;
+            }
+
+            /* Hide all action buttons */
+            #print-button-container, #profile-actions {
+                display: none !important;
+            }
+
+            /* Make the 3-col grid stack vertically */
+            .lg\:grid-cols-3 {
+                grid-template-columns: repeat(1, minmax(0, 1fr));
+            }
+            
+            /* Ensure images and doc links are printable */
+            img, a[target="_blank"] {
+                page-break-inside: avoid; /* Try to keep images from splitting */
+                max-width: 100% !important;
+            }
+            
+            .shadow-sm, .shadow-md {
+                box-shadow: none !important;
+            }
+            .border, .border-gray-100, .border-gray-200 {
+                border: none !important;
+            }
+            
+            /* Make sure document images are still visible */
+            .md\:grid-cols-3 {
+                 grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="flex flex-col sm:flex-row h-screen">
+        
+        <!-- SIDEBAR (hidden on mobile, visible on sm+) -->
+        <div class="w-64 bg-white border-r border-gray-200 flex-col hidden sm:flex" id="sidebar">
+            <!-- Logo Section -->
+            <div class="p-4 flex items-center space-x-2">
+                <div class="bg-blue-100 p-2 rounded-lg">
+                    <i data-feather="users" class="text-blue-600"></i>
+                </div>
+                <span class="font-bold text-gray-800">SPDA System</span>
+            </div>
+
+            <nav class="flex-1 px-2 space-y-1">
+                <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                    <i data-feather="home" class="mr-3"></i>
+                    Dashboard
+                </a>
+                <a href="categories.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                    <i data-feather="bar-chart-2" class="mr-3"></i>
+                    Categories
+                </a>
+                <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                    <i data-feather="users" class="mr-3"></i>
+                    Members
+                </a>
+                <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                    <i data-feather="file-text" class="mr-3"></i>
+                    Applications
+                </a>
+                <a href="events.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                    <i data-feather="calendar" class="mr-3"></i>
+                    Events
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-gray-200">
+                <div class="flex items-center space-x-3">
+                    <img src="https://i.pravatar.cc/200?img=1" class="w-10 h-10 rounded-full" alt="Admin">
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">Admin Name</p>
+                        <p class="text-xs text-gray-500">System Administrator</p>
+                    </div>
+                </div>
+                <button class="mt-4 w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    <i data-feather="log-out" class="mr-2"></i>
+                    Log Out
+                </button>
+            </div>
+        </div>
+
+        <!-- HAMBURGER (only on mobile) -->
+        <button class="sm:hidden fixed top-4 left-4 z-50 p-2 bg-white border rounded-full" id="sidebar-toggle">
+            <i data-feather="menu"></i>
+        </button>
+
+        <!-- MOBILE SIDEBAR OVERLAY -->
+        <div class="fixed inset-0 bg-black bg-opacity-50 z-40 flex sm:hidden" id="mobile-sidebar" style="display: none;">
+             <!-- Logo Section -->
+            <div class="w-64 bg-white h-full shadow-lg p-4 overflow-auto">
+                <div class="p-4 flex items-center space-x-2">
+                    <div class="bg-blue-100 p-2 rounded-lg">
+                        <i data-feather="users" class="text-blue-600"></i>
+                    </div>
+                    <span class="font-bold text-gray-800">SPDA System</span>
+                </div>
+
+                <nav class="flex-1 px-2 space-y-1">
+                    <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                        <i data-feather="home" class="mr-3"></i>
+                        Dashboard
+                    </a>
+                    <a href="categories.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                        <i data-feather="bar-chart-2" class="mr-3"></i>
+                        Categories
+                    </a>
+                    <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                        <i data-feather="users" class="mr-3"></i>
+                        Members
+                    </a>
+                    <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                        <i data-feather="file-text" class="mr-3"></i>
+                        Applications
+                    </a>
+                    <a href="events.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                        <i data-feather="calendar" class="mr-3"></i>
+                        Events
+                    </a>
+                </nav>
+
+                <div class="p-4 border-t border-gray-200">
+                    <div class="flex items-center space-x-3">
+                        <img src="https://i.pravatar.cc/200?img=1" class="w-10 h-10 rounded-full" alt="Admin">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">Admin Name</p>
+                            <p class="text-xs text-gray-500">System Administrator</p>
+                        </div>
+                    </div>
+                    <button class="mt-4 w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        <i data-feather="log-out" class="mr-2"></i>
+                        Log Out
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-auto">
+            <div class="p-6">
+                <!-- Header -->
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800 mb-1">Applicant Profile</h1>
+                        <p id="profile-breadcrumb" class="text-gray-500 text-sm">Loading...</p>
+                    </div>
+                    <!-- ✅ ADDED: Print Button -->
+                    <div id="print-button-container">
+                        <button id="print-profile-btn" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition">
+                            <i data-feather="printer" class="w-4 h-4"></i>
+                            Print to PDF
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Main Profile Layout -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Left Column: Profile Card -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                            <div class="flex flex-col items-center">
+                                <img id="profile-avatar" src="https://placehold.co/128x128/EBF4FF/7F9CF5?text=...&font=inter" class="w-32 h-32 rounded-full mb-4 object-cover">
+                                <h2 id="profile-name" class="text-2xl font-bold text-gray-800">Loading...</h2>
+                                <p id="profile-category" class="text-sm text-gray-500 mb-4">...</p>
+                                <span id="profile-status-badge" class="px-3 py-1 text-xs font-medium rounded-full">...</span>
+                            </div>
+                            <hr class="my-6">
+                            <div class="space-y-4">
+                                <div>
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Email</h4>
+                                    <p id="profile-email" class="text-sm text-gray-800">...</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Contact</h4>
+                                    <p id="profile-contact" class="text-sm text-gray-800">...</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Address</h4>
+                                    <p id="profile-address" class="text-sm text-gray-800">...</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Solo Parent ID</h4>
+                                    <p id="profile-sp-id" class="text-sm text-gray-800">...</p>
+                                </div>
+                            </div>
+                            <hr class="my-6">
+                            <!-- Action buttons will be shown/hidden by JS based on status -->
+                            <div id="profile-actions" class="space-y-3">
+                                <button id="profile-approve-btn" class="w-full flex justify-center items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition">
+                                    <i data-feather="check-circle" class="w-4 h-4"></i> Approve
+                                </button>
+                                <button id="profile-reject-btn" class="w-full flex justify-center items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition">
+                                    <i data-feather="x-circle" class="w-4 h-4"></i> Reject
+                                </button>
+                                <button id="profile-edit-btn" class="w-full flex justify-center items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 border border-gray-300 rounded-md shadow-sm transition">
+                                    <i data-feather="edit" class="w-4 h-4"></i> Edit Profile
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Details & Documents -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- Personal Information -->
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Personal Information</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                                <div>
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Full Name</h4>
+                                    <p id="detail-full-name" class="text-sm text-gray-800">...</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Email</h4>
+                                    <p id="detail-email" class="text-sm text-gray-800">...</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Date of Birth</h4>
+                                    <p id="detail-dob" class="text-sm text-gray-800">...</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Age</h4>
+                                    <p id="detail-age" class="text-sm text-gray-800">...</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Sex</h4>
+                                    <p id="detail-sex" class="text-sm text-gray-800">...</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Place of Birth</h4>
+                                    <p id="detail-pob" class="text-sm text-gray-800">...</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Civil Status</h4>
+                                    <p id="detail-civil-status" class="text-sm text-gray-800">...</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Ethnicity</h4>
+                                    <p id="detail-ethnicity" class="text-sm text-gray-800">...</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Religion</h4>
+                                    <p id="detail-religion" class="text-sm text-gray-800">...</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Date Registered</h4>
+                                    <p id="detail-created-at" class="text-sm text-gray-800">...</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Family & Employment -->
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Family & Employment</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                                <div>
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Occupation</h4>
+                                    <p id="detail-occupation" class="text-sm text-gray-800">...</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Company / Agency</h4>
+                                    <p id="detail-company" class="text-sm text-gray-800">...</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Monthly Income</h4>
+                                    <p id="detail-income" class="text-sm text-gray-800">...</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Number of Children</h4>
+                                    <p id="detail-num-children" class="text-sm text-gray-800">...</p>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Ages of Children</h4>
+                                    <p id="detail-children-ages" class="text-sm text-gray-800">...</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase">PhilHealth Member</h4>
+                                    <p id="detail-has-philhealth" class="text-sm text-gray-800">...</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase">PhilHealth ID</h4>
+                                    <p id="detail-philhealth-id" class="text-sm text-gray-800">...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Uploaded Documents -->
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Uploaded Documents</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <!-- Document 1 -->
+                                <div id="doc-container-valid-id">
+                                    <h4 class="text-sm font-medium text-gray-800 mb-2">Valid ID</h4>
+                                    <a id="doc-link-valid-id" href="#" target="_blank" class="block border border-gray-200 rounded-lg overflow-hidden hover:border-blue-500 transition">
+                                        <img id="doc-img-valid-id" src="https://placehold.co/300x200/F9FAFB/D1D5DB?text=Loading..." class="w-full h-40 object-cover">
+                                    </a>
+                                    <p id="doc-error-valid-id" class="text-sm text-gray-500 hidden">Not provided</p>
+                                </div>
+                                <!-- Document 2 -->
+                                <div id="doc-container-proof">
+                                    <h4 class="text-sm font-medium text-gray-800 mb-2">Proof of Solo Parent Status</h4>
+                                    <a id="doc-link-proof" href="#" target="_blank" class="block border border-gray-200 rounded-lg overflow-hidden hover:border-blue-500 transition">
+                                        <img id="doc-img-proof" src="https://placehold.co/300x200/F9FAFB/D1D5DB?text=Loading..." class="w-full h-40 object-cover">
+                                    </a>
+                                     <p id="doc-error-proof" class="text-sm text-gray-500 hidden">Not provided</p>
+                                </div>
+                                <!-- Document 3 -->
+                                <div id="doc-container-philhealth">
+                                    <h4 class="text-sm font-medium text-gray-500 mb-2">PhilHealth ID (if applicable)</h4>
+                                    <a id="doc-link-philhealth" href="#" target="_blank" class="block border border-gray-200 rounded-lg overflow-hidden hover:border-blue-500 transition">
+                                        <img id="doc-img-philhealth" src="https://placehold.co/300x200/F9FAFB/D1D5DB?text=Loading..." class="w-full h-40 object-cover">
+                                    </a>
+                                    <p id="doc-error-philhealth" class="text-sm text-gray-500 hidden">Not provided</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        feather.replace();
+    </script>
+    <script type="module" src="script.js"></script>
+</body>
+</html>
