@@ -63,6 +63,39 @@ async function rejectUser(docId) {
 // --------------------------------------------------------------------------
 // UTILITY FUNCTIONS (Run on all pages)
 // --------------------------------------------------------------------------
+document.addEventListener('DOMContentLoaded', function() {
+    if (!db) {
+        console.error("Firebase DB not available. Aborting script execution.");
+        return;
+    }
+
+    // Run common functions on all pages
+    handleSidebarHighlight();
+    handleMobileSidebar();
+    handleLogout();
+
+    // Run page-specific logic
+    if (isPage('dashboard.html')) {
+        initDashboardPage();
+    } else if (isPage('applications.html')) {
+        initApplicationsPage();
+    } else if (isPage('members.html')) {
+        initMembersPage();
+    } else if (isPage('categories.html')) {
+        initCategoriesPage();
+    } else if (isPage('events.html')) {
+        initEventsPage();
+    } else if (isPage('profile.html')) {
+        initProfilePage();
+    } else if (isPage('announcements.html')) { // ✅ ADD THIS LINE
+        initAnnouncementsPage();
+    } else if (isPage('index.html') || isPage('/') || window.location.pathname === '/') {
+        handlePasswordToggle(); // For login page
+    }
+
+    // Finally, replace all Feather icons
+    feather.replace();
+});
 
 function isPage(pageName) {
   // ✅ UPDATED: To handle "profile.html?id=..."
@@ -904,3 +937,156 @@ document.addEventListener('DOMContentLoaded', function() {
     // Finally, replace all Feather icons
     feather.replace();
 });
+
+// ... (Keep all your existing code above this line) ...
+
+// --------------------------------------------------------------------------
+// ANNOUNCEMENTS PAGE LOGIC (`announcements.html`)
+// --------------------------------------------------------------------------
+// --------------------------------------------------------------------------
+// ANNOUNCEMENTS PAGE LOGIC (`announcements.html`)
+// --------------------------------------------------------------------------
+// --------------------------------------------------------------------------
+// ANNOUNCEMENTS PAGE LOGIC (`announcements.html`)
+// --------------------------------------------------------------------------
+function initAnnouncementsPage() {
+    console.log('Initializing announcements page...');
+    
+    // Get DOM elements
+    const createAnnouncementForm = document.getElementById('create-announcement-form');
+    const announcementList = document.getElementById('announcement-list');
+    const publishBtn = document.getElementById('publish-btn');
+    const annTitle = document.getElementById('ann-title');
+    const annBody = document.getElementById('ann-body');
+    const annImage = document.getElementById('ann-image');
+
+    // Debug log to check if elements are found
+    console.log('Form element:', createAnnouncementForm);
+    console.log('Announcement list:', announcementList);
+    console.log('Publish button:', publishBtn);
+
+    if (!createAnnouncementForm) {
+        console.error('Create announcement form not found!');
+        return;
+    }
+
+    // Load existing announcements
+    loadAnnouncements();
+
+    // Form submission handler
+    createAnnouncementForm.addEventListener('submit', handleFormSubmit);
+
+    async function loadAnnouncements() {
+        try {
+            console.log('Loading announcements...');
+            const q = query(collection(db, 'announcements'), orderBy('timestamp', 'desc'));
+            const querySnapshot = await getDocs(q);
+            
+            if (announcementList) {
+                announcementList.innerHTML = '';
+                
+                if (querySnapshot.empty) {
+                    announcementList.innerHTML = '<p class="text-center text-gray-500 py-8">No announcements yet.</p>';
+                    return;
+                }
+                
+                querySnapshot.forEach((docSnapshot) => {
+                    const announcement = docSnapshot.data();
+                    const announcementId = docSnapshot.id;
+                    
+                    const date = announcement.timestamp.toDate().toLocaleDateString();
+                    
+                    const imageHtml = announcement.imageUrl 
+                        ? `<div class="mt-3"><img src="${announcement.imageUrl}" alt="Announcement Image" class="rounded-lg max-w-full h-auto max-h-48 object-cover"></div>`
+                        : '';
+                    
+                    const cardHtml = `
+                        <div class="announcement-card bg-gray-50 p-4 rounded-lg border border-gray-200" data-id="${announcementId}">
+                            <div class="announcement-header flex justify-between items-start mb-2">
+                                <h3 class="announcement-title font-semibold text-gray-800 text-lg">${announcement.title}</h3>
+                                <button class="delete-btn text-red-500 hover:text-red-700 p-1 rounded transition-colors" data-id="${announcementId}">
+                                    <i data-feather="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                            <div class="announcement-date text-sm text-gray-500 mb-3">${date}</div>
+                            ${imageHtml}
+                            <div class="announcement-body text-gray-700 mt-3">${announcement.body}</div>
+                        </div>
+                    `;
+                    
+                    announcementList.innerHTML += cardHtml;
+                });
+                
+                // Add event listeners to delete buttons
+                document.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', handleDeleteAnnouncement);
+                });
+                
+                // Render feather icons
+                feather.replace();
+            }
+            
+        } catch (error) {
+            console.error('Error loading announcements:', error);
+            if (announcementList) {
+                announcementList.innerHTML = `<p class="text-center text-red-500 py-8">Error loading announcements: ${error.message}</p>`;
+            }
+        }
+    }
+
+    async function handleDeleteAnnouncement(event) {
+        const announcementId = event.currentTarget.getAttribute('data-id');
+        
+        if (confirm('Are you sure you want to delete this announcement?')) {
+            try {
+                await deleteDoc(doc(db, 'announcements', announcementId));
+                console.log('Announcement deleted:', announcementId);
+                loadAnnouncements();
+            } catch (error) {
+                console.error('Error deleting announcement:', error);
+                alert('Error deleting announcement: ' + error.message);
+            }
+        }
+    }
+
+    async function handleFormSubmit(event) {
+        event.preventDefault();
+        console.log('Form submitted!');
+        
+        const title = annTitle.value.trim();
+        const body = annBody.value.trim();
+        const imageUrl = annImage.value.trim();
+        
+        if (!title || !body) {
+            alert('Please fill in both title and body fields.');
+            return;
+        }
+        
+        // Update button state
+        const originalText = publishBtn.textContent;
+        publishBtn.textContent = 'Publishing...';
+        publishBtn.disabled = true;
+        
+        try {
+            console.log('Saving announcement to Firestore...');
+            await addDoc(collection(db, 'announcements'), {
+                title: title,
+                body: body,
+                imageUrl: imageUrl || null,
+                timestamp: Timestamp.now()
+            });
+            
+            alert('Announcement Published! All users will be notified automatically.');
+            createAnnouncementForm.reset();
+            loadAnnouncements();
+            
+        } catch (error) {
+            console.error('Error publishing announcement:', error);
+            alert('Error publishing announcement: ' + error.message);
+        } finally {
+            // Restore button state
+            publishBtn.textContent = originalText;
+            publishBtn.disabled = false;
+        }
+    }
+}

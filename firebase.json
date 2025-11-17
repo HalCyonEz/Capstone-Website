@@ -18,5 +18,8 @@
     "location": "asia-southeast2",
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
+  },
+  "functions": {
+    "source": "functions"
   }
 }
