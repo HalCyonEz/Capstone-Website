@@ -943,12 +943,6 @@ document.addEventListener('DOMContentLoaded', function() {
 // --------------------------------------------------------------------------
 // ANNOUNCEMENTS PAGE LOGIC (`announcements.html`)
 // --------------------------------------------------------------------------
-// --------------------------------------------------------------------------
-// ANNOUNCEMENTS PAGE LOGIC (`announcements.html`)
-// --------------------------------------------------------------------------
-// --------------------------------------------------------------------------
-// ANNOUNCEMENTS PAGE LOGIC (`announcements.html`)
-// --------------------------------------------------------------------------
 function initAnnouncementsPage() {
     console.log('Initializing announcements page...');
     
