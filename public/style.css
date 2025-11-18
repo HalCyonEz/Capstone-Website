@@ -21,3 +21,34 @@ input {
 .bg-blue-600:hover {
     box-shadow: 0 2px 6px rgba(0, 94, 166, 0.2);
 }
+
+.stat-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.analytics-card {
+    transition: all 0.3s ease;
+}
+        
+.analytics-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.08);
+}
+        
+.sidebar-link {
+    transition: all 0.2s ease;
+}
+        
+.sidebar-link:hover {
+    background-color: #f3f4f6;
+    padding-left: 1.5rem;
+}
+        
+.progress-bar {
+    transition: width 1s ease-in-out;
+}

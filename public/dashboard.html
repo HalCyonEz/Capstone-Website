@@ -4,16 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SPDA Dashboard</title>
-    <link rel="stylesheet" href="style.css"> 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/feather-icons"></script>
-    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+
 </head>
-<body class="bg-gray-50 font-sans">
+<body class="bg-gray-50">
     <div class="flex flex-col sm:flex-row h-screen">
-        
         <div class="w-64 bg-white border-r border-gray-200 flex-col hidden sm:flex" id="sidebar">
             <div class="p-4 flex items-center space-x-2">
                 <div class="bg-blue-100 p-2 rounded-lg">
@@ -23,30 +20,30 @@
             </div>
 
             <nav class="flex-1 px-2 space-y-1">
-                <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100">
+                <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100 sidebar-link">
                     <i data-feather="home" class="mr-3"></i>
                     Dashboard
                 </a>
-                <a href="categories.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                <a href="categories.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 sidebar-link">
                     <i data-feather="bar-chart-2" class="mr-3"></i>
                     Categories
                 </a>
-                <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 sidebar-link">
                     <i data-feather="users" class="mr-3"></i>
                     Members
                 </a>
-                <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 sidebar-link">
                     <i data-feather="file-text" class="mr-3"></i>
                     Applications
                 </a>
-                <a href="events.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                <a href="events.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 sidebar-link">
                     <i data-feather="calendar" class="mr-3"></i>
                     Events
                 </a>
-                <a href="announcements.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                <a href="announcements.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 sidebar-link">
                     <i data-feather="bell" class="mr-3"></i>
                     Announcements
-                
+                </a>
             </nav>
 
             <div class="p-4 border-t border-gray-200">
@@ -98,6 +95,10 @@
                         <i data-feather="calendar" class="mr-3"></i>
                         Events
                     </a>
+                    <a href="announcements.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                        <i data-feather="bell" class="mr-3"></i>
+                        Announcements
+                    </a>
                 </nav>
 
                 <div class="p-4 border-t border-gray-200">
@@ -123,51 +124,72 @@
                         <h1 class="text-2xl font-bold text-gray-800">Solo Parent Assistance Dashboard</h1>
                         <p class="text-gray-500">Welcome back, Admin. Here's a summary of your system.</p>
                     </div>
-                    <div class="flex items-center space-x-4">
-                        <button class="p-2 rounded-full bg-white border border-gray-200 hover:bg-gray-50">
-                            <i data-feather="bell" class="text-gray-600"></i>
-                        </button>
-                    </div>
                 </div>
 
+                <div class="mb-4 p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <div class="flex-1">
+                            <label for="date-range-select" class="block text-sm font-medium text-gray-700">Filter Stats By Date</label>
+                            <select id="date-range-select" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="this_month" selected>This Month</option>
+                            <option value="this_year">This Year</option>
+                            <option value="all">All Time</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+        </div>
+        
+        <div id="custom-date-range" class="hidden sm:flex-1 items-end gap-2">
+            <div class="flex-1">
+                <label for="start-date" class="block text-sm font-medium text-gray-700">Start Date</label>
+                <input type="date" id="start-date" class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+            </div>
+            <div class="flex-1">
+                <label for="end-date" class="block text-sm font-medium text-gray-700">End Date</label>
+                <input type="date" id="end-date" class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+            </div>
+            <button id="apply-custom-date" class="bg-blue-600 text-white py-2 px-4 rounded-md text-sm shadow-sm hover:bg-blue-700">Apply</button>
+        </div>
+    </div>
+</div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                    <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
+                    <div class="stat-card bg-white p-5 rounded-lg shadow-sm border border-gray-100">
                         <div class="flex justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-500">Registered Solo Parents</p>
                                 <p id="registered-count" class="text-2xl font-bold mt-1">...</p>
                             </div>
-                            <div id="registered-percent-badge" class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium self-start">
+                            <div id="registered-percent-badge" class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium self-start hidden">
                                 <span id="registered-percent-text">...</span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
+                    <div class="stat-card bg-white p-5 rounded-lg shadow-sm border border-gray-100">
                         <div class="flex justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-500">Pending Applications</p>
                                 <p id="pending-count" class="text-2xl font-bold mt-1">...</p>
                             </div>
-                            <div id="pending-percent-badge" class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium self-start">
+                            <div id="pending-percent-badge" class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium self-start hidden">
                                 <span id="pending-percent-text">...</span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
+                    <div class="stat-card bg-white p-5 rounded-lg shadow-sm border border-gray-100">
                         <div class="flex justify-between">
                             <div>
-                                <p class="text-sm font-medium text-gray-500">Approved This Month</p>
+                                <p class="text-sm font-medium text-gray-500">Approved Applications</p>
                                 <p id="approved-count" class="text-2xl font-bold mt-1">...</p>
                             </div>
-                            <div id="approved-percent-badge" class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium self-start">
+                            <div id="approved-percent-badge" class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium self-start hidden">
                                 <span id="approved-percent-text">...</span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
+                    <div class="stat-card bg-white p-5 rounded-lg shadow-sm border border-gray-100">
                         <div class="flex justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-500">Upcoming Events</p>
@@ -180,7 +202,93 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="mt-6 bg-white p-5 rounded-lg shadow-sm border border-gray-100 analytics-card">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Predictive Analytics</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                            <h3 class="font-medium text-blue-800 mb-2">Application Forecast</h3>
+                            <p class="text-sm text-gray-600">Predicted applications for next month: <span class="font-bold">45-55</span></p>
+                            <div class="w-full bg-blue-200 rounded-full h-2 mt-2">
+                                <div class="bg-blue-600 h-2 rounded-full progress-bar" style="width: 65%"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">65% confidence level</p>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                            <h3 class="font-medium text-purple-800 mb-2">Approval Rate Prediction</h3>
+                            <p class="text-sm text-gray-600">Expected approval rate: <span class="font-bold">78%</span></p>
+                            <div class="w-full bg-purple-200 rounded-full h-2 mt-2">
+                                <div class="bg-purple-600 h-2 rounded-full progress-bar" style="width: 78%"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Based on current trends</p>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                            <h3 class="font-medium text-green-800 mb-2">Resource Utilization</h3>
+                            <p class="text-sm text-gray-600">Predicted staff workload: <span class="font-bold">82%</span></p>
+                            <div class="w-full bg-green-200 rounded-full h-2 mt-2">
+                                <div class="bg-green-600 h-2 rounded-full progress-bar" style="width: 82%"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Optimal range: 70-85%</p>
+                        </div>
+                        <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                            <h3 class="font-medium text-yellow-800 mb-2">Event Participation Forecast</h3>
+                            <p class="text-sm text-gray-600">Expected attendees for next event: <span class="font-bold">120-140</span></p>
+                            <div class="w-full bg-yellow-200 rounded-full h-2 mt-2">
+                                <div class="bg-yellow-600 h-2 rounded-full progress-bar" style="width: 75%"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Based on RSVPs and historical data</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-white p-5 rounded-lg shadow-sm border border-gray-100 analytics-card">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Prescriptive Analytics</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                            <h3 class="font-medium text-green-800 mb-2">Recommended Actions</h3>
+                            <ul class="text-sm text-gray-600 space-y-2">
+                                <li class="flex items-start">
+                                    <i data-feather="check-circle" class="text-green-500 mr-2 mt-0.5 w-4 h-4"></i>
+                                    <span>Increase outreach in District 5 - high potential applicants</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i data-feather="alert-triangle" class="text-yellow-500 mr-2 mt-0.5 w-4 h-4"></i>
+                                    <span>Review pending applications from last week to meet monthly targets</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i data-feather="users" class="text-blue-500 mr-2 mt-0.5 w-4 h-4"></i>
+                                    <span>Schedule additional verification staff for peak application days</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i data-feather="calendar" class="text-purple-500 mr-2 mt-0.5 w-4 h-4"></i>
+                                    <span>Plan additional parenting workshops in high-demand areas</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                            <h3 class="font-medium text-orange-800 mb-2">Optimization Suggestions</h3>
+                            <ul class="text-sm text-gray-600 space-y-2">
+                                <li class="flex items-start">
+                                    <i data-feather="trending-up" class="text-orange-500 mr-2 mt-0.5 w-4 h-4"></i>
+                                    <span>Process optimization could reduce approval time by 2.3 days</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i data-feather="dollar-sign" class="text-green-500 mr-2 mt-0.5 w-4 h-4"></i>
+                                    <span>Resource reallocation could save approximately 15% in operational costs</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i data-feather="clock" class="text-blue-500 mr-2 mt-0.5 w-4 h-4"></i>
+                                    <span>Automate document verification to handle 30% more applications</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i data-feather="map-pin" class="text-red-500 mr-2 mt-0.5 w-4 h-4"></i>
+                                    <span>Open temporary service centers in underserved districts</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
                     <div class="lg:col-span-2 bg-white p-5 rounded-lg shadow-sm border border-gray-100">
                         <h2 class="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h2>
                         <div class="overflow-x-auto">
@@ -203,7 +311,7 @@
                             </table>
                         </div>
                     </div>
-
+                    
                     <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
                         <h2 class="text-lg font-semibold text-gray-800 mb-4">Application Status</h2>
                         <div class="relative h-64">
@@ -212,7 +320,7 @@
                         <div class="mt-4 grid grid-cols-3 gap-2 text-center">
                             <div>
                                 <div class="h-2 w-2 bg-green-500 rounded-full inline-block mr-1"></div>
-                                <span id="chart-label-approved" class="text-xs">...</span>
+                                <span id="chart-label-approved" class_alias="text-xs">...</span>
                             </div>
                             <div>
                                 <div class="h-2 w-2 bg-yellow-500 rounded-full inline-block mr-1"></div>

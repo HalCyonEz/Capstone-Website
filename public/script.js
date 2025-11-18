@@ -7,7 +7,7 @@ import {
  addDoc, deleteDoc, getDoc
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
-// Your Firebase config (this was correct)
+// Your Firebase config
 const firebaseConfig = {
  apiKey: "AIzaSyBjO4P1-Ir_iJSkLScTiyshEd28GdskN24",
  authDomain: "solo-parent-app.firebaseapp.com",
@@ -30,17 +30,40 @@ try {
  console.error("❌ Firebase initialization error:", error);
 }
 
+// --- ✅ NEW GLOBAL VARIABLES ---
+const DESCRIPTION_TO_CODE_MAP = {
+  "a1: Birth of a child as a consequence of rape": "a1",
+  "a2: Widow/widower": "a2",
+  "a3: Spouse of person deprived of liberty": "a3",
+  "a4: Spouse of person with physical or mental incapacity": "a4",
+  "a5: Due to legal separation or de facto separation": "a5",
+  "a6: Due to nullity or annulment of marriage": "a6",
+  "a7: Abandonment by the spouse": "a7",
+  "b1: Spouse of OFW": "b1",
+  "b2: Relative of OFW": "b2",
+  "c: Unmarried person": "c",
+  "d: Legal guardian / Adoptive parent / Foster parent": "d",
+  "f: Pregnant Woman": "f"
+};
+
+const CODE_TO_DESCRIPTION_MAP = {};
+for (const description in DESCRIPTION_TO_CODE_MAP) {
+  const code = DESCRIPTION_TO_CODE_MAP[description];
+  CODE_TO_DESCRIPTION_MAP[code] = description;
+}
+// --- END OF NEW GLOBAL VARIABLES ---
+
 // --------------------------------------------------------------------------
-// GLOBAL HELPER FUNCTIONS (for Approve/Reject)
+// GLOBAL HELPER FUNCTIONS
 // --------------------------------------------------------------------------
 async function approveUser(docId) {
  try {
   await updateDoc(doc(db, "users", docId), {
   status: "approved",
-  approvedAt: Timestamp.now() // Adds the required timestamp!
+  approvedAt: Timestamp.now()
   });
   console.log('✅ Application approved successfully!');
-  location.reload(); // Reload the current page
+  location.reload();
  } catch (error) {
   console.error('❌ Error approving:', error);
  }
@@ -50,7 +73,7 @@ async function rejectUser(docId) {
  try {
   await updateDoc(doc(db, "users", docId), { status: "rejected" });
   console.log('✅ Application rejected.');
-  location.reload(); // Reload the current page
+  location.reload();
  } catch (error) {
   console.error('❌ Error rejecting:', error);
  }
@@ -76,7 +99,6 @@ function handleSidebarHighlight() {
   link.classList.remove('text-gray-600');
   }
  
-  // Handle profile page highlighting
   if (isPage('profile.html') && (href === 'categories.html' || href === 'members.html')) {
   link.classList.add('bg-blue-50', 'text-blue-700');
   link.classList.remove('text-gray-600');
@@ -106,7 +128,7 @@ function handleLogout() {
  logoutButtons.forEach(button => {
   button.addEventListener('click', function(e) {
   e.preventDefault();
-  window.location.href = 'index.html'; // Assuming index.html is your login page
+  window.location.href = 'index.html';
   });
  });
 }
@@ -126,165 +148,270 @@ function handlePasswordToggle() {
 }
 
 // --------------------------------------------------------------------------
-// DASHBOARD PAGE LOGIC (`dashboard.html`)
+// DASHBOARD PAGE LOGIC (`dashboard.html`) --- ✅ NEWLY UPDATED
 // --------------------------------------------------------------------------
 async function initDashboardPage() {
- console.log("🚀 Initializing Dashboard...");
+  console.log("🚀 Initializing Dashboard...");
 
- async function fetchStatCards() {
-  try {
-  const usersCollection = collection(db, "users");
-  const registeredSnapshot = await getDocs(usersCollection);
-  document.getElementById('registered-count').textContent = registeredSnapshot.size;
-  const pendingQuery = query(usersCollection, where("status", "==", "pending"));
-  const pendingSnapshot = await getDocs(pendingQuery);
-  document.getElementById('pending-count').textContent = pendingSnapshot.size;
-  const now = new Date();
-  const startOfMonth = Timestamp.fromDate(new Date(now.getFullYear(), now.getMonth(), 1));
-  const approvedQuery = query(usersCollection,
-  where("status", "==", "approved"),
-  where("approvedAt", ">=", startOfMonth)
-  );
-  const approvedSnapshot = await getDocs(approvedQuery);
-  document.getElementById('approved-count').textContent = approvedSnapshot.size;
-  const eventsQuery = query(collection(db, "events"),
-  where("eventDate", ">=", Timestamp.now()),
-  orderBy("eventDate", "asc"),
-  limit(1)
-  );
-  const eventsSnapshot = await getDocs(eventsQuery);
-  document.getElementById('events-count').textContent = eventsSnapshot.size;
-  if (!eventsSnapshot.empty) {
-  const nextEvent = eventsSnapshot.docs[0].data();
-  document.getElementById('next-event-text').textContent = `Next: ${nextEvent.eventName}`;
-  } else {
-  document.getElementById('next-event-text').textContent = "No upcoming events";
-  }
-  } catch (error) {
-  console.error("❌ Error fetching stat cards:", error);
-  if (error.code === 'failed-precondition') {
-  console.warn("Firestore index missing. Check console (F12) for a link to create it.");
-  }
-  }
- }
+  let allUsersData = []; // Caches all user data
+  let donutChartInstance = null; // Holds the chart object
 
- async function loadRecentActivity() {
-  const tableBody = document.getElementById('recent-activity-table');
-  if (!tableBody) return;
-  try {
-  const activityQuery = query(collection(db, "users"),
-  where("status", "==", "pending"),
-  orderBy("createdAt", "desc"),
-  limit(5)
-  );
-  const snapshot = await getDocs(activityQuery);
-  if (snapshot.empty) {
-  tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No new pending applications.</td></tr>`;
-  return;
-  }
-  tableBody.innerHTML = "";
-  snapshot.forEach(doc => {
-  const user = doc.data();
-  const name = `${user.firstName} ${user.lastName}`;
-  const date = user.createdAt.toDate().toLocaleDateString();
-  const row = `
-  <tr>
-  <td class="px-6 py-4 whitespace-nowrap"><div class="flex items-center"><div class="ml-4"><div class="text-sm font-medium text-gray-900">${name}</div></div></div></td>
-  <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-900">New Application</div></td>
-  <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span></td>
-  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${date}</td>
-  </tr>`;
-  tableBody.innerHTML += row;
-  });
-  } catch (error) {
-  console.error("❌ Error loading recent activity:", error);
-  tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Error loading activity.</td></tr>`;
-  }
- }
+  // --- 1. Functions to FETCH data ---
 
- async function initApplicationChart() {
-  try {
-  const approvedQuery = query(collection(db, "users"), where("status", "==", "approved"));
-  const pendingQuery = query(collection(db, "users"), where("status", "==", "pending"));
-  const rejectedQuery = query(collection(db, "users"), where("status", "==", "rejected"));
-  const [approvedSnap, pendingSnap, rejectedSnap] = await Promise.all([
-  getDocs(approvedQuery),
-  getDocs(pendingQuery),
-  getDocs(rejectedQuery)
-  ]);
-  const approvedCount = approvedSnap.size;
-  const pendingCount = pendingSnap.size;
-  const rejectedCount = rejectedSnap.size;
-  const total = approvedCount + pendingCount + rejectedCount;
-  const approvedPercent = total === 0 ? 0 : Math.round((approvedCount / total) * 100);
-  const pendingPercent = total === 0 ? 0 : Math.round((pendingCount / total) * 100);
-  const rejectedPercent = total === 0 ? 0 : (100 - approvedPercent - pendingPercent);
-  document.getElementById('chart-label-approved').textContent = `Approved ${approvedPercent}%`;
-  document.getElementById('chart-label-pending').textContent = `Pending ${pendingPercent}%`;
-  document.getElementById('chart-label-rejected').textContent = `Rejected ${rejectedPercent}%`;
-  const ctx = document.getElementById('donutChart').getContext('2d');
-  new Chart(ctx, {
-  type: 'doughnut',
-  data: {
-  labels: ['Approved', 'Pending', 'Rejected'],
-  datasets: [{
-  data: [approvedCount, pendingCount, rejectedCount],
-  backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
-  borderWidth: 0
-  }]
-  },
-  options: {
-  cutout: '70%',
-  plugins: { legend: { display: false } },
-  responsive: true,
-  maintainAspectRatio: false
+  // Fetches all users ONCE and stores them
+  async function fetchAllUsers() {
+    if (!db) return;
+    try {
+      const usersCollection = collection(db, "users");
+      const snapshot = await getDocs(usersCollection);
+      allUsersData = snapshot.docs.map(doc => doc.data());
+    } catch (error) {
+      console.error("❌ Error fetching all users:", error);
+    }
   }
-  });
-  } catch (error) {
-  console.error("❌ Error initializing donut chart:", error);
-  }
- }
 
- async function loadUpcomingEvents() {
-  const eventsList = document.getElementById('upcoming-events-list');
-  if (!eventsList) return;
-  try {
-  const eventsQuery = query(collection(db, "events"),
-  where("eventDate", ">=", Timestamp.now()),
-  orderBy("eventDate", "asc"),
-  limit(2)
-  );
-  const snapshot = await getDocs(eventsQuery);
-  if (snapshot.empty) {
-  eventsList.innerHTML = `<p class="text-sm text-gray-500">No upcoming events found.</p>`;
-  return;
+  // Fetches upcoming events (this is independent of date filters)
+  async function fetchUpcomingEvents() {
+    const eventsList = document.getElementById('upcoming-events-list');
+    const eventsCountEl = document.getElementById('events-count');
+    const nextEventEl = document.getElementById('next-event-text');
+    if (!eventsList || !eventsCountEl || !nextEventEl) return;
+    
+    eventsList.innerHTML = `<p class="text-sm text-gray-500">Loading upcoming events...</p>`;
+    try {
+      const eventsQuery = query(collection(db, "events"),
+        where("eventDate", ">=", Timestamp.now()),
+        orderBy("eventDate", "asc")
+      );
+      const snapshot = await getDocs(eventsQuery);
+
+      eventsCountEl.textContent = snapshot.size;
+      
+      if (snapshot.empty) {
+        nextEventEl.textContent = "No upcoming events";
+        eventsList.innerHTML = `<p class="text-sm text-gray-500">No upcoming events found.</p>`;
+        return;
+      }
+      
+      // Populate the "Next Event" text on the stat card
+      const nextEvent = snapshot.docs[0].data();
+      nextEventEl.textContent = `Next: ${nextEvent.eventName}`;
+
+      // Populate the event list
+      eventsList.innerHTML = "";
+      const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+      snapshot.forEach(doc => {
+        const event = doc.data();
+        const eventDate = event.eventDate.toDate();
+        const day = eventDate.getDate();
+        const month = monthNames[eventDate.getMonth()];
+        const eventHtml = `
+          <div class="flex items-start">
+            <div class="bg-blue-100 p-3 rounded-lg mr-4">
+              <i data-feather="calendar" class="text-blue-600"></i>
+            </div>
+            <div>
+              <h3 class="font-medium text-gray-800">${event.eventName}</h3>
+              <p class="text-sm text-gray-600">${eventDate.toLocaleDateString()} | ${event.eventTime || ''}</p>
+              <p class="text-xs text-gray-500 mt-1">${event.eventLocation || 'Online'}</p>
+            </div>
+          </div>`;
+        eventsList.innerHTML += eventHtml;
+      });
+      feather.replace();
+
+    } catch (error) {
+      console.error("❌ Error loading upcoming events:", error);
+      eventsList.innerHTML = `<p class="text-sm text-red-500">Error loading events.</p>`;
+    }
   }
-  eventsList.innerHTML = "";
-  const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-  snapshot.forEach(doc => {
-  const event = doc.data();
-  const eventDate = event.eventDate.toDate();
-  const day = eventDate.getDate();
-  const month = monthNames[eventDate.getMonth()];
-  const eventHtml = `
-  <div class="flex items-start">
-  <div class="bg-blue-100 text-blue-800 p-2 rounded-lg mr-4"><div class="text-center"><div class="font-bold">${day}</div><div class="text-xs">${month}</div></div></div>
-  <div>
-  <h3 class="font-medium text-gray-800">${event.eventName}</h3>
-  <p class="text-sm text-gray-500">${event.eventTime || ''} • ${event.eventLocation || ''}</p>
-  </div>
-  </div>`;
-  eventsList.innerHTML += eventHtml;
-  });
-  } catch (error) {
-  console.error("❌ Error loading upcoming events:", error);
-  eventsList.innerHTML = `<p class="text-sm text-red-500">Error loading events.</p>`;
+
+  // --- 2. Functions to UPDATE the UI ---
+
+  // Creates the donut chart shell (called once)
+  function initDonutChart() {
+    const ctx = document.getElementById('donutChart').getContext('2d');
+    donutChartInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Approved', 'Pending', 'Rejected'],
+        datasets: [{
+          data: [0, 0, 0], // Start empty
+          backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
+          borderWidth: 0,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
   }
- }
- fetchStatCards();
- loadRecentActivity();
- initApplicationChart();
- loadUpcomingEvents();
+
+  // ✅ NEW: This function now just builds the table from a given list
+  function updateRecentActivity(users) {
+    const tableBody = document.getElementById('recent-activity-table');
+    if (!tableBody) return;
+    
+    if (!users || users.length === 0) {
+      tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No recent activity for this period.</td></tr>`;
+      return;
+    }
+    
+    tableBody.innerHTML = "";
+    users.forEach(user => { // users is the pre-filtered, pre-sorted list
+      const name = `${user.firstName || ''} ${user.lastName || ''}`;
+      const date = user.createdAt.toDate().toLocaleDateString();
+
+      let statusText = 'Pending';
+      let statusClass = 'bg-yellow-100 text-yellow-800';
+
+      if (user.status === 'approved') {
+          statusText = 'Approved';
+          statusClass = 'bg-green-100 text-green-800';
+      } else if (user.status === 'rejected') {
+          statusText = 'Rejected';
+          statusClass = 'bg-red-100 text-red-800';
+      }
+      
+      const row = `
+        <tr>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${name}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">New Application</td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">${statusText}</span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${date}</td>
+        </tr>`;
+      tableBody.innerHTML += row;
+    });
+  }
+  
+  // This function now filters for stats AND for recent activity
+  function updateDashboardStats(filter) {
+    let startDate, endDate;
+    const now = new Date();
+    
+    // 1. Determine date range
+    if (filter === 'this_month') {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    } else if (filter === 'this_year') {
+      startDate = new Date(now.getFullYear(), 0, 1);
+      endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+    } else if (filter === 'custom') {
+      const startVal = document.getElementById('start-date').value;
+      const endVal = document.getElementById('end-date').value;
+      if (!startVal || !endVal) {
+        alert("Please select both a start and end date.");
+        return;
+      }
+      startDate = new Date(startVal + "T00:00:00");
+      endDate = new Date(endVal + "T23:59:59");
+    }
+
+    // 2. Filter data for Stat Cards
+    let registeredCount = 0;
+    let pendingCount = 0;
+    let approvedCount = 0;
+    let rejectedCount = 0;
+
+    registeredCount = allUsersData.filter(u => {
+        const createdAt = u.createdAt?.toDate();
+        if (!createdAt) return false;
+        return (filter === 'all') ? true : (createdAt >= startDate && createdAt <= endDate);
+    }).length;
+
+    pendingCount = allUsersData.filter(u => {
+        if (u.status !== 'pending') return false;
+        const createdAt = u.createdAt?.toDate();
+        if (!createdAt) return false;
+        return (filter === 'all') ? true : (createdAt >= startDate && createdAt <= endDate);
+    }).length;
+
+    approvedCount = allUsersData.filter(u => {
+        if (u.status !== 'approved') return false;
+        const approvedAt = u.approvedAt?.toDate();
+        if (!approvedAt) return false;
+        return (filter === 'all') ? true : (approvedAt >= startDate && approvedAt <= endDate);
+    }).length;
+    
+    rejectedCount = allUsersData.filter(u => {
+        if (u.status !== 'rejected') return false;
+        const createdAt = u.createdAt?.toDate();
+        if (!createdAt) return false;
+        return (filter === 'all') ? true : (createdAt >= startDate && createdAt <= endDate);
+    }).length;
+    
+    // 3. Update the Stat Cards
+    document.getElementById('registered-count').textContent = registeredCount;
+    document.getElementById('pending-count').textContent = pendingCount;
+    document.getElementById('approved-count').textContent = approvedCount;
+
+    // 4. Update the Donut Chart
+    const total = approvedCount + pendingCount + rejectedCount;
+    const approvedPercent = total === 0 ? 0 : Math.round((approvedCount / total) * 100);
+    const pendingPercent = total === 0 ? 0 : Math.round((pendingCount / total) * 100);
+    const rejectedPercent = (total === 0 || (approvedPercent + pendingPercent) > 100) ? 0 : (100 - approvedPercent - pendingPercent);
+
+    if (donutChartInstance) {
+      donutChartInstance.data.datasets[0].data = [approvedCount, pendingCount, rejectedCount];
+      donutChartInstance.update();
+    }
+    document.getElementById('chart-label-approved').textContent = `Approved (${approvedPercent}%)`;
+    document.getElementById('chart-label-pending').textContent = `Pending (${pendingPercent}%)`;
+    document.getElementById('chart-label-rejected').textContent = `Rejected (${rejectedPercent}%)`;
+
+    // 5. ✅ NEW: Filter and update the Recent Activity table
+    const activityUsers = allUsersData.filter(u => {
+        const createdAt = u.createdAt?.toDate();
+        if (!createdAt) return false;
+        return (filter === 'all') ? true : (createdAt >= startDate && createdAt <= endDate);
+    });
+    
+    // Sort by creation date (newest first) and take top 5
+    const sortedActivityUsers = activityUsers
+        .sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate())
+        .slice(0, 5);
+        
+    updateRecentActivity(sortedActivityUsers); // Call the new update function
+  }
+
+  // --- 3. Setup Event Listeners ---
+  function setupEventListeners() {
+    const dateSelect = document.getElementById('date-range-select');
+    const customRangeDiv = document.getElementById('custom-date-range');
+    const applyBtn = document.getElementById('apply-custom-date');
+
+    dateSelect.addEventListener('change', function() {
+      const filterValue = this.value;
+      if (filterValue === 'custom') {
+        customRangeDiv.classList.remove('hidden');
+        customRangeDiv.classList.add('sm:flex');
+      } else {
+        customRangeDiv.classList.add('hidden');
+        customRangeDiv.classList.remove('sm:flex');
+        updateDashboardStats(filterValue);
+      }
+    });
+
+    applyBtn.addEventListener('click', function() {
+      updateDashboardStats('custom');
+    });
+  }
+
+  // --- 4. Initial Page Load ---
+  initDonutChart();       // Create the empty chart
+  setupEventListeners();  // Set up the filter buttons
+  fetchUpcomingEvents();  // Load events (independent)
+  
+  // Fetch all user data, then update stats (which now includes recent activity)
+  await fetchAllUsers();
+  updateDashboardStats('this_month'); // This will load stats AND recent activity
 }
 
 // --------------------------------------------------------------------------
@@ -313,11 +440,10 @@ function initApplicationsPage() {
       }
       querySnapshot.forEach(docSnapshot => {
         const data = docSnapshot.data();
-        const name = `${data.firstName} ${data.lastName}`;
+        const name = `${data.firstName || ''} ${data.lastName || ''}`;
         const row = document.createElement('tr');
         row.className = 'hover:bg-gray-50';
         
-        // --- THIS IS THE UPDATED CODE ---
         row.innerHTML = `
           <td class="px-6 py-4 whitespace-nowrap">
             <input type="checkbox" class="rounded text-blue-600 focus:ring-blue-500">
@@ -352,12 +478,9 @@ function initApplicationsPage() {
             </div>
           </td>
         `;
-        // --- END OF UPDATED CODE ---
-
         tbody.appendChild(row);
       });
 
-      // Add event listeners to the new buttons
       tbody.querySelectorAll('[data-action="approve"]').forEach(btn => {
         btn.addEventListener('click', () => approveUser(btn.dataset.id));
       });
@@ -372,7 +495,6 @@ function initApplicationsPage() {
 
   loadPendingApplications();
 }
-
 
 // --------------------------------------------------------------------------
 // MEMBERS PAGE LOGIC (`members.html`)
@@ -404,14 +526,17 @@ function initMembersPage() {
   querySnapshot.forEach(docSnapshot => {
   const data = docSnapshot.data();
   const name = `${data.firstName || ''} ${data.lastName || ''}`;
-  const category = data.category || 'N/A';
+  
+  // ✅ Use the code map to display the full category description
+  const categoryDescription = CODE_TO_DESCRIPTION_MAP[data.category] || data.category || 'N/A';
+  
   const address = data.address || 'N/A';
   const soloParentId = data.soloParentIdNumber || 'N/A';
   const project = data.projectReceived || 'N/A';
   const row = document.createElement('tr');
   row.className = 'hover:bg-gray-50';
   row.innerHTML = `
-  <td class="px-6 py-4 whitespace-nowrap"><div class="flex items-center"><div class="ml-4"><div class="text-sm font-medium text-gray-900">${name}</div><div class="text-sm text-gray-500">${category}</div></div></div></td>
+  <td class="px-6 py-4 whitespace-nowrap"><div class="flex items-center"><div class="ml-4"><div class="text-sm font-medium text-gray-900">${name}</div><div class="text-sm text-gray-500">${categoryDescription}</div></div></div></td>
   <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-900">${address}</div></td>
   <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-900">${soloParentId}</div></td>
   <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-900">${project}</div></td>
@@ -444,34 +569,11 @@ function initMembersPage() {
 function initCategoriesPage() {
   console.log("🚀 Initializing Categories Page...");
 
-  // --- RENAMED this map for clarity ---
-  const DESCRIPTION_TO_CODE_MAP = {
-    "Birth of a child as a consequence of rape": "a1",
-    "Widow/widower": "a2",
-    "Spouse of person deprived of liberty": "a3",
-    "Spouse of person with physical or mental incapacity": "a4",
-    "Due to legal separation or de facto separation": "a5",
-    "Due to nullity or annulment of marriage": "a6",
-    "Abandonment by the spouse": "a7",
-    "Spouse of OFW": "b1",
-    "Relative of OFW": "b2",
-    "Unmarried person": "c",
-    "Legal guardian / Adoptive parent / Foster parent": "d",
-    "Pregnant Woman": "f"
-  };
-
-  // --- ✅ NEW: Added a reverse map to find descriptions from codes ---
-  const CODE_TO_DESCRIPTION_MAP = {};
-  for (const description in DESCRIPTION_TO_CODE_MAP) {
-    const code = DESCRIPTION_TO_CODE_MAP[description];
-    CODE_TO_DESCRIPTION_MAP[code] = description;
-  }
-
-  // This list of descriptions is still correct for building the UI
+  // The maps are global now, so we can use them.
+  // We just need the list of descriptions for the UI.
   const CATEGORY_LIST = Object.keys(DESCRIPTION_TO_CODE_MAP);
   const MUNICIPALITY_LIST = [ "Atok", "Bakun", "Bokod", "Buguias", "Itogon", "Kabayan", "Kapangan", "Kibungan", "La Trinidad", "Mankayan", "Sablan", "Tuba", "Tublay" ];
 
-  // --- Get DOM elements ---
   const categoryListEl = document.getElementById('category-filter-list');
   const municipalitySelectEl = document.getElementById('municipality-filter-select');
   const memberGridEl = document.getElementById('member-profile-grid');
@@ -479,37 +581,31 @@ function initCategoriesPage() {
   const filterTagsEl = document.getElementById('filter-tags-container');
   const resetFiltersBtn = document.getElementById('reset-filters-btn');
 
-  // --- State variables ---
   let allApprovedMembers = [];
-  let currentCategory = "All"; // This will store the *description*
+  let currentCategory = "All"; 
   let currentMunicipality = "All";
   let currentSearch = "";
 
-  // --- Main function to fetch and process data ---
   async function loadAllData() {
     if (!db) {
       memberGridEl.innerHTML = `<p class="text-sm text-red-500">Database connection error.</p>`;
       return;
     }
     try {
-      // 1. Fetch all approved members ONCE
       const q = query(collection(db, "users"), where("status", "==", "approved"));
       const snapshot = await getDocs(q);
       allApprovedMembers = snapshot.docs;
 
-      // 2. Calculate counts
       const categoryCounts = {};
       const municipalityCounts = {};
       CATEGORY_LIST.forEach(c => categoryCounts[c] = 0);
       MUNICIPALITY_LIST.forEach(m => municipalityCounts[m] = 0);
       
-      // --- ✅ MODIFIED COUNTING LOGIC ---
       allApprovedMembers.forEach(doc => {
         const data = doc.data();
         
-        // Count categories
-        const code = data.category; // e.g., "a7"
-        const description = CODE_TO_DESCRIPTION_MAP[code]; // e.g., "Abandonment by the spouse"
+        const code = data.category;
+        const description = CODE_TO_DESCRIPTION_MAP[code];
         
         if (description && categoryCounts[description] !== undefined) {
           categoryCounts[description]++;
@@ -517,20 +613,15 @@ function initCategoriesPage() {
           console.warn(`Unknown category code in database: "${data.category}"`);
         }
 
-        // Count municipalities
         const location = data.municipality || data.placeOfBirth;
         if (municipalityCounts[location] !== undefined) {
           municipalityCounts[location]++;
         }
       });
-      // --- END OF MODIFIED LOGIC ---
 
-      // 3. Render all components
       renderCategoryFilters(categoryCounts);
       renderMunicipalityFilters(municipalityCounts, allApprovedMembers.length);
       applyFiltersAndRender();
-
-      // 4. Add event listeners
       addFilterListeners();
     } catch (error) {
       console.error("❌ Error loading categories page:", error);
@@ -538,8 +629,6 @@ function initCategoriesPage() {
     }
   }
 
-  // --- Render Functions ---
-  // This function is correct, it already uses descriptions
   function renderCategoryFilters(counts) {
     categoryListEl.innerHTML = "";
     let total = allApprovedMembers.length;
@@ -563,7 +652,6 @@ function initCategoriesPage() {
     }
   }
 
-  // This function is correct
   function renderMunicipalityFilters(counts, total) {
     municipalitySelectEl.innerHTML = "";
     municipalitySelectEl.innerHTML += `<option value="All">All Municipalities (${total})</option>`;
@@ -573,7 +661,6 @@ function initCategoriesPage() {
     });
   }
 
-  // This function is correct
   function renderMemberProfiles(members) {
     memberGridEl.innerHTML = "";
     if (members.length === 0) {
@@ -609,19 +696,13 @@ function initCategoriesPage() {
     });
   }
 
-  // --- Filtering Logic ---
   function applyFiltersAndRender() {
     let filteredMembers = allApprovedMembers;
     
-    // --- ✅ MODIFIED FILTERING LOGIC ---
     if (currentCategory !== "All") {
-      // 'currentCategory' is the description (e.g., "Abandonment by the spouse")
-      // We need to find its code to match what's in Firebase
-      const currentCode = DESCRIPTION_TO_CODE_MAP[currentCategory]; // e.g., "a7"
-      
+      const currentCode = DESCRIPTION_TO_CODE_MAP[currentCategory];
       filteredMembers = filteredMembers.filter(doc => doc.data().category === currentCode);
     }
-    // --- END OF MODIFIED LOGIC ---
 
     if (currentMunicipality !== "All") {
       const locationField = allApprovedMembers[0]?.data().municipality ? 'municipality' : 'placeOfBirth';
@@ -642,7 +723,6 @@ function initCategoriesPage() {
     updateFilterTags();
   }
 
-  // This function is correct
   function updateFilterTags() {
     filterTagsEl.innerHTML = "";
     let filtersActive = false;
@@ -658,13 +738,12 @@ function initCategoriesPage() {
     resetFiltersBtn.style.display = filtersActive ? 'flex' : 'none';
   }
 
-  // This function is correct
   function addFilterListeners() {
     categoryListEl.addEventListener('click', e => {
       e.preventDefault();
       const link = e.target.closest('.category-link');
       if (!link) return;
-      currentCategory = link.dataset.category; // This sets the description, which is correct
+      currentCategory = link.dataset.category;
       document.querySelectorAll('.category-link').forEach(l => {
         l.classList.remove('bg-blue-50', 'text-blue-700');
         l.classList.add('hover:bg-gray-50');
@@ -715,7 +794,6 @@ function initEventsPage() {
   }
   eventListEl.innerHTML = `<p class="text-sm text-gray-500">Loading active events...</p>`;
   try {
-  // Query for all events from now forward, ordered by date
   const q = query(collection(db, "events"),
   where("eventDate", ">=", Timestamp.now()),
   orderBy("eventDate", "asc")
@@ -725,7 +803,7 @@ function initEventsPage() {
   eventListEl.innerHTML = `<p class="text-sm text-gray-500">No active events found.</p>`;
   return;
   }
-  eventListEl.innerHTML = ""; // Clear loading text
+  eventListEl.innerHTML = "";
   snapshot.forEach(doc => {
   const event = doc.data();
   const eventId = doc.id;
@@ -828,7 +906,6 @@ function initEventsPage() {
 // --------------------------------------------------------------------------
 async function initProfilePage() {
  console.log("🚀 Initializing Profile Page...");
- // 1. Get User ID from URL
  const params = new URLSearchParams(window.location.search);
  const userId = params.get('id');
  const breadcrumb = document.getElementById('profile-breadcrumb');
@@ -851,7 +928,6 @@ async function initProfilePage() {
  }
 
  breadcrumb.textContent = `Loading profile for ID: ${userId}`;
- // 2. Fetch User Data from Firebase
  try {
   const docRef = doc(db, "users", userId);
   const docSnap = await getDoc(docRef);
@@ -862,15 +938,14 @@ async function initProfilePage() {
   return;
   }
   const user = docSnap.data();
-  // 3. Populate All Data
   const fullName = `${user.firstName || ''} ${user.middleInitial || ''} ${user.lastName || ''}`;
   breadcrumb.textContent = `Viewing profile for ${fullName}`;
-  // Helper function for setting text
+  
   const setText = (id, text) => {
   const el = document.getElementById(id);
   if (el) el.textContent = text || 'N/A';
   };
-  // Helper function for handling image docs
+  
   const setDoc = (id, url) => {
   const link = document.getElementById(`doc-link-${id}`);
   const img = document.getElementById(`doc-img-${id}`);
@@ -884,15 +959,18 @@ async function initProfilePage() {
   }
   };
 
-  // --- Populate Left Card ---
   document.getElementById('profile-avatar').src = user.profileImageUrl || `https://placehold.co/128x128/EBF4FF/7F9CF5?text=${user.firstName?.charAt(0) || 'A'}&font=inter`;
   setText('profile-name', fullName);
-  setText('profile-category', user.category);
+  
+  // ✅ Use the global code map to display the full category description
+  const categoryDescription = CODE_TO_DESCRIPTION_MAP[user.category] || user.category || 'N/A';
+  setText('profile-category', categoryDescription);
+  
   setText('profile-email', user.email);
   setText('profile-contact', user.contact);
   setText('profile-address', user.address);
   setText('profile-sp-id', user.soloParentIdNumber);
-  // Status Badge
+  
   const statusBadge = document.getElementById('profile-status-badge');
   if (user.status === 'approved') {
   statusBadge.textContent = 'Approved';
@@ -909,12 +987,11 @@ async function initProfilePage() {
   } else {
   statusBadge.textContent = 'Rejected';
   statusBadge.className = 'px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800';
-  approveBtn.style.display = 'flex'; // Allow re-approval
+  approveBtn.style.display = 'flex';
   rejectBtn.style.display = 'none';
   editBtn.style.display = 'none';
   }
 
-  // --- Populate Personal Info ---
   setText('detail-full-name', fullName);
   setText('detail-email', user.email);
   setText('detail-dob', user.dateOfBirth);
@@ -925,8 +1002,6 @@ async function initProfilePage() {
   setText('detail-ethnicity', user.ethnicity);
   setText('detail-religion', user.religion);
   setText('detail-created-at', user.createdAt ? user.createdAt.toDate().toLocaleDateString() : 'N/A');
-
-  // --- Populate Family & Employment ---
   setText('detail-occupation', user.occupation);
   setText('detail-company', user.companyAgency);
   setText('detail-income', user.monthlyIncome);
@@ -935,17 +1010,15 @@ async function initProfilePage() {
   setText('detail-has-philhealth', user.hasPhilhealth ? 'Yes' : 'No');
   setText('detail-philhealth-id', user.philhealthIdNumber);
 
-  // --- Populate Documents ---
   setDoc('valid-id', user.proofIdUrl);
   setDoc('proof', user.proofSoloParentUrl);
   setDoc('philhealth', user.philhealthIdUrl);
 
-  // 4. Add Button Listeners
   approveBtn.addEventListener('click', () => approveUser(userId));
   rejectBtn.addEventListener('click', () => rejectUser(userId));
   editBtn.addEventListener('click', () => console.log('Edit functionality is not yet implemented.'));
  
-  feather.replace(); // Re-run feather icons for new buttons
+  feather.replace();
  } catch (error) {
   console.error("❌ Error fetching user profile:", error);
   breadcrumb.textContent = "Error: Could not load user profile.";
@@ -958,25 +1031,23 @@ async function initProfilePage() {
 // --------------------------------------------------------------------------
 function initAnnouncementsPage() {
  console.log("🚀 Initializing Announcements Page...");
- // --- Get DOM elements ---
  const annForm = document.getElementById('create-announcement-form');
  const annListEl = document.getElementById('announcement-list');
- // --- 1. Logic to LOAD announcements ---
- async function loadAnnouncements() {
+ 
+  async function loadAnnouncements() {
   if (!db) {
   annListEl.innerHTML = `<p class="text-sm text-red-500">Database connection error.</p>`;
   return;
   }
   annListEl.innerHTML = `<p class="text-center text-gray-500">Loading announcements...</p>`;
   try {
-  // Query for announcements, newest first
   const q = query(collection(db, "announcements"), orderBy("createdAt", "desc"));
   const snapshot = await getDocs(q);
   if (snapshot.empty) {
   annListEl.innerHTML = `<p class="text-center text-gray-500">No announcements found.</p>`;
   return;
   }
-  annListEl.innerHTML = ""; // Clear loading text
+  annListEl.innerHTML = "";
   snapshot.forEach(doc => {
   const ann = doc.data();
   const annId = doc.id;
@@ -984,7 +1055,6 @@ function initAnnouncementsPage() {
   const formattedDate = date.toLocaleDateString(undefined, {
   month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
   });
-  // Conditionally render image if it exists
   const imageHtml = ann.imageUrl ?
   `<img src="${ann.imageUrl}" class="w-full h-48 object-cover rounded-lg mt-4 mb-2">` :
   '';
@@ -1011,8 +1081,8 @@ function initAnnouncementsPage() {
   annListEl.innerHTML = `<p class="text-center text-red-500">Error loading announcements: ${error.message}</p>`;
   }
  }
- // --- 2. Logic to CREATE announcements ---
- if (annForm) {
+ 
+  if (annForm) {
   annForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const title = document.getElementById('ann-title').value;
@@ -1032,30 +1102,27 @@ function initAnnouncementsPage() {
   await addDoc(collection(db, "announcements"), annData);
   console.log("✅ Announcement published!");
   annForm.reset();
-  loadAnnouncements(); // Refresh list
+  loadAnnouncements();
   } catch (error) {
   console.error("❌ Error publishing announcement:", error);
   }
   });
  }
- // --- 3. Logic to DELETE announcements ---
- async function deleteAnnouncement(annId) {
+  async function deleteAnnouncement(annId) {
   try {
   await deleteDoc(doc(db, "announcements", annId));
   console.log("Announcement deleted.");
-  loadAnnouncements(); // Refresh
+  loadAnnouncements();
   } catch (error) {
   console.error("❌ Error deleting announcement:", error);
   }
  }
- // --- 4. Add listeners for dynamic buttons ---
- function addDynamicButtonListeners() {
+  function addDynamicButtonListeners() {
   annListEl.querySelectorAll('.delete-ann-btn').forEach(btn => {
   btn.addEventListener('click', (e) => deleteAnnouncement(e.target.dataset.id));
   });
  }
- // --- Initial Load ---
- loadAnnouncements();
+  loadAnnouncements();
 }
 
 // --------------------------------------------------------------------------
