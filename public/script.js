@@ -6,6 +6,10 @@ import {
     where, doc, updateDoc, Timestamp, orderBy, limit,
     addDoc, deleteDoc, getDoc
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+// ✅ NEW: Import Storage functions
+import { 
+    getStorage, ref, uploadBytes, getDownloadURL 
+} from "https://www.gstatic.com/firebasejs/12.4.0/firebase-storage.js";
 
 // Your Firebase config
 const firebaseConfig = {
@@ -20,11 +24,12 @@ const firebaseConfig = {
 };
 
 // Firebase init
-let app, analytics, db;
+let app, analytics, db, storage;
 try {
     app = initializeApp(firebaseConfig);
     analytics = getAnalytics(app);
     db = getFirestore(app);
+    storage = getStorage(app); // ✅ Initialize Storage
     console.log("✅ Firebase initialized successfully");
 } catch (error) {
     console.error("❌ Firebase initialization error:", error);
@@ -758,18 +763,18 @@ function initEventsPage() {
 }
 
 // --------------------------------------------------------------------------
-// ANNOUNCEMENTS PAGE LOGIC (`announcements.html`) --- ✅ FIXED TIMESTAMP HERE
+// ANNOUNCEMENTS PAGE LOGIC (`announcements.html`)
 // --------------------------------------------------------------------------
 function initAnnouncementsPage() {
     console.log("🚀 Initializing Announcements Page...");
     const annForm = document.getElementById('create-announcement-form');
     const annListEl = document.getElementById('announcement-list');
+    const annImageFile = document.getElementById('ann-image-file');
 
     async function loadAnnouncements() {
         if (!db) return;
         annListEl.innerHTML = `<p class="text-center text-gray-500">Loading announcements...</p>`;
         try {
-            // CHANGED: orderBy 'timestamp' to match mobile app
             const q = query(collection(db, "announcements"), orderBy("timestamp", "desc"));
             const snapshot = await getDocs(q);
             if (snapshot.empty) {
@@ -779,10 +784,14 @@ function initAnnouncementsPage() {
             annListEl.innerHTML = "";
             snapshot.forEach(doc => {
                 const ann = doc.data();
-                // CHANGED: ann.timestamp
                 const date = ann.timestamp ? ann.timestamp.toDate() : new Date();
                 const formattedDate = date.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
-                const imageHtml = ann.imageUrl ? `<img src="${ann.imageUrl}" class="w-full h-48 object-cover rounded-lg mt-4 mb-2">` : '';
+                
+                // ✅ FIXED: Changed classes to show full image (h-auto) instead of cropping
+                const imageHtml = ann.imageUrl ? 
+                    `<img src="${ann.imageUrl}" class="w-full h-auto max-h-96 object-contain rounded-lg mt-4 mb-2 bg-gray-100">` : 
+                    '';
+                
                 annListEl.innerHTML += `
           <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100 relative">
             <button data-id="${doc.id}" class="delete-ann-btn absolute top-4 right-4 text-red-600 hover:text-red-800 p-2 rounded-full hover:bg-red-50" title="Delete Announcement"><i data-feather="trash-2" class="w-4 h-4 pointer-events-none"></i></button>
@@ -804,20 +813,45 @@ function initAnnouncementsPage() {
             e.preventDefault();
             const title = document.getElementById('ann-title').value;
             const body = document.getElementById('ann-body').value;
-            const imageUrl = document.getElementById('ann-image').value;
-            if (!title || !body) return;
+            const file = annImageFile.files[0];
+            let imageUrl = null;
+
+            if (!title || !body) {
+                console.error("Title and Message Body are required.");
+                return;
+            }
+
+            const submitBtn = annForm.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.textContent;
+            submitBtn.textContent = "Publishing...";
+            submitBtn.disabled = true;
+
             try {
+                if (file) {
+                    console.log("Uploading image...");
+                    const storageRef = ref(storage, `announcements/${Date.now()}_${file.name}`);
+                    await uploadBytes(storageRef, file);
+                    imageUrl = await getDownloadURL(storageRef);
+                    console.log("Image uploaded:", imageUrl);
+                }
+
                 await addDoc(collection(db, "announcements"), {
                     title: title,
                     body: body,
-                    imageUrl: imageUrl || null,
-                    timestamp: Timestamp.now() // ✅ CHANGED: using timestamp
+                    imageUrl: imageUrl,
+                    timestamp: Timestamp.now()
                 });
+                
                 console.log("✅ Announcement published!");
                 annForm.reset();
+                annImageFile.value = ""; 
                 loadAnnouncements();
             } catch (error) {
                 console.error("❌ Error publishing announcement:", error);
+                alert("Failed to publish announcement: " + error.message);
+            } finally {
+                submitBtn.textContent = originalBtnText;
+                submitBtn.disabled = false;
             }
         });
     }
