@@ -9,10 +9,37 @@
     <script src="https://unpkg.com/feather-icons"></script>
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Print Styles for Reports */
+        @media print {
+            body * { visibility: hidden; }
+            #print-report-container, #print-report-container * { visibility: visible; }
+            #print-report-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 20px;
+                background: white;
+            }
+            #sidebar, #mobile-sidebar, #sidebar-toggle, .no-print { display: none !important; }
+            
+            /* Report Table Styling */
+            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10px; } /* Smaller font for many columns */
+            th, td { border: 1px solid #000; padding: 4px 8px; text-align: left; }
+            th { background-color: #f3f4f6; font-weight: bold; }
+            
+            .letterhead { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; }
+            .letterhead h1 { font-size: 20px; font-weight: bold; color: #1e3a8a; margin: 0; }
+            .letterhead p { font-size: 10px; color: #6b7280; margin: 2px 0; }
+            .report-title { text-align: center; font-size: 16px; font-weight: bold; margin: 15px 0; text-transform: uppercase; }
+        }
+    </style>
 </head>
 <body class="bg-gray-50 font-sans">
     <div class="flex flex-col sm:flex-row h-screen">
-        
+        <!-- SIDEBAR -->
         <div class="w-64 bg-white border-r border-gray-200 flex-col hidden sm:flex" id="sidebar">
             <div class="p-4 flex items-center space-x-2">
                 <div class="bg-blue-100 p-2 rounded-lg">
@@ -20,34 +47,29 @@
                 </div>
                 <span class="font-bold text-gray-800">SPDA System</span>
             </div>
-
             <nav class="flex-1 px-2 space-y-1">
                 <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
-                    <i data-feather="home" class="mr-3"></i>
-                    Dashboard
+                    <i data-feather="home" class="mr-3"></i> Dashboard
                 </a>
                 <a href="categories.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100">
-                    <i data-feather="bar-chart-2" class="mr-3"></i>
-                    Categories
+                    <i data-feather="bar-chart-2" class="mr-3"></i> Categories
                 </a>
                 <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
-                    <i data-feather="users" class="mr-3"></i>
-                    Members
+                    <i data-feather="users" class="mr-3"></i> Members
                 </a>
                 <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
-                    <i data-feather="file-text" class="mr-3"></i>
-                    Applications
+                    <i data-feather="file-text" class="mr-3"></i> Applications
+                </a>
+                <a href="renewals.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                    <i data-feather="refresh-cw" class="mr-3"></i> Renewals
                 </a>
                 <a href="events.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
-                    <i data-feather="calendar" class="mr-3"></i>
-                    Events
+                    <i data-feather="calendar" class="mr-3"></i> Events
                 </a>
                 <a href="announcements.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
-                    <i data-feather="bell" class="mr-3"></i>
-                    Announcements
+                    <i data-feather="bell" class="mr-3"></i> Announcements
                 </a>
             </nav>
-
             <div class="p-4 border-t border-gray-200">
                 <div class="flex items-center space-x-3">
                     <img src="https://i.pravatar.cc/200?img=1" class="w-10 h-10 rounded-full" alt="Admin">
@@ -57,112 +79,151 @@
                     </div>
                 </div>
                 <button class="mt-4 w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                    <i data-feather="log-out" class="mr-2"></i>
-                    Log Out
+                    <i data-feather="log-out" class="mr-2"></i> Log Out
                 </button>
             </div>
         </div>
 
-        <button class="sm:hidden fixed top-4 left-4 z-50 p-2 bg-white border rounded-full" id="sidebar-toggle">
+        <!-- Mobile Sidebar Toggle -->
+        <button class="sm:hidden fixed top-4 left-4 z-50 p-2 bg-white border rounded-full no-print" id="sidebar-toggle">
             <i data-feather="menu"></i>
         </button>
 
-        <div class="fixed inset-0 bg-black bg-opacity-50 z-40 flex sm:hidden" id="mobile-sidebar" style="display: none;">
+        <!-- Mobile Sidebar -->
+        <div class="fixed inset-0 bg-black bg-opacity-50 z-40 flex sm:hidden no-print" id="mobile-sidebar" style="display: none;">
             <div class="w-64 bg-white h-full shadow-lg p-4 overflow-auto">
-                <div class="p-4 flex items-center space-x-2">
-                    <div class="bg-blue-100 p-2 rounded-lg">
-                        <i data-feather="users" class="text-blue-600"></i>
-                    </div>
+                 <!-- (Mobile sidebar content same as other pages) -->
+                 <div class="p-4 flex items-center space-x-2">
+                    <div class="bg-blue-100 p-2 rounded-lg"><i data-feather="users" class="text-blue-600"></i></div>
                     <span class="font-bold text-gray-800">SPDA System</span>
                 </div>
-
                 <nav class="flex-1 px-2 space-y-1">
-                    <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
-                        <i data-feather="home" class="mr-3"></i>
-                        Dashboard
-                    </a>
-                    <a href="categories.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100">
-                        <i data-feather="bar-chart-2" class="mr-3"></i>
-                        Categories
-                    </a>
-                    <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
-                        <i data-feather="users" class="mr-3"></i>
-                        Members
-                    </a>
-                    <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
-                        <i data-feather="file-text" class="mr-3"></i>
-                        Applications
-                    </a>
-                    <a href="events.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
-                        <i data-feather="calendar" class="mr-3"></i>
-                        Events
-                    </a>
+                    <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100"><i data-feather="home" class="mr-3"></i> Dashboard</a>
+                    <a href="categories.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100"><i data-feather="bar-chart-2" class="mr-3"></i> Categories</a>
+                    <!-- ... other links ... -->
                 </nav>
-
-                <div class="p-4 border-t border-gray-200">
-                    <div class="flex items-center space-x-3">
-                        <img src="https://i.pravatar.cc/200?img=1" class="w-10 h-10 rounded-full" alt="Admin">
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">Admin Name</p>
-                            <p class="text-xs text-gray-500">System Administrator</p>
-                        </div>
-                    </div>
-                    <button class="mt-4 w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                        <i data-feather="log-out" class="mr-2"></i>
-                        Log Out
-                    </button>
-                </div>
             </div>
         </div>
 
+        <!-- MAIN CONTENT -->
         <div class="flex-1 overflow-auto">
             <div class="p-6">
-                <div class="mb-6">
-                    <h1 class="text-2xl font-bold text-gray-800 mb-1">Solo Parent Categories</h1>
-                    <p class="text-gray-500 text-sm">View and filter categories about registered solo parents.</p>
+                <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 no-print">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800 mb-1">Categories</h1>
+                        <p class="text-gray-500 text-sm">Advanced filtering and report generation.</p>
+                    </div>
+                    <button id="generate-category-report-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-blue-700 flex items-center gap-2 transition">
+                        <i data-feather="printer" class="w-4 h-4"></i> Generate Report
+                    </button>
                 </div>
 
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                    <div class="relative w-full md:w-96">
-                        <input type="text" id="search-box" class="pl-10 pr-4 py-2 border border-gray-200 rounded-md w-full focus:ring-1 focus:ring-blue-500 focus:border-blue-500" placeholder="Search by name or registration ID...">
-                        <i data-feather="search" class="absolute left-3 top-2.5 text-gray-400"></i>
-                    </div>
-                    <div id="filter-tags-container" class="flex items-center gap-2 flex-wrap">
-                        <button id="reset-filters-btn" class="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1" style="display: none;">
-                            <i data-feather="refresh-cw" class="w-4 h-4"></i>
-                            Reset Filters
-                        </button>
+                <!-- ADVANCED FILTERS -->
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100 mb-6 no-print">
+                    <h3 class="font-medium text-gray-800 mb-4 flex items-center gap-2">
+                        <i data-feather="filter" class="w-4 h-4 text-gray-500"></i> Filter Criteria
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <!-- Search by Name/ID -->
+                        <div class="col-span-1 md:col-span-2">
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Search (Name/ID)</label>
+                            <input type="text" id="search-box" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500" placeholder="Search...">
+                        </div>
+                        <!-- Category (Existing) -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Category</label>
+                            <select id="category-filter-select" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm">
+                                <option value="All">All Categories</option>
+                                <!-- Filled by JS -->
+                            </select>
+                        </div>
+                        <!-- Municipality (Existing) -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Municipality/Address</label>
+                            <select id="municipality-filter-select" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm">
+                                <option value="All">All Municipalities</option>
+                                <!-- Filled by JS -->
+                            </select>
+                        </div>
+                        <!-- Gender -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Gender</label>
+                            <select id="gender-filter" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm">
+                                <option value="All">All</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                         <!-- PhilHealth -->
+                         <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Has PhilHealth?</label>
+                            <select id="philhealth-filter" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm">
+                                <option value="All">All</option>
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                         <!-- Min Age -->
+                         <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Min Age</label>
+                            <input type="number" id="min-age-filter" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm" placeholder="e.g. 18">
+                        </div>
+                         <!-- Max Age -->
+                         <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Max Age</label>
+                            <input type="number" id="max-age-filter" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm" placeholder="e.g. 60">
+                        </div>
+                        <!-- Date Range Start -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Date Registered (From)</label>
+                            <input type="date" id="date-start-filter" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm">
+                        </div>
+                        <!-- Date Range End -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Date Registered (To)</label>
+                            <input type="date" id="date-end-filter" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm">
+                        </div>
+                         <!-- Number of Children -->
+                         <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Min Children</label>
+                            <input type="number" id="children-filter" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm" placeholder="0">
+                        </div>
+                        <!-- Reset Button -->
+                        <div class="flex items-end">
+                            <button id="reset-filters-btn" class="w-full bg-gray-100 text-gray-600 border border-gray-300 px-4 py-2 rounded-md text-sm hover:bg-gray-200 transition">
+                                Reset All
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <div class="flex flex-col lg:flex-row gap-6">
-                    <div class="lg:w-1/4 space-y-4">
+                    <!-- Left Column: Quick Category List (Existing) -->
+                    <div class="lg:w-1/4 space-y-4 no-print">
                         <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                            <h3 class="font-medium text-gray-800 mb-3">Solo Parent Categories</h3>
+                            <h3 class="font-medium text-gray-800 mb-3">Categories Summary</h3>
                             <div id="category-filter-list" class="space-y-2">
                                 <p class="text-sm text-gray-500">Loading categories...</p>
                             </div>
                         </div>
-
-                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                            <h3 class="font-medium text-gray-800 mb-3">Geographical Filters</h3>
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Municipality</label>
-                                    <select id="municipality-filter-select" class="w-full border border-gray-200 rounded-md px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
-                                        <option>Loading municipalities...</option>
-                                    </select>
-                                </div>
-                                </div>
-                        </div>
                     </div>
 
+                    <!-- Right Column: Results Grid -->
                     <div class="lg:w-3/4">
-                        <div id="member-profile-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex justify-between items-center mb-4 no-print">
+                            <p class="text-sm text-gray-500">Showing <span id="result-count" class="font-bold text-gray-800">0</span> applicants based on filters</p>
+                        </div>
+                        <div id="member-profile-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 no-print">
                             <p class="text-sm text-gray-500">Loading members...</p>
                         </div>
                     </div>
                 </div>
+                
+                <!-- ✅ HIDDEN PRINT TEMPLATE -->
+                <div id="print-report-container" style="visibility: hidden; display: none;">
+                    <!-- JS will inject content here -->
+                </div>
+
             </div>
         </div>
     </div>
@@ -170,6 +231,6 @@
     <script>
         feather.replace();
     </script>
-    <script type="module" src="script.js"></script>
+    <script type="module" src="categories.js"></script>
 </body>
 </html>
