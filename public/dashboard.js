@@ -8,7 +8,9 @@ initLogout();
 let allUsersData = [];
 let donutChartInstance = null;
 let predictiveChartInstance = null;
+let categoryChartInstance = null; // ✅ NEW: Chart instance for demographics
 
+// --- Data ---
 const mockAnalyticsData = {
     predictive: [
         { metric: "Application Forecast", value: "45-55", notes: "65% confidence level" },
@@ -28,6 +30,16 @@ const mockAnalyticsData = {
 const forecastData = [35, 42, 38, 45, 50, 55];
 const forecastMonths = ["Aug", "Sep", "Oct", "Nov (Current)", "Dec (Forecast)", "Jan (Forecast)"];
 
+// --- Helper: Description Map (To make pie chart labels readable) ---
+// NOTE: You can also import this from utils.js if you exported it there
+const CATEGORY_MAP = {
+    "a1": "Rape Victim", "a2": "Widow/er", "a3": "Spouse Detained",
+    "a4": "Spouse Incapacitated", "a5": "Separated", "a6": "Annulled",
+    "a7": "Abandoned", "b1": "Spouse OFW", "b2": "OFW Relative",
+    "c": "Unmarried", "d": "Legal Guardian", "f": "Pregnant"
+};
+
+// --- Fetch Data ---
 async function fetchAllUsers() {
     if (!db) return;
     try {
@@ -42,8 +54,9 @@ async function fetchAllUsers() {
 async function fetchUpcomingEvents() {
     const eventsList = document.getElementById('upcoming-events-list');
     const eventsCountEl = document.getElementById('events-count');
-    const nextEventEl = document.getElementById('next-event-text');
-    if (!eventsList || !eventsCountEl || !nextEventEl) return;
+    // const nextEventEl = document.getElementById('next-event-text'); // Removed from UI, keeping variable just in case
+    
+    if (!eventsList || !eventsCountEl) return;
 
     eventsList.innerHTML = `<p class="text-sm text-gray-500">Loading upcoming events...</p>`;
     try {
@@ -55,29 +68,27 @@ async function fetchUpcomingEvents() {
         eventsCountEl.textContent = snapshot.size;
 
         if (snapshot.empty) {
-            nextEventEl.textContent = "No upcoming events";
             eventsList.innerHTML = `<p class="text-sm text-gray-500">No upcoming events found.</p>`;
             return;
         }
 
-        const nextEvent = snapshot.docs[0].data();
-        nextEventEl.textContent = `Next: ${nextEvent.eventName}`;
-
         eventsList.innerHTML = "";
-        snapshot.forEach(doc => {
+        // Show only top 3 events
+        const topEvents = snapshot.docs.slice(0, 3);
+        
+        topEvents.forEach(doc => {
             const event = doc.data();
             const eventDate = event.eventDate.toDate();
             const eventHtml = `
-      <div class="flex items-start">
-        <div class="bg-blue-100 p-3 rounded-lg mr-4">
-          <i data-feather="calendar" class="text-blue-600"></i>
-        </div>
-        <div>
-          <h3 class="font-medium text-gray-800">${event.eventName}</h3>
-          <p class="text-sm text-gray-600">${eventDate.toLocaleDateString()} | ${event.eventTime || ''}</p>
-          <p class="text-xs text-gray-500 mt-1">${event.eventLocation || 'Online'}</p>
-        </div>
-      </div>`;
+            <div class="flex items-start border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                <div class="bg-blue-100 p-2 rounded-lg mr-3 h-10 w-10 flex items-center justify-center text-blue-600 font-bold text-xs flex-shrink-0">
+                    ${eventDate.getDate()}
+                </div>
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-800 truncate w-48">${event.eventName}</h3>
+                    <p class="text-xs text-gray-500">${eventDate.toLocaleDateString()} • ${event.eventLocation || 'Online'}</p>
+                </div>
+            </div>`;
             eventsList.innerHTML += eventHtml;
         });
         feather.replace();
@@ -87,9 +98,13 @@ async function fetchUpcomingEvents() {
     }
 }
 
+// --- Chart Initializers ---
+
 function initDonutChart() {
-    const ctx = document.getElementById('donutChart').getContext('2d');
-    donutChartInstance = new Chart(ctx, {
+    const ctx = document.getElementById('donutChart');
+    if(!ctx) return;
+    
+    donutChartInstance = new Chart(ctx.getContext('2d'), {
         type: 'doughnut',
         data: {
             labels: ['Approved', 'Pending', 'Rejected'],
@@ -102,8 +117,10 @@ function initDonutChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '70%',
-            plugins: { legend: { display: false } }
+            cutout: '65%',
+            plugins: { 
+                legend: { display: false } 
+            }
         }
     });
 }
@@ -111,6 +128,7 @@ function initDonutChart() {
 function initPredictiveChart() {
     const ctx = document.getElementById('predictiveChart');
     if (!ctx) return;
+    
     predictiveChartInstance = new Chart(ctx.getContext('2d'), {
         type: 'bar',
         data: {
@@ -119,7 +137,8 @@ function initPredictiveChart() {
                 label: 'Registered Solo Parents',
                 data: forecastData,
                 backgroundColor: ['#93C5FD', '#93C5FD', '#93C5FD', '#3B82F6', '#8B5CF6', '#8B5CF6'],
-                borderRadius: 4
+                borderRadius: 4,
+                barPercentage: 0.7
             }]
         },
         options: {
@@ -129,13 +148,95 @@ function initPredictiveChart() {
                 legend: { display: false },
                 tooltip: { callbacks: { label: function(context) { return context.raw + " Applicants"; } } }
             },
-            scales: { y: { beginAtZero: true } }
+            scales: { 
+                y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
+                x: { grid: { display: false } }
+            }
         }
     });
+    
     const summaryEl = document.getElementById('predictive-summary-text');
     if(summaryEl) {
         summaryEl.innerHTML = `Based on the current trend, we project <strong>${forecastData[4]} to ${forecastData[5]}</strong> new solo parent registrations for the upcoming months. <br><br> This represents a <strong>10-15% increase</strong> compared to the previous quarter.`;
     }
+}
+
+// ✅ NEW: Initialize Applicant Demographics Pie Chart
+function initCategoryChart() {
+    const ctx = document.getElementById('categoryChart');
+    if (!ctx) return;
+
+    categoryChartInstance = new Chart(ctx.getContext('2d'), {
+        type: 'pie',
+        data: {
+            labels: [], // Will populate dynamically
+            datasets: [{
+                data: [],
+                backgroundColor: [
+                    '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', 
+                    '#EC4899', '#6366F1', '#14B8A6', '#F97316', '#64748B'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { 
+                    position: 'right',
+                    labels: { boxWidth: 10, font: { size: 10 } }
+                }
+            }
+        }
+    });
+}
+
+// --- Updates & Logic ---
+
+function updateCategoryChart() {
+    if (!categoryChartInstance || allUsersData.length === 0) return;
+
+    const counts = {};
+    allUsersData.forEach(user => {
+        // Use map to get readable name, fallback to code
+        let label = CATEGORY_MAP[user.category] || user.category || "Unspecified";
+        counts[label] = (counts[label] || 0) + 1;
+    });
+
+    // Sort by count descending to make chart look better
+    const sortedLabels = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+    const sortedData = sortedLabels.map(label => counts[label]);
+
+    categoryChartInstance.data.labels = sortedLabels;
+    categoryChartInstance.data.datasets[0].data = sortedData;
+    categoryChartInstance.update();
+}
+
+function calculateAvgProcessingTime() {
+    // Filter users who are approved AND have both timestamps
+    const approvedUsers = allUsersData.filter(u => u.status === 'approved' && u.createdAt && u.approvedAt);
+    
+    if (approvedUsers.length === 0) {
+        document.getElementById('avg-processing-time').textContent = "N/A";
+        return;
+    }
+
+    let totalHours = 0;
+    approvedUsers.forEach(user => {
+        const created = user.createdAt.toDate();
+        const approved = user.approvedAt.toDate();
+        // Difference in milliseconds -> hours
+        const diff = (approved - created) / (1000 * 60 * 60);
+        totalHours += diff;
+    });
+
+    const avgHours = totalHours / approvedUsers.length;
+    const avgDays = (avgHours / 24).toFixed(1); // Convert to days with 1 decimal
+
+    // Update DOM
+    const el = document.getElementById('avg-processing-time');
+    if (el) el.textContent = `${avgDays} Days`;
 }
 
 function updateRecentActivity(users) {
@@ -198,6 +299,10 @@ function updateDashboardStats(filter) {
     const activityUsers = allUsersData.filter(u => { const c = u.createdAt?.toDate(); return c && (filter === 'all' || (c >= startDate && c <= endDate)); });
     const sortedActivityUsers = activityUsers.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0)).slice(0, 5);
     updateRecentActivity(sortedActivityUsers);
+    
+    // ✅ NEW: Update the new analytics metrics
+    updateCategoryChart();
+    calculateAvgProcessingTime();
 }
 
 function handleGenerateReport() {
@@ -208,13 +313,41 @@ function handleGenerateReport() {
     const pending = document.getElementById('pending-count').textContent;
     const approved = document.getElementById('approved-count').textContent;
     
-    let chartImg = '';
-    const chartCanvas = document.getElementById('predictiveChart');
-    if (chartCanvas) {
-        chartImg = `<div style="text-align:center; margin: 20px 0;"><img src="${chartCanvas.toDataURL()}" style="max-width:100%; height:auto;"></div>`;
-    }
+    let forecastImg = '';
+    const forecastCanvas = document.getElementById('predictiveChart');
+    if (forecastCanvas) forecastImg = `<div style="text-align:center; margin: 20px 0;"><img src="${forecastCanvas.toDataURL()}" style="max-width:100%; height:auto;"></div>`;
 
-    let html = `<div class="letterhead"><h1>Solo Parent Data Analysis System</h1><p>Official Analytical Report</p><p>Date Generated: ${date}</p></div><h2 class="report-title">1. System Overview (Descriptive)</h2><table><thead><tr><th>Metric</th><th>Count</th></tr></thead><tbody><tr><td>Registered Solo Parents</td><td>${registered}</td></tr><tr><td>Pending Applications</td><td>${pending}</td></tr><tr><td>Approved Applications</td><td>${approved}</td></tr></tbody></table><h2 class="report-title">2. Predictive Analytics (Forecast)</h2><p style="font-size:11px; color:#666;">Visual representation of applicant trends.</p>${chartImg}<table><thead><tr><th>Metric</th><th>Predicted Value</th><th>Notes</th></tr></thead><tbody>${mockAnalyticsData.predictive.map(item => `<tr><td>${item.metric}</td><td>${item.value}</td><td>${item.notes}</td></tr>`).join('')}</tbody></table><h2 class="report-title">3. Prescriptive Analytics</h2><table><thead><tr><th>Category</th><th>Suggestion / Action</th></tr></thead><tbody>${mockAnalyticsData.prescriptive.map(item => `<tr><td>${item.category}</td><td>${item.details}</td></tr>`).join('')}</tbody></table>`;
+    // ✅ NEW: Include demographics chart in report
+    let demoImg = '';
+    const demoCanvas = document.getElementById('categoryChart');
+    if (demoCanvas) demoImg = `<div style="text-align:center; margin: 20px 0;"><img src="${demoCanvas.toDataURL()}" style="max-width:60%; height:auto; margin: 0 auto;"></div>`;
+
+    let html = `
+    <div class="letterhead"><h1>Solo Parent Data Analysis System</h1><p>Official Analytical Report</p><p>Date Generated: ${date}</p></div>
+    
+    <h2 class="report-title">1. System Overview (Descriptive)</h2>
+    <table><thead><tr><th>Metric</th><th>Count</th></tr></thead><tbody>
+    <tr><td>Registered Solo Parents</td><td>${registered}</td></tr>
+    <tr><td>Pending Applications</td><td>${pending}</td></tr>
+    <tr><td>Approved Applications</td><td>${approved}</td></tr>
+    </tbody></table>
+    
+    <h2 class="report-title">2. Applicant Demographics</h2>
+    <p style="font-size:11px; color:#666;">Breakdown of applicants by solo parent category.</p>
+    ${demoImg}
+
+    <h2 class="report-title">3. Applicant Forecast (Predictive)</h2>
+    <p style="font-size:11px; color:#666;">Visual representation of applicant trends.</p>
+    ${forecastImg}
+    <table><thead><tr><th>Metric</th><th>Predicted Value</th><th>Notes</th></tr></thead><tbody>
+    ${mockAnalyticsData.predictive.map(item => `<tr><td>${item.metric}</td><td>${item.value}</td><td>${item.notes}</td></tr>`).join('')}
+    </tbody></table>
+    
+    <h2 class="report-title">4. Prescriptive Analytics</h2>
+    <table><thead><tr><th>Category</th><th>Suggestion / Action</th></tr></thead><tbody>
+    ${mockAnalyticsData.prescriptive.map(item => `<tr><td>${item.category}</td><td>${item.details}</td></tr>`).join('')}
+    </tbody></table>`;
+    
     printContainer.innerHTML = html;
     printContainer.style.display = 'block';
     setTimeout(() => { window.print(); }, 500);
@@ -224,6 +357,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log("🚀 Dashboard Loaded");
     initDonutChart();
     initPredictiveChart();
+    initCategoryChart(); // ✅ Initialize the new chart
     
     const dateSelect = document.getElementById('date-range-select');
     const customRangeDiv = document.getElementById('custom-date-range');

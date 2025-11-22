@@ -15,43 +15,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        /* ✅ NOTE: I removed the .stat-card, .sidebar-link, etc. from here 
-           because they are already inside your style.css file.
-        */
-
-        /* --- PRINT STYLES (Unique to Dashboard) --- */
+        /* --- PRINT STYLES --- */
         @media print {
-            body * {
-                visibility: hidden;
-            }
-            #sidebar, #mobile-sidebar, #sidebar-toggle, .no-print {
-                display: none !important;
-            }
-            
-            #print-report-container, #print-report-container * {
-                visibility: visible;
-            }
-            
+            body * { visibility: hidden; }
+            #sidebar, #mobile-sidebar, #sidebar-toggle, .no-print { display: none !important; }
+            #print-report-container, #print-report-container * { visibility: visible; }
             #print-report-container {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                margin: 0;
-                padding: 20px;
-                background: white;
+                position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 20px; background: white;
             }
-
             table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
             th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
             th { background-color: #f3f4f6; font-weight: bold; }
-            
             .letterhead { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
             .letterhead h1 { font-size: 24px; font-weight: bold; color: #1e3a8a; margin: 0; }
-            .letterhead p { font-size: 12px; color: #6b7280; margin: 2px 0; }
             .report-title { text-align: center; font-size: 18px; font-weight: bold; margin: 20px 0; text-transform: uppercase; }
         }
     </style>
+
 </head>
 <body class="bg-gray-50 font-sans">
     <div class="flex flex-col sm:flex-row h-screen">
@@ -116,7 +96,7 @@
                 </div>
                 <nav class="flex-1 px-2 space-y-1">
                     <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100"><i data-feather="home" class="mr-3"></i> Dashboard</a>
-                    </nav>
+                </nav>
             </div>
         </div>
 
@@ -124,8 +104,8 @@
             <div class="p-6">
                 <div class="flex justify-between items-center mb-6 no-print">
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-800">Solo Parent Assistance Dashboard</h1>
-                        <p class="text-gray-500">Welcome back, Admin. Here's a summary of your system.</p>
+                        <h1 class="text-2xl font-bold text-gray-800">Solo Parent Analytics Dashboard</h1>
+                        <p class="text-gray-500">Real-time data insights and applicant forecasting.</p>
                     </div>
                     <div class="flex items-center space-x-4">
                         <button id="generate-report-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-blue-700 flex items-center gap-2 transition">
@@ -191,18 +171,18 @@
                     <div class="stat-card bg-white p-5 rounded-lg shadow-sm border border-gray-100">
                         <div class="flex justify-between">
                             <div>
-                                <p class="text-sm font-medium text-gray-500">Upcoming Events</p>
-                                <p id="events-count" class="text-2xl font-bold mt-1">...</p>
+                                <p class="text-sm font-medium text-gray-500">Avg. Approval Time</p>
+                                <p id="avg-processing-time" class="text-2xl font-bold mt-1">1.5 Days</p>
                             </div>
-                            <div>
-                                <p id="next-event-text" class="text-xs text-gray-500 mt-1">...</p>
+                            <div class="bg-green-100 text-green-800 p-2 rounded-full h-10 w-10 flex items-center justify-center">
+                                <i data-feather="clock" class="w-5 h-5"></i>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="mt-6 bg-white p-5 rounded-lg shadow-sm border border-gray-100 analytics-card no-print">
-                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Predictive Analytics (Forecast)</h2>
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Applicant Forecast (Predictive)</h2>
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="lg:col-span-2">
                             <canvas id="predictiveChart" height="150"></canvas>
@@ -218,8 +198,29 @@
                     </div>
                 </div>
 
+                <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6 no-print">
+                    <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100 analytics-card">
+                        <h2 class="text-lg font-semibold text-gray-800 mb-4">Applicant Demographics</h2>
+                        <div class="relative h-64">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100 analytics-card">
+                        <h2 class="text-lg font-semibold text-gray-800 mb-4">Application Status</h2>
+                        <div class="relative h-64">
+                            <canvas id="donutChart"></canvas>
+                        </div>
+                        <div class="mt-4 grid grid-cols-3 gap-2 text-center">
+                            <div><div class="h-2 w-2 bg-green-500 rounded-full inline-block mr-1"></div><span id="chart-label-approved" class="text-xs">...</span></div>
+                            <div><div class="h-2 w-2 bg-yellow-500 rounded-full inline-block mr-1"></div><span id="chart-label-pending" class="text-xs">...</span></div>
+                            <div><div class="h-2 w-2 bg-red-500 rounded-full inline-block mr-1"></div><span id="chart-label-rejected" class="text-xs">...</span></div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="mt-6 bg-white p-5 rounded-lg shadow-sm border border-gray-100 analytics-card no-print">
-                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Prescriptive Analytics (Future Work)</h2>
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Prescriptive Analytics</h2>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div class="bg-green-50 p-4 rounded-lg border border-green-200">
                             <h3 class="font-medium text-green-800 mb-2">Recommended Actions</h3>
@@ -238,43 +239,22 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 no-print">
-                    <div class="lg:col-span-2 bg-white p-5 rounded-lg shadow-sm border border-gray-100">
-                        <h2 class="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h2>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="recent-activity-table" class="bg-white divide-y divide-gray-200">
-                                    <tr><td colspan="4" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">Loading...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
-                        <h2 class="text-lg font-semibold text-gray-800 mb-4">Application Status</h2>
-                        <div class="relative h-64">
-                            <canvas id="donutChart"></canvas>
-                        </div>
-                        <div class="mt-4 grid grid-cols-3 gap-2 text-center">
-                            <div><div class="h-2 w-2 bg-green-500 rounded-full inline-block mr-1"></div><span id="chart-label-approved" class="text-xs">...</span></div>
-                            <div><div class="h-2 w-2 bg-yellow-500 rounded-full inline-block mr-1"></div><span id="chart-label-pending" class="text-xs">...</span></div>
-                            <div><div class="h-2 w-2 bg-red-500 rounded-full inline-block mr-1"></div><span id="chart-label-rejected" class="text-xs">...</span></div>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="mt-6 bg-white p-5 rounded-lg shadow-sm border border-gray-100 no-print">
-                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Upcoming Events</h2>
-                    <div id="upcoming-events-list" class="space-y-4">
-                        <p class="text-sm text-gray-500">Loading upcoming events...</p>
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h2>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-activity-table" class="bg-white divide-y divide-gray-200">
+                                <tr><td colspan="4" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">Loading...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 

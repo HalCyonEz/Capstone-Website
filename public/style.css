@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================
+   BASE STYLES
+   ========================================= */
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     background-color: #f7f9fa;
@@ -22,10 +25,11 @@ input {
     box-shadow: 0 2px 6px rgba(0, 94, 166, 0.2);
 }
 
+/* Card Animations */
 .stat-card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
 .stat-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(0,0,0,0.1);
@@ -34,21 +38,188 @@ input {
 .analytics-card {
     transition: all 0.3s ease;
 }
-        
+
 .analytics-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 15px rgba(0,0,0,0.08);
 }
-        
+
 .sidebar-link {
     transition: all 0.2s ease;
 }
-        
+
 .sidebar-link:hover {
     background-color: #f3f4f6;
     padding-left: 1.5rem;
 }
-        
+
 .progress-bar {
     transition: width 1s ease-in-out;
+}
+
+/* =========================================
+   GLOBAL PRINT STYLES (Applies to ALL pages)
+   ========================================= */
+@media print {
+    body {
+        background: white;
+        /* Standard & Webkit color adjustments */
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* HIDE SIDEBAR AND NAVIGATION ON ALL PAGES */
+    #sidebar, 
+    #sidebar-toggle, 
+    #mobile-sidebar, 
+    .no-print,
+    nav {
+        display: none !important;
+    }
+    
+    /* Ensure the main content takes full width */
+    .flex-col, .flex-row {
+        display: block !important;
+    }
+    
+    /* Reset main content margins */
+    .flex-1 {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        overflow: visible !important;
+    }
+    
+    .p-6 {
+        padding: 0 !important;
+    }
+}
+
+
+/* =========================================
+   PROFILE PAGE PRINT PART
+   ========================================= */
+@media print {
+    /* Hide buttons specific to profile page */
+    #print-button-container, 
+    #profile-actions, 
+    #profile-breadcrumb,
+    #profile-approve-btn,
+    #profile-reject-btn {
+        display: none !important;
+    }
+
+    /* Main Grid Layout */
+    #main-profile-grid {
+        display: grid !important;
+        grid-template-columns: 250px 1fr !important;
+        gap: 2rem !important;
+        width: 100%;
+    }
+
+/* Left Column (Photo & ID) */
+    #profile-card-container {
+        border-right: 1px solid #eee;
+        padding-right: 1.5rem;
+        
+        /* ✅ CHANGE: Add left padding to push content to the visual center */
+        padding-left: 3.5rem !important; 
+        
+        /* Keep text left-aligned so everything lines up vertically */
+        text-align: left !important; 
+    }
+
+    /* Target the flex container holding the avatar and name */
+    #profile-card-container > div > div:first-child {
+        align-items: flex-start !important; 
+        text-align: left !important;
+    }
+
+    #profile-avatar {
+        width: 100px !important;
+        height: 100px !important;
+        margin-left: 0 !important; 
+        margin-right: 0 !important;
+        margin-bottom: 15px !important;
+    }
+    
+    #profile-name {
+        text-align: left !important;
+        width: 100%;
+    }
+    
+    #profile-status-badge {
+        margin-top: 5px !important;
+        display: inline-block !important;
+    }
+
+    /* Right Column (Details) */
+    #personal-info-grid, 
+    #family-info-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 1rem !important;
+    }
+
+    /* Headers */
+    h3 {
+        font-size: 16px !important;
+        border-bottom: 2px solid #3b82f6;
+        padding-bottom: 5px;
+        margin-bottom: 10px !important;
+        color: #000 !important;
+        margin-top: 0 !important;
+    }
+
+    /* --- DOCUMENTS SECTION FIXED --- */
+    
+    /* Force New Page for Documents */
+    #documents-section {
+        page-break-before: always !important;
+        margin-top: 0 !important; /* Reduce top margin to save space */
+        padding-top: 20px !important;
+        display: block !important;
+    }
+
+    /* Document Grid Container */
+    #documents-grid {
+        display: block !important; /* Stack elements vertically */
+    }
+
+    /* Individual Document Items (Label + Image) */
+    #documents-grid > div {
+        margin-bottom: 15px !important; /* Tighter spacing between docs */
+        break-inside: avoid !important; /* Keep Header + Image together */
+    }
+
+    /* Document Titles (Valid ID, etc) */
+    #documents-grid h4 {
+        margin-bottom: 5px !important;
+        color: #000 !important;
+    }
+
+    /* Image Styling - Fixed Height & Left Align */
+    #documents-grid img {
+        height: 230px !important;        /* Reduced height so 3 fit on one page */
+        width: auto !important;          /* Natural width */
+        max-width: 100% !important;      /* Don't exceed page width */
+        
+        object-fit: contain !important;  /* Ensure whole ID is visible */
+        object-position: left !important; /* ✅ ALIGN LEFT */
+        
+        border: 1px solid #ccc;          /* Add border to define edge */
+        background-color: #f9f9f9;       /* Light grey background for visibility */
+    }
+
+    /* Remove the link border/container styling */
+    #documents-grid a {
+        border: none !important;
+        display: block;
+    }
+
+    /* Clean up card styling for print */
+    .bg-white, .shadow-sm, .border {
+        box-shadow: none !important;
+        border: none !important;
+    }
 }
