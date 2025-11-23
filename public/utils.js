@@ -14,7 +14,8 @@ export const DESCRIPTION_TO_CODE_MAP = {
     "Spouse of OFW": "b1",
     "Relative of OFW": "b2",
     "Unmarried person": "c",
-    "Legal guardian / Adoptive parent / Foster parent": "d"
+    "Legal guardian / Adoptive parent / Foster parent": "d",
+    "Pregnant Woman": "f"
 };
 
 export const CODE_TO_DESCRIPTION_MAP = {};
