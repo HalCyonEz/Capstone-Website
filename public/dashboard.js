@@ -36,7 +36,7 @@ const CATEGORY_MAP = {
     "a1": "Rape Victim", "a2": "Widow/er", "a3": "Spouse Detained",
     "a4": "Spouse Incapacitated", "a5": "Separated", "a6": "Annulled",
     "a7": "Abandoned", "b1": "Spouse OFW", "b2": "OFW Relative",
-    "c": "Unmarried", "d": "Legal Guardian", "f": "Pregnant"
+    "c": "Unmarried", "d": "Legal Guardian", "f": "Pregnant Woman"
 };
 
 // --- Fetch Data ---
