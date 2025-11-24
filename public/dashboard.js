@@ -2,6 +2,7 @@ import { db } from "./firebase-config.js";
 import { initSidebar, initLogout } from "./utils.js";
 import { collection, getDocs, query, where, orderBy, Timestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
+// Initialize UI
 initSidebar();
 initLogout();
 
@@ -155,85 +156,60 @@ function initCategoryChart() {
 }
 
 // --- 3. Logic Functions ---
-// ✅ UPDATED: Now shows specific dates for Custom Range
+
 function updateCategoryChart(users, filterType) {
     if (!categoryChartInstance || !users) return;
 
     const totalUsers = users.length;
     const counts = {};
 
-    // 1. Count categories
     users.forEach(user => {
         let label = CATEGORY_MAP[user.category] || user.category || "Unspecified";
         counts[label] = (counts[label] || 0) + 1;
     });
 
-    // 2. Sort by count
     const sortedLabels = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
     const sortedData = sortedLabels.map(label => counts[label]);
 
-    // 3. Update Chart Data
     categoryChartInstance.data.labels = sortedLabels;
     categoryChartInstance.data.datasets[0].data = sortedData;
     categoryChartInstance.update();
 
-    // 4. Generate Description Text
+    // --- SAFE DESCRIPTION UPDATE ---
     const descEl = document.getElementById('demographics-description');
     if (descEl) {
         if (totalUsers === 0) {
             descEl.textContent = "No data available for this time period.";
             return;
         }
-
-        // Build list parts: "50% (10) widows"
         const textParts = sortedLabels.map(label => {
             const count = counts[label];
             const percentage = Math.round((count / totalUsers) * 100);
             return `<strong>${percentage}% (${count})</strong> ${label}`;
         });
 
-        // Join sentence with commas and "and"
-        let sentence = "";
-        if (textParts.length === 1) {
-            sentence = textParts[0];
-        } else if (textParts.length === 2) {
-            sentence = textParts.join(' and ');
-        } else {
-            const lastPart = textParts.pop();
-            sentence = textParts.join(', ') + ', and ' + lastPart;
-        }
-
-        // --- NEW DATE CONTEXT LOGIC ---
         let dateContext = "";
         const now = new Date();
         const monthName = now.toLocaleString('default', { month: 'long' });
         const year = now.getFullYear();
 
-        if (filterType === 'this_month') {
-            dateContext = `this ${monthName} ${year}`;
-        } else if (filterType === 'this_year') {
-            dateContext = `this year (${year})`;
-        } else if (filterType === 'all') {
-            dateContext = `of all time`;
-        } else if (filterType === 'custom') {
-            // ✅ Get the values directly from the inputs
-            const startInput = document.getElementById('start-date').value;
-            const endInput = document.getElementById('end-date').value;
-            
-            if (startInput && endInput) {
-                // Format them to look good (e.g., 11/01/2025)
-                // We use simple string replacement to ensure we don't get timezone shifts
-                // or use new Date() if you prefer standard formatting
-                const sDate = new Date(startInput).toLocaleDateString();
-                const eDate = new Date(endInput).toLocaleDateString();
+        if (filterType === 'this_month') dateContext = `this ${monthName} ${year}`;
+        else if (filterType === 'this_year') dateContext = `this year (${year})`;
+        else if (filterType === 'custom') {
+            const startInput = document.getElementById('start-date');
+            const endInput = document.getElementById('end-date');
+            if (startInput && endInput && startInput.value && endInput.value) {
+                const sDate = new Date(startInput.value).toLocaleDateString();
+                const eDate = new Date(endInput.value).toLocaleDateString();
                 dateContext = `from ${sDate} to ${eDate}`;
             } else {
                 dateContext = `in the selected range`;
             }
         } else {
-            dateContext = `in the selected range`;
+            dateContext = `of all time`;
         }
 
+        let sentence = textParts.length > 0 ? textParts.slice(0, 3).join(', ') + (textParts.length > 3 ? '...' : '') : "No categories found";
         descEl.innerHTML = `There are ${sentence} applied ${dateContext}.`;
     }
 }
@@ -250,12 +226,12 @@ function calculateAvgProcessingTime() {
             totalHours += (approved - created) / (1000 * 60 * 60);
         });
         avgDays = (totalHours / 24 / approvedUsers.length).toFixed(1);
-        document.getElementById('avg-processing-time').textContent = `${avgDays} Days`;
-    } else {
-        document.getElementById('avg-processing-time').textContent = "N/A";
-        avgDays = 0;
     }
     
+    // Update DOM safely
+    const el = document.getElementById('avg-processing-time');
+    if (el) el.textContent = (approvedUsers.length > 0) ? `${avgDays} Days` : "N/A";
+
     return Number(avgDays);
 }
 
@@ -314,69 +290,82 @@ function updateForecastWithRealData() {
     generateSmartAnalytics(avgDays, dataPoints);
 }
 
-// --- SMART ANALYTICS ---
+// --- SMART ANALYTICS (SAFE & BENEFIT FOCUSED) ---
 function generateSmartAnalytics(avgDays, forecastCounts) {
+    // Default if forecast data is missing
     if (!forecastCounts || forecastCounts.length < 4) forecastCounts = [10, 12, 15, 20, 25, 30];
 
     const summaryEl = document.getElementById('predictive-summary-text');
     const actionContent = document.getElementById('prescriptive-actions-content');
     const optContent = document.getElementById('prescriptive-opt-content');
-    const actionBox = document.getElementById('prescriptive-action-box');
-
+    
+    // 1. Forecast Text
     const currentVal = forecastCounts[3]; 
     const futureVal = forecastCounts[5];  
     const percentChange = currentVal > 0 ? Math.round(((futureVal - currentVal) / currentVal) * 100) : 100;
-    const isSlow = avgDays > 3.0; 
-
-    let predictiveTitle = "";
-    let predictiveDesc = "";
-
-    if (percentChange > 10) {
-        predictiveTitle = "📈 Expect More Applicants";
-        predictiveDesc = `The system predicts <strong>${percentChange}% more applicants</strong> soon. It is going to get busy.`;
-    } else if (percentChange < -5) {
-        predictiveTitle = "📉 Fewer Applicants Expected";
-        predictiveDesc = `Applicants are decreasing by ${Math.abs(percentChange)}%. Check if people know about the program.`;
-    } else {
-        predictiveTitle = "⚖️ Steady Number of Applicants";
-        predictiveDesc = `Applicant numbers are stable. Good time to organize old files.`;
-    }
+    
+    let predictiveTitle = percentChange > 10 ? "📈 High Applicant Volume" : (percentChange < -5 ? "📉 Low Applicant Volume" : "⚖️ Steady Volume");
+    let predictiveDesc = `We expect <strong>${Math.abs(percentChange)}% ${percentChange > 0 ? 'more' : 'less'}</strong> applicants next month compared to today.`;
 
     if (summaryEl) {
         summaryEl.innerHTML = `
             <strong class="block text-blue-800 mb-1" style="font-size: 14px;">${predictiveTitle}</strong>
             <p style="margin-top: 5px; line-height: 1.4;">${predictiveDesc}</p>
-            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e5e7eb;">
-                <span class="text-xs text-gray-500">Current Speed: <strong>${avgDays} Days per approval</strong></span>
-            </div>
         `;
     }
 
-    let actionsHTML = "";
-    let optsHTML = "";
+    // 2. Recommendations
+    const counts = {};
+    allUsersData.forEach(user => {
+        let code = user.category || "unknown";
+        counts[code] = (counts[code] || 0) + 1;
+    });
 
-    if (percentChange > 10 && isSlow) {
-        actionBox.className = "bg-red-50 p-4 rounded-lg border border-red-200";
-        actionBox.querySelector('h3').className = "font-medium text-red-800 mb-2";
-        actionsHTML = `<li class="flex items-start"><i data-feather="users" class="text-red-500 mr-2 mt-0.5 w-4 h-4"></i><span><strong>Assign more staff</strong> to check documents.</span></li>`;
-        optsHTML = `<li class="flex items-start"><i data-feather="check-square" class="text-orange-500 mr-2 mt-0.5 w-4 h-4"></i><span>Prioritize pending list.</span></li>`;
-    } else if (percentChange > 10 && !isSlow) {
-        actionBox.className = "bg-green-50 p-4 rounded-lg border border-green-200";
-        actionBox.querySelector('h3').className = "font-medium text-green-800 mb-2";
-        actionsHTML = `<li class="flex items-start"><i data-feather="thumbs-up" class="text-green-500 mr-2 mt-0.5 w-4 h-4"></i><span><strong>Good job!</strong> The approval time is efficient.</span></li>`;
-        optsHTML = `<li class="flex items-start"><i data-feather="printer" class="text-orange-500 mr-2 mt-0.5 w-4 h-4"></i><span>Prepare ID card materials.</span></li>`;
-    } else if (percentChange < 0) {
-        actionBox.className = "bg-blue-50 p-4 rounded-lg border border-blue-200";
-        actionsHTML = `<li class="flex items-start"><i data-feather="mic" class="text-blue-500 mr-2 mt-0.5 w-4 h-4"></i><span><strong>Promote the program</strong> in the Barangay.</span></li>`;
-        optsHTML = `<li class="flex items-start"><i data-feather="file-text" class="text-gray-500 mr-2 mt-0.5 w-4 h-4"></i><span>Review rejected applications.</span></li>`;
-    } else {
-        actionBox.className = "bg-green-50 p-4 rounded-lg border border-green-200";
-        actionsHTML = `<li class="flex items-start"><i data-feather="check" class="text-green-500 mr-2 mt-0.5 w-4 h-4"></i><span>Operations are normal. Keep it up.</span></li>`;
-        optsHTML = `<li class="flex items-start"><i data-feather="archive" class="text-blue-500 mr-2 mt-0.5 w-4 h-4"></i><span>Archive completed records.</span></li>`;
+    const sortedCodes = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+    const topCategoryCode = sortedCodes[0] || "default";
+    const secondCategoryCode = sortedCodes[1];
+
+    function getRecommendation(code) {
+        const name = CATEGORY_MAP[code] || "General";
+        switch (code) {
+            case 'f': return { label: name, action: `Prioritize <strong>Health Assistance & Maternal Kits</strong>.`, tip: `Coordinate with Health Centers.` };
+            case 'a2': return { label: name, action: `Prioritize <strong>Educational Scholarships</strong>.`, tip: `Offer psychosocial support.` };
+            case 'b1': 
+            case 'b2': return { label: name, action: `Focus on <strong>Livelihood Assistance</strong>.`, tip: `Check for legal support needs.` };
+            case 'a1': 
+            case 'a3': return { label: name, action: `Provide <strong>Legal & Psychological Support</strong>.`, tip: `Ensure privacy and cash aid.` };
+            case 'a5': 
+            case 'a6': 
+            case 'a7': return { label: name, action: `Prioritize <strong>Crisis Intervention (CIU)</strong>.`, tip: `Verify custody for scholarships.` };
+            case 'c': return { label: name, action: `Focus on <strong>Job Placement & Skills Training</strong>.`, tip: `Encourage TESDA programs.` };
+            default: return { label: "General", action: `Provide standard <strong>Monthly Cash Subsidy</strong>.`, tip: `Review renewal requirements.` };
+        }
     }
 
-    actionContent.innerHTML = actionsHTML;
-    optContent.innerHTML = optsHTML;
+    const topRec = getRecommendation(topCategoryCode);
+    const actionsHTML = `
+        <li class="flex items-start">
+            <div class="mr-2 mt-0.5"><i data-feather="star" class="text-yellow-500 w-4 h-4"></i></div>
+            <span><strong>Top Category (${topRec.label}):</strong><br>${topRec.action}</span>
+        </li>
+    `;
+
+    let optsHTML = "";
+    if (secondCategoryCode) {
+        const secondRec = getRecommendation(secondCategoryCode);
+        optsHTML = `
+            <li class="flex items-start">
+                <div class="mr-2 mt-0.5"><i data-feather="trending-up" class="text-blue-500 w-4 h-4"></i></div>
+                <span><strong>Also High (${secondRec.label}):</strong><br>${secondRec.tip}</span>
+            </li>
+        `;
+    } else {
+        optsHTML = `<li>No secondary data available yet.</li>`;
+    }
+
+    // SAFE UPDATES (Prevent Crash if elements missing)
+    if (actionContent) actionContent.innerHTML = actionsHTML;
+    if (optContent) optContent.innerHTML = optsHTML;
     feather.replace();
 }
 
@@ -388,38 +377,35 @@ function updateRecentActivity(users) {
         const name = `${user.firstName || ''} ${user.lastName || ''}`;
         const date = user.createdAt ? user.createdAt.toDate().toLocaleDateString() : 'N/A';
         const statusClass = user.status === 'approved' ? 'bg-green-100 text-green-800' : (user.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800');
-        const statusText = user.status.charAt(0).toUpperCase() + user.status.slice(1);
+        const statusText = user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : "Unknown";
         tableBody.innerHTML += `<tr><td class="px-6 py-4 text-sm font-medium text-gray-900">${name}</td><td class="px-6 py-4 text-sm text-gray-500">Application</td><td class="px-6 py-4"><span class="px-2 inline-flex text-xs font-semibold rounded-full ${statusClass}">${statusText}</span></td><td class="px-6 py-4 text-sm text-gray-500">${date}</td></tr>`;
     });
 }
 
-// ✅ UPDATED: Dashboard Stats now calls updateCategoryChart with Filter Data
 function updateDashboardStats(filter) {
     let startDate, endDate;
-    const now = new Date();
     
     if (filter === 'this_month') { 
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1); 
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59); 
+        startDate = new Date(); startDate.setDate(1); 
+        endDate = new Date(); endDate.setMonth(endDate.getMonth() + 1); endDate.setDate(0); 
     } else if (filter === 'this_year') { 
-        startDate = new Date(now.getFullYear(), 0, 1); 
-        endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59); 
+        startDate = new Date(new Date().getFullYear(), 0, 1); 
+        endDate = new Date(new Date().getFullYear(), 11, 31); 
     } else if (filter === 'custom') {
         const startVal = document.getElementById('start-date').value;
         const endVal = document.getElementById('end-date').value;
         if (startVal && endVal) {
-            startDate = new Date(startVal + "T00:00:00");
-            endDate = new Date(endVal + "T23:59:59");
+            startDate = new Date(startVal);
+            endDate = new Date(endVal);
         } else {
-            startDate = new Date(0); endDate = new Date(); // Default All Time
+            startDate = new Date(0); endDate = new Date();
         }
     } else {
-        startDate = new Date(0); endDate = new Date(); // All Time
+        startDate = new Date(0); endDate = new Date();
     }
     
     let registered = 0, pending = 0, approved = 0, rejected = 0;
     
-    // Filter Users based on Date Range
     const filteredUsers = allUsersData.filter(u => {
         const d = u.createdAt?.toDate();
         return filter === 'all' || (d && d >= startDate && d <= endDate);
@@ -451,12 +437,8 @@ function updateDashboardStats(filter) {
 
     updateRecentActivity(filteredUsers.slice(0, 5));
     
-    // ✅ Pass the filtered data AND filter type to update the chart text correctly
     updateCategoryChart(filteredUsers, filter);
-    
-    // Note: Forecast usually stays "All Time" for trend analysis, but re-calling it ensures freshness
     updateForecastWithRealData(); 
-    
     calculateAvgProcessingTime();
 }
 
@@ -467,34 +449,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     initCategoryChart();
     
     const dateSelect = document.getElementById('date-range-select');
-    const customRangeDiv = document.getElementById('custom-date-range'); // Get the hidden div
+    const customRangeDiv = document.getElementById('custom-date-range');
     
-    // ✅ FIXED: Logic to show/hide the Custom Range inputs
+    // ✅ FIXED: Correct logic to SHOW Custom Range inputs
     if (dateSelect && customRangeDiv) {
         dateSelect.addEventListener('change', function() {
-            const filterValue = this.value;
-            
-            if (filterValue === 'custom') {
-                // Show the inputs
+            if (this.value === 'custom') {
                 customRangeDiv.classList.remove('hidden');
-                customRangeDiv.classList.add('flex'); // Use flex to align them
+                customRangeDiv.classList.add('flex');
             } else {
-                // Hide the inputs
                 customRangeDiv.classList.add('hidden');
                 customRangeDiv.classList.remove('flex');
-                // Update stats immediately for non-custom filters
-                updateDashboardStats(filterValue);
+                updateDashboardStats(this.value);
             }
         });
     }
     
-    // Apply button for the custom range
     const applyBtn = document.getElementById('apply-custom-date');
-    if (applyBtn) {
-        applyBtn.addEventListener('click', function() { 
-            updateDashboardStats('custom'); 
-        });
-    }
+    if(applyBtn) applyBtn.addEventListener('click', function() { updateDashboardStats('custom'); });
 
     document.getElementById('generate-report-btn')?.addEventListener('click', handleGenerateReport);
 
@@ -504,7 +476,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     feather.replace();
 });
 
-// ✅ Report Generation (Includes Charts & Data)
+// ✅ Report Generation
 function handleGenerateReport() {
     const printContainer = document.getElementById('print-report-container');
     if (!printContainer) return;
@@ -523,10 +495,12 @@ function handleGenerateReport() {
     if (demoCanvas) demoImg = `<div style="text-align:center; margin: 20px 0;"><img src="${demoCanvas.toDataURL()}" style="max-width:60%; height:auto; margin: 0 auto;"></div>`;
 
     const predictiveText = document.getElementById('predictive-summary-text').innerHTML;
-    const actionsText = document.getElementById('prescriptive-actions-content').innerHTML;
-    const optsText = document.getElementById('prescriptive-opt-content').innerHTML;
+    // Safe retrieval of content
+    const actionsContent = document.getElementById('prescriptive-actions-content');
+    const optsContent = document.getElementById('prescriptive-opt-content');
     
-    // Look for the description text we added
+    const actionsText = actionsContent ? actionsContent.innerHTML : "No actions available.";
+    const optsText = optsContent ? optsContent.innerHTML : "No tips available.";
     const demoText = document.getElementById('demographics-description') ? document.getElementById('demographics-description').innerHTML : "";
 
     let html = `
@@ -550,10 +524,10 @@ function handleGenerateReport() {
     <div style="background:#f9fafb; padding:15px; border:1px solid #e5e7eb; margin-bottom:15px;">${predictiveText}</div>
     ${forecastImg}
     
-    <h2 class="report-title">4. Recommendations</h2>
+    <h2 class="report-title">4. Benefit Recommendations</h2>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-        <div><h3 style="font-size:14px; border-bottom:2px solid #10B981;">Actions</h3><ul>${actionsText}</ul></div>
-        <div><h3 style="font-size:14px; border-bottom:2px solid #F59E0B;">Tips</h3><ul>${optsText}</ul></div>
+        <div><h3 style="font-size:14px; border-bottom:2px solid #10B981;">Primary Recommendation</h3><ul style="margin-top:10px;">${actionsText}</ul></div>
+        <div><h3 style="font-size:14px; border-bottom:2px solid #F59E0B;">Secondary Focus</h3><ul style="margin-top:10px;">${optsText}</ul></div>
     </div>
     `;
     
