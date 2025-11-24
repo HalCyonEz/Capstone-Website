@@ -363,7 +363,7 @@ function generateSmartAnalytics(avgDays, forecastCounts) {
     } else if (percentChange > 10 && !isSlow) {
         actionBox.className = "bg-green-50 p-4 rounded-lg border border-green-200";
         actionBox.querySelector('h3').className = "font-medium text-green-800 mb-2";
-        actionsHTML = `<li class="flex items-start"><i data-feather="thumbs-up" class="text-green-500 mr-2 mt-0.5 w-4 h-4"></i><span><strong>Good job!</strong> Your speed is fast enough.</span></li>`;
+        actionsHTML = `<li class="flex items-start"><i data-feather="thumbs-up" class="text-green-500 mr-2 mt-0.5 w-4 h-4"></i><span><strong>Good job!</strong> The approval time is efficient.</span></li>`;
         optsHTML = `<li class="flex items-start"><i data-feather="printer" class="text-orange-500 mr-2 mt-0.5 w-4 h-4"></i><span>Prepare ID card materials.</span></li>`;
     } else if (percentChange < 0) {
         actionBox.className = "bg-blue-50 p-4 rounded-lg border border-blue-200";
