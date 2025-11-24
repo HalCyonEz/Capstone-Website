@@ -8,38 +8,23 @@ initLogout();
 let allUsersData = [];
 let donutChartInstance = null;
 let predictiveChartInstance = null;
-let categoryChartInstance = null; // ✅ NEW: Chart instance for demographics
+let categoryChartInstance = null;
 
-// --- Data ---
-const mockAnalyticsData = {
-    predictive: [
-        { metric: "Application Forecast", value: "45-55", notes: "65% confidence level" },
-        { metric: "Approval Rate Prediction", value: "78%", notes: "Based on current trends" },
-        { metric: "Resource Utilization", value: "82%", notes: "Predicted staff workload" },
-        { metric: "Event Participation Forecast", value: "120-140", notes: "Based on RSVPs" }
-    ],
-    prescriptive: [
-        { category: "Recommended Actions", details: "Increase outreach in District 5 - high potential applicants" },
-        { category: "Recommended Actions", details: "Review pending applications from last week to meet monthly targets" },
-        { category: "Recommended Actions", details: "Schedule additional verification staff for peak application days" },
-        { category: "Optimization Suggestions", details: "Process optimization could reduce approval time by 2.3 days" },
-        { category: "Optimization Suggestions", details: "Automate document verification to handle 30% more applications" }
-    ]
-};
-
-const forecastData = [35, 42, 38, 45, 50, 55];
+// --- 1. Forecast Data Configuration ---
+const forecastData = [35, 42, 38, 45, 50, 55]; // [Aug, Sep, Oct, Nov, Dec, Jan]
 const forecastMonths = ["Aug", "Sep", "Oct", "Nov (Current)", "Dec (Forecast)", "Jan (Forecast)"];
 
-// --- Helper: Description Map (To make pie chart labels readable) ---
-// NOTE: You can also import this from utils.js if you exported it there
+// --- 2. Map Helper (for Charts) ---
+// Note: Ensure DESCRIPTION_TO_CODE_MAP is imported or defined if used here. 
+// If not using the import from utils, we can rely on the raw category code or add the map here.
 const CATEGORY_MAP = {
     "a1": "Rape Victim", "a2": "Widow/er", "a3": "Spouse Detained",
     "a4": "Spouse Incapacitated", "a5": "Separated", "a6": "Annulled",
     "a7": "Abandoned", "b1": "Spouse OFW", "b2": "OFW Relative",
-    "c": "Unmarried", "d": "Legal Guardian", "f": "Pregnant Woman"
+    "c": "Unmarried", "d": "Legal Guardian", "f": "Pregnant"
 };
 
-// --- Fetch Data ---
+// --- 3. Fetch Data ---
 async function fetchAllUsers() {
     if (!db) return;
     try {
@@ -54,7 +39,6 @@ async function fetchAllUsers() {
 async function fetchUpcomingEvents() {
     const eventsList = document.getElementById('upcoming-events-list');
     const eventsCountEl = document.getElementById('events-count');
-    // const nextEventEl = document.getElementById('next-event-text'); // Removed from UI, keeping variable just in case
     
     if (!eventsList || !eventsCountEl) return;
 
@@ -73,7 +57,6 @@ async function fetchUpcomingEvents() {
         }
 
         eventsList.innerHTML = "";
-        // Show only top 3 events
         const topEvents = snapshot.docs.slice(0, 3);
         
         topEvents.forEach(doc => {
@@ -93,13 +76,12 @@ async function fetchUpcomingEvents() {
         });
         feather.replace();
     } catch (error) {
-        console.error("❌ Error loading upcoming events:", error);
+        console.error("❌ Error loading events:", error);
         eventsList.innerHTML = `<p class="text-sm text-red-500">Error loading events.</p>`;
     }
 }
 
-// --- Chart Initializers ---
-
+// --- 4. Chart Initializers ---
 function initDonutChart() {
     const ctx = document.getElementById('donutChart');
     if(!ctx) return;
@@ -118,9 +100,7 @@ function initDonutChart() {
             responsive: true,
             maintainAspectRatio: false,
             cutout: '65%',
-            plugins: { 
-                legend: { display: false } 
-            }
+            plugins: { legend: { display: false } }
         }
     });
 }
@@ -154,14 +134,8 @@ function initPredictiveChart() {
             }
         }
     });
-    
-    const summaryEl = document.getElementById('predictive-summary-text');
-    if(summaryEl) {
-        summaryEl.innerHTML = `Based on the current trend, we project <strong>${forecastData[4]} to ${forecastData[5]}</strong> new solo parent registrations for the upcoming months. <br><br> This represents a <strong>10-15% increase</strong> compared to the previous quarter.`;
-    }
 }
 
-// ✅ NEW: Initialize Applicant Demographics Pie Chart
 function initCategoryChart() {
     const ctx = document.getElementById('categoryChart');
     if (!ctx) return;
@@ -169,13 +143,10 @@ function initCategoryChart() {
     categoryChartInstance = new Chart(ctx.getContext('2d'), {
         type: 'pie',
         data: {
-            labels: [], // Will populate dynamically
+            labels: [],
             datasets: [{
                 data: [],
-                backgroundColor: [
-                    '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', 
-                    '#EC4899', '#6366F1', '#14B8A6', '#F97316', '#64748B'
-                ],
+                backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'],
                 borderWidth: 1
             }]
         },
@@ -183,199 +154,289 @@ function initCategoryChart() {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { 
-                    position: 'right',
-                    labels: { boxWidth: 10, font: { size: 10 } }
-                }
+                legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } }
             }
         }
     });
 }
 
-// --- Updates & Logic ---
+// --- 5. SMART ANALYTICS LOGIC (SIMPLIFIED LANGUAGE) ---
+function generateSmartAnalytics(avgDays) {
+    const summaryEl = document.getElementById('predictive-summary-text');
+    const actionBox = document.getElementById('prescriptive-action-box');
+    const actionContent = document.getElementById('prescriptive-actions-content');
+    const optBox = document.getElementById('prescriptive-opt-box');
+    const optContent = document.getElementById('prescriptive-opt-content');
 
+    // 1. Analyze Forecast Data
+    const currentVal = forecastData[3]; // Nov
+    const futureVal = forecastData[5];  // Jan
+    const diff = futureVal - currentVal;
+    const percentChange = Math.round((diff / currentVal) * 100);
+    
+    // 2. Analyze Processing Efficiency
+    const isSlow = avgDays > 3.0; // If taking more than 3 days, it's slow
+    const isFast = avgDays < 1.0; // If taking less than 1 day, it's fast
+
+    // --- PREDICTIVE LOGIC (Simple Explanations) ---
+    let predictiveTitle = "";
+    let predictiveDesc = "";
+
+    if (percentChange > 10) {
+        predictiveTitle = "📈 Expect More Applicants";
+        predictiveDesc = `The system predicts <strong>${percentChange}% more applicants</strong> in the coming months. It is going to get busy.`;
+    } else if (percentChange < -5) {
+        predictiveTitle = "📉 Fewer Applicants Expected";
+        predictiveDesc = `The number of applicants is going down by ${Math.abs(percentChange)}%. This might mean people in the barangay don't know about the program yet.`;
+    } else {
+        predictiveTitle = "⚖️ Steady Number of Applicants";
+        predictiveDesc = `The number of applicants is stable. Use this time to finish checking old applications.`;
+    }
+
+    if (summaryEl) {
+        summaryEl.innerHTML = `
+            <strong class="block text-blue-800 mb-1" style="font-size: 14px;">${predictiveTitle}</strong>
+            <p style="margin-top: 5px; line-height: 1.4;">${predictiveDesc}</p>
+            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e5e7eb;">
+                <span class="text-xs text-gray-500">Current Speed: <strong>${avgDays} Days per approval</strong></span>
+            </div>
+        `;
+    }
+
+    // --- PRESCRIPTIVE LOGIC (Simple Commands) ---
+    let actionsHTML = "";
+    let optsHTML = "";
+
+    // Scenario A: It's getting busy AND we are slow
+    if (percentChange > 10 && isSlow) {
+        actionBox.className = "bg-red-50 p-4 rounded-lg border border-red-200";
+        actionBox.querySelector('h3').className = "font-medium text-red-800 mb-2";
+        
+        actionsHTML = `
+            <li class="flex items-start"><i data-feather="users" class="text-red-500 mr-2 mt-0.5 w-4 h-4"></i><span><strong>Assign more staff</strong> to check documents today.</span></li>
+            <li class="flex items-start"><i data-feather="clock" class="text-red-500 mr-2 mt-0.5 w-4 h-4"></i><span><strong>Speed up:</strong> Try to approve IDs within 2 days.</span></li>
+        `;
+        optsHTML = `
+            <li class="flex items-start"><i data-feather="check-square" class="text-orange-500 mr-2 mt-0.5 w-4 h-4"></i><span>Check "Pending" list every morning.</span></li>
+        `;
+    } 
+    // Scenario B: It's getting busy BUT we are fast
+    else if (percentChange > 10 && !isSlow) {
+        actionsHTML = `
+            <li class="flex items-start"><i data-feather="thumbs-up" class="text-green-500 mr-2 mt-0.5 w-4 h-4"></i><span><strong>Good job!</strong> Your speed is fast enough for the new applicants.</span></li>
+            <li class="flex items-start"><i data-feather="printer" class="text-blue-500 mr-2 mt-0.5 w-4 h-4"></i><span>Prepare extra ID cards for printing.</span></li>
+        `;
+        optsHTML = `
+            <li class="flex items-start"><i data-feather="calendar" class="text-orange-500 mr-2 mt-0.5 w-4 h-4"></i><span>Schedule a mass-oath taking event.</span></li>
+        `;
+    }
+    // Scenario C: Few applicants
+    else if (percentChange < 0) {
+        actionsHTML = `
+            <li class="flex items-start"><i data-feather="mic" class="text-blue-500 mr-2 mt-0.5 w-4 h-4"></i><span><strong>Promote the program:</strong> Announce benefits in the Barangay.</span></li>
+            <li class="flex items-start"><i data-feather="search" class="text-purple-500 mr-2 mt-0.5 w-4 h-4"></i><span>Check if applicants are having trouble with the website.</span></li>
+        `;
+        optsHTML = `
+            <li class="flex items-start"><i data-feather="file-text" class="text-gray-500 mr-2 mt-0.5 w-4 h-4"></i><span>Review old rejected applications.</span></li>
+        `;
+    }
+    // Scenario D: Normal
+    else {
+        actionsHTML = `
+            <li class="flex items-start"><i data-feather="check" class="text-green-500 mr-2 mt-0.5 w-4 h-4"></i><span>Operations are normal. Keep it up.</span></li>
+        `;
+        optsHTML = `
+            <li class="flex items-start"><i data-feather="archive" class="text-blue-500 mr-2 mt-0.5 w-4 h-4"></i><span>Archive old completed records.</span></li>
+        `;
+    }
+
+    // Inject Content
+    actionContent.innerHTML = actionsHTML;
+    optContent.innerHTML = optsHTML;
+    feather.replace();
+}
+
+// --- 6. Update Functions ---
 function updateCategoryChart() {
     if (!categoryChartInstance || allUsersData.length === 0) return;
-
     const counts = {};
     allUsersData.forEach(user => {
-        // Use map to get readable name, fallback to code
         let label = CATEGORY_MAP[user.category] || user.category || "Unspecified";
         counts[label] = (counts[label] || 0) + 1;
     });
-
-    // Sort by count descending to make chart look better
     const sortedLabels = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
-    const sortedData = sortedLabels.map(label => counts[label]);
-
     categoryChartInstance.data.labels = sortedLabels;
-    categoryChartInstance.data.datasets[0].data = sortedData;
+    categoryChartInstance.data.datasets[0].data = sortedLabels.map(label => counts[label]);
     categoryChartInstance.update();
 }
 
 function calculateAvgProcessingTime() {
-    // Filter users who are approved AND have both timestamps
     const approvedUsers = allUsersData.filter(u => u.status === 'approved' && u.createdAt && u.approvedAt);
-    
-    if (approvedUsers.length === 0) {
+    let avgDays = 0;
+
+    if (approvedUsers.length > 0) {
+        let totalHours = 0;
+        approvedUsers.forEach(user => {
+            const created = user.createdAt.toDate();
+            const approved = user.approvedAt.toDate();
+            totalHours += (approved - created) / (1000 * 60 * 60);
+        });
+        avgDays = (totalHours / 24 / approvedUsers.length).toFixed(1);
+        document.getElementById('avg-processing-time').textContent = `${avgDays} Days`;
+    } else {
         document.getElementById('avg-processing-time').textContent = "N/A";
-        return;
+        avgDays = 0;
     }
 
-    let totalHours = 0;
-    approvedUsers.forEach(user => {
-        const created = user.createdAt.toDate();
-        const approved = user.approvedAt.toDate();
-        // Difference in milliseconds -> hours
-        const diff = (approved - created) / (1000 * 60 * 60);
-        totalHours += diff;
-    });
-
-    const avgHours = totalHours / approvedUsers.length;
-    const avgDays = (avgHours / 24).toFixed(1); // Convert to days with 1 decimal
-
-    // Update DOM
-    const el = document.getElementById('avg-processing-time');
-    if (el) el.textContent = `${avgDays} Days`;
+    // ✅ Trigger the Smart Analytics after calculation
+    generateSmartAnalytics(Number(avgDays));
 }
 
 function updateRecentActivity(users) {
     const tableBody = document.getElementById('recent-activity-table');
     if (!tableBody) return;
-    if (!users || users.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No recent activity for this period.</td></tr>`;
-        return;
-    }
-    tableBody.innerHTML = "";
+    tableBody.innerHTML = users.length === 0 ? `<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No recent activity.</td></tr>` : "";
     users.forEach(user => {
         const name = `${user.firstName || ''} ${user.lastName || ''}`;
         const date = user.createdAt ? user.createdAt.toDate().toLocaleDateString() : 'N/A';
-        let statusText = 'Pending';
-        let statusClass = 'bg-yellow-100 text-yellow-800';
-        if (user.status === 'approved') { statusText = 'Approved'; statusClass = 'bg-green-100 text-green-800'; }
-        else if (user.status === 'rejected') { statusText = 'Rejected'; statusClass = 'bg-red-100 text-red-800'; }
-        const row = `<tr><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${name}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">New Application</td><td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">${statusText}</span></td><td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${date}</td></tr>`;
-        tableBody.innerHTML += row;
+        const statusClass = user.status === 'approved' ? 'bg-green-100 text-green-800' : (user.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800');
+        const statusText = user.status.charAt(0).toUpperCase() + user.status.slice(1);
+        tableBody.innerHTML += `<tr><td class="px-6 py-4 text-sm font-medium text-gray-900">${name}</td><td class="px-6 py-4 text-sm text-gray-500">Application</td><td class="px-6 py-4"><span class="px-2 inline-flex text-xs font-semibold rounded-full ${statusClass}">${statusText}</span></td><td class="px-6 py-4 text-sm text-gray-500">${date}</td></tr>`;
     });
 }
 
 function updateDashboardStats(filter) {
     let startDate, endDate;
     const now = new Date();
-    if (filter === 'this_month') {
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-    } else if (filter === 'this_year') {
-        startDate = new Date(now.getFullYear(), 0, 1);
-        endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
-    } else if (filter === 'custom') {
-        const startVal = document.getElementById('start-date').value;
-        const endVal = document.getElementById('end-date').value;
-        if (!startVal || !endVal) { alert("Please select both dates."); return; }
-        startDate = new Date(startVal + "T00:00:00");
-        endDate = new Date(endVal + "T23:59:59");
-    }
-
-    let registeredCount = 0, pendingCount = 0, approvedCount = 0, rejectedCount = 0;
-    registeredCount = allUsersData.filter(u => { const c = u.createdAt?.toDate(); return c && (filter === 'all' || (c >= startDate && c <= endDate)); }).length;
-    pendingCount = allUsersData.filter(u => { const c = u.createdAt?.toDate(); return u.status === 'pending' && c && (filter === 'all' || (c >= startDate && c <= endDate)); }).length;
-    approvedCount = allUsersData.filter(u => { const a = u.approvedAt?.toDate(); return u.status === 'approved' && a && (filter === 'all' || (a >= startDate && a <= endDate)); }).length;
-    rejectedCount = allUsersData.filter(u => { const c = u.createdAt?.toDate(); return u.status === 'rejected' && c && (filter === 'all' || (c >= startDate && c <= endDate)); }).length;
-
-    document.getElementById('registered-count').textContent = registeredCount;
-    document.getElementById('pending-count').textContent = pendingCount;
-    document.getElementById('approved-count').textContent = approvedCount;
-
-    const total = approvedCount + pendingCount + rejectedCount;
-    const approvedPercent = total === 0 ? 0 : Math.round((approvedCount / total) * 100);
-    const pendingPercent = total === 0 ? 0 : Math.round((pendingCount / total) * 100);
-    const rejectedPercent = (total === 0 || (approvedPercent + pendingPercent) > 100) ? 0 : (100 - approvedPercent - pendingPercent);
-
-    if (donutChartInstance) { donutChartInstance.data.datasets[0].data = [approvedCount, pendingCount, rejectedCount]; donutChartInstance.update(); }
-    document.getElementById('chart-label-approved').textContent = `Approved (${approvedPercent}%)`;
-    document.getElementById('chart-label-pending').textContent = `Pending (${pendingPercent}%)`;
-    document.getElementById('chart-label-rejected').textContent = `Rejected (${rejectedPercent}%)`;
-
-    const activityUsers = allUsersData.filter(u => { const c = u.createdAt?.toDate(); return c && (filter === 'all' || (c >= startDate && c <= endDate)); });
-    const sortedActivityUsers = activityUsers.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0)).slice(0, 5);
-    updateRecentActivity(sortedActivityUsers);
+    if (filter === 'this_month') { startDate = new Date(now.getFullYear(), now.getMonth(), 1); endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0); }
+    else if (filter === 'this_year') { startDate = new Date(now.getFullYear(), 0, 1); endDate = new Date(now.getFullYear(), 11, 31); }
     
-    // ✅ NEW: Update the new analytics metrics
+    let registered = 0, pending = 0, approved = 0, rejected = 0;
+    const filteredUsers = allUsersData.filter(u => {
+        const d = u.createdAt?.toDate();
+        return filter === 'all' || (d >= startDate && d <= endDate);
+    });
+
+    filteredUsers.forEach(u => {
+        if (u.status === 'pending') pending++;
+        else if (u.status === 'approved') approved++;
+        else if (u.status === 'rejected') rejected++;
+    });
+    registered = filteredUsers.length;
+
+    document.getElementById('registered-count').textContent = registered;
+    document.getElementById('pending-count').textContent = pending;
+    document.getElementById('approved-count').textContent = approved;
+
+    if (donutChartInstance) {
+        donutChartInstance.data.datasets[0].data = [approved, pending, rejected];
+        donutChartInstance.update();
+    }
+    document.getElementById('chart-label-approved').textContent = `Approved (${Math.round(approved/registered*100)||0}%)`;
+    document.getElementById('chart-label-pending').textContent = `Pending (${Math.round(pending/registered*100)||0}%)`;
+    document.getElementById('chart-label-rejected').textContent = `Rejected (${Math.round(rejected/registered*100)||0}%)`;
+
+    updateRecentActivity(filteredUsers.slice(0, 5));
     updateCategoryChart();
     calculateAvgProcessingTime();
 }
 
-function handleGenerateReport() {
-    const printContainer = document.getElementById('print-report-container');
-    if (!printContainer) return;
-    const date = new Date().toLocaleDateString();
-    const registered = document.getElementById('registered-count').textContent;
-    const pending = document.getElementById('pending-count').textContent;
-    const approved = document.getElementById('approved-count').textContent;
-    
-    let forecastImg = '';
-    const forecastCanvas = document.getElementById('predictiveChart');
-    if (forecastCanvas) forecastImg = `<div style="text-align:center; margin: 20px 0;"><img src="${forecastCanvas.toDataURL()}" style="max-width:100%; height:auto;"></div>`;
-
-    // ✅ NEW: Include demographics chart in report
-    let demoImg = '';
-    const demoCanvas = document.getElementById('categoryChart');
-    if (demoCanvas) demoImg = `<div style="text-align:center; margin: 20px 0;"><img src="${demoCanvas.toDataURL()}" style="max-width:60%; height:auto; margin: 0 auto;"></div>`;
-
-    let html = `
-    <div class="letterhead"><h1>Solo Parent Data Analysis System</h1><p>Official Analytical Report</p><p>Date Generated: ${date}</p></div>
-    
-    <h2 class="report-title">1. System Overview (Descriptive)</h2>
-    <table><thead><tr><th>Metric</th><th>Count</th></tr></thead><tbody>
-    <tr><td>Registered Solo Parents</td><td>${registered}</td></tr>
-    <tr><td>Pending Applications</td><td>${pending}</td></tr>
-    <tr><td>Approved Applications</td><td>${approved}</td></tr>
-    </tbody></table>
-    
-    <h2 class="report-title">2. Applicant Demographics</h2>
-    <p style="font-size:11px; color:#666;">Breakdown of applicants by solo parent category.</p>
-    ${demoImg}
-
-    <h2 class="report-title">3. Applicant Forecast (Predictive)</h2>
-    <p style="font-size:11px; color:#666;">Visual representation of applicant trends.</p>
-    ${forecastImg}
-    <table><thead><tr><th>Metric</th><th>Predicted Value</th><th>Notes</th></tr></thead><tbody>
-    ${mockAnalyticsData.predictive.map(item => `<tr><td>${item.metric}</td><td>${item.value}</td><td>${item.notes}</td></tr>`).join('')}
-    </tbody></table>
-    
-    <h2 class="report-title">4. Prescriptive Analytics</h2>
-    <table><thead><tr><th>Category</th><th>Suggestion / Action</th></tr></thead><tbody>
-    ${mockAnalyticsData.prescriptive.map(item => `<tr><td>${item.category}</td><td>${item.details}</td></tr>`).join('')}
-    </tbody></table>`;
-    
-    printContainer.innerHTML = html;
-    printContainer.style.display = 'block';
-    setTimeout(() => { window.print(); }, 500);
-}
-
+// --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("🚀 Dashboard Loaded");
     initDonutChart();
     initPredictiveChart();
-    initCategoryChart(); // ✅ Initialize the new chart
+    initCategoryChart();
     
     const dateSelect = document.getElementById('date-range-select');
-    const customRangeDiv = document.getElementById('custom-date-range');
-    const applyBtn = document.getElementById('apply-custom-date');
-    const reportBtn = document.getElementById('generate-report-btn');
-
-    if(dateSelect) {
-        dateSelect.addEventListener('change', function () {
-            const filterValue = this.value;
-            if (filterValue === 'custom') { customRangeDiv.classList.remove('hidden'); customRangeDiv.classList.add('sm:flex'); }
-            else { customRangeDiv.classList.add('hidden'); customRangeDiv.classList.remove('sm:flex'); updateDashboardStats(filterValue); }
-        });
-    }
-    if(applyBtn) applyBtn.addEventListener('click', function () { updateDashboardStats('custom'); });
-    if(reportBtn) reportBtn.addEventListener('click', handleGenerateReport);
+    if(dateSelect) dateSelect.addEventListener('change', function() { updateDashboardStats(this.value); });
+    document.getElementById('generate-report-btn')?.addEventListener('click', handleGenerateReport);
 
     await fetchUpcomingEvents();
     await fetchAllUsers();
     updateDashboardStats('this_month');
     feather.replace();
 });
+
+function handleGenerateReport() {
+    const printContainer = document.getElementById('print-report-container');
+    if (!printContainer) return;
+    
+    const date = new Date().toLocaleDateString();
+    
+    // 1. Get the Counts
+    const registered = document.getElementById('registered-count').textContent;
+    const pending = document.getElementById('pending-count').textContent;
+    const approved = document.getElementById('approved-count').textContent;
+    
+    // 2. Get the Charts as Images
+    let forecastImg = '';
+    const forecastCanvas = document.getElementById('predictiveChart');
+    if (forecastCanvas) {
+        forecastImg = `<div style="text-align:center; margin: 20px 0;"><img src="${forecastCanvas.toDataURL()}" style="max-width:100%; height:auto; border:1px solid #eee;"></div>`;
+    }
+
+    let demoImg = '';
+    const demoCanvas = document.getElementById('categoryChart');
+    if (demoCanvas) {
+        // Smaller width for the pie chart so it doesn't take up the whole page
+        demoImg = `<div style="text-align:center; margin: 20px 0;"><img src="${demoCanvas.toDataURL()}" style="max-width:60%; height:auto; margin: 0 auto;"></div>`;
+    }
+
+    // 3. Get the Smart Text Analysis
+    const predictiveText = document.getElementById('predictive-summary-text').innerHTML;
+    const actionsText = document.getElementById('prescriptive-actions-content').innerHTML;
+    const optsText = document.getElementById('prescriptive-opt-content').innerHTML;
+
+    // 4. Build the HTML
+    let html = `
+    <div class="letterhead">
+        <h1>SPDA Analytics Report</h1>
+        <p>Official Report • Generated: ${date}</p>
+    </div>
+    
+    <h2 class="report-title">1. System Overview</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Metric</th>
+                <th>Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>Total Registered Solo Parents</td><td>${registered}</td></tr>
+            <tr><td>Pending Applications</td><td>${pending}</td></tr>
+            <tr><td>Verified/Approved Members</td><td>${approved}</td></tr>
+        </tbody>
+    </table>
+    
+    <h2 class="report-title">2. Applicant Demographics</h2>
+    <p style="font-size:11px; color:#666; text-align:center;">Breakdown of applicants by solo parent category.</p>
+    ${demoImg}
+
+    <h2 class="report-title">3. Applicant Forecast (Predictive)</h2>
+    <div style="background:#f9fafb; padding:15px; border-radius:8px; margin-bottom:15px; border:1px solid #e5e7eb;">
+        ${predictiveText}
+    </div>
+    ${forecastImg}
+    
+    <h2 class="report-title">4. Prescriptive Recommendations</h2>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div>
+            <h3 style="font-size:14px; border-bottom:2px solid #10B981; padding-bottom:5px;">Recommended Actions</h3>
+            <ul style="font-size:12px; margin-top:10px;">${actionsText}</ul>
+        </div>
+        <div>
+            <h3 style="font-size:14px; border-bottom:2px solid #F59E0B; padding-bottom:5px;">Optimization Tips</h3>
+            <ul style="font-size:12px; margin-top:10px;">${optsText}</ul>
+        </div>
+    </div>
+    `;
+    
+    printContainer.innerHTML = html;
+    printContainer.style.display = 'block';
+    
+    // Wait for images to render in the DOM before printing
+    setTimeout(() => { 
+        window.print(); 
+    }, 500);
+}
