@@ -26,7 +26,18 @@ async function initProfilePage() {
         setText('profile-category', CODE_TO_DESCRIPTION_MAP[user.category] || user.category);
         setText('profile-email', user.email);
         setText('profile-contact', user.contact);
-        setText('profile-address', user.address);
+        // --- FIX: Combine Address Fields ---
+        const addressParts = [
+            user.houseNumber,
+            user.street,
+            user.barangay,
+            user.municipality // (Optional) Include this if you have it in DB
+        ].filter(part => part && part.trim() !== ""); // Remove empty values
+
+        const fullAddress = addressParts.length > 0 ? addressParts.join(', ') : 'N/A';
+
+        setText('profile-address', fullAddress);
+        // -----------------------------------
         setText('profile-sp-id', user.soloParentIdNumber);
         
         const statusBadge = document.getElementById('profile-status-badge');
