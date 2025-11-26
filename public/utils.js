@@ -31,15 +31,15 @@ export function initSidebar() {
     
     // Highlight logic
     sidebarLinks.forEach(link => {
+        // 1. Reset ALL links to gray first
         link.classList.remove('bg-blue-50', 'text-blue-700');
         link.classList.add('text-gray-600');
+        
         const href = link.getAttribute('href');
+        
+        // 2. Only highlight if the URL matches EXACTLY
+        // We removed the "profile.html" check, so it won't highlight Members anymore
         if (currentPath.endsWith(href)) {
-            link.classList.add('bg-blue-50', 'text-blue-700');
-            link.classList.remove('text-gray-600');
-        }
-        // Special case for profile page
-        if (currentPath.endsWith('profile.html') && (href === 'categories.html' || href === 'members.html')) {
             link.classList.add('bg-blue-50', 'text-blue-700');
             link.classList.remove('text-gray-600');
         }

@@ -2,7 +2,6 @@ import { db } from "./firebase-config.js";
 import { initSidebar, initLogout } from "./utils.js";
 import { collection, getDocs, query, where, orderBy, Timestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
-// Initialize UI
 initSidebar();
 initLogout();
 
@@ -33,9 +32,9 @@ async function fetchAllUsers() {
 
 async function fetchUpcomingEvents() {
     const eventsList = document.getElementById('upcoming-events-list');
-    const eventsCountEl = document.getElementById('events-count');
+    const eventsCountEl = document.getElementById('events-count'); // Note: This ID might need removing from HTML if unused
     
-    if (!eventsList || !eventsCountEl) return;
+    if (!eventsList) return; // eventsCountEl check removed if you deleted that card too
 
     eventsList.innerHTML = `<p class="text-sm text-gray-500">Loading upcoming events...</p>`;
     try {
@@ -44,7 +43,6 @@ async function fetchUpcomingEvents() {
             orderBy("eventDate", "asc")
         );
         const snapshot = await getDocs(eventsQuery);
-        eventsCountEl.textContent = snapshot.size;
 
         if (snapshot.empty) {
             eventsList.innerHTML = `<p class="text-sm text-gray-500">No upcoming events found.</p>`;
@@ -196,43 +194,18 @@ function updateCategoryChart(users, filterType) {
         else if (filterType === 'this_year') dateContext = `this year (${year})`;
         else if (filterType === 'all') dateContext = `of all time`;
         else if (filterType === 'custom') {
-            const startInput = document.getElementById('start-date');
-            const endInput = document.getElementById('end-date');
-            if (startInput && endInput && startInput.value && endInput.value) {
-                const sDate = new Date(startInput.value).toLocaleDateString();
-                const eDate = new Date(endInput.value).toLocaleDateString();
+            const startInput = document.getElementById('start-date').value;
+            const endInput = document.getElementById('end-date').value;
+            if (startInput && endInput) {
+                const sDate = new Date(startInput).toLocaleDateString();
+                const eDate = new Date(endInput).toLocaleDateString();
                 dateContext = `from ${sDate} to ${eDate}`;
-            } else {
-                dateContext = `in the selected range`;
-            }
-        } else {
-            dateContext = `of all time`;
-        }
+            } else dateContext = `in the selected range`;
+        } else dateContext = `in the selected range`;
 
         let sentence = textParts.length > 0 ? textParts.slice(0, 3).join(', ') + (textParts.length > 3 ? '...' : '') : "No categories found";
         descEl.innerHTML = `There are ${sentence} applied ${dateContext}.`;
     }
-}
-
-function calculateAvgProcessingTime() {
-    const approvedUsers = allUsersData.filter(u => u.status === 'approved' && u.createdAt && u.approvedAt);
-    let avgDays = 0;
-
-    if (approvedUsers.length > 0) {
-        let totalHours = 0;
-        approvedUsers.forEach(user => {
-            const created = user.createdAt.toDate();
-            const approved = user.approvedAt.toDate();
-            totalHours += (approved - created) / (1000 * 60 * 60);
-        });
-        avgDays = (totalHours / 24 / approvedUsers.length).toFixed(1);
-        document.getElementById('avg-processing-time').textContent = `${avgDays} Days`;
-    } else {
-        document.getElementById('avg-processing-time').textContent = "N/A";
-        avgDays = 0;
-    }
-    
-    return Number(avgDays);
 }
 
 // --- REAL TIME FORECAST LOGIC ---
@@ -286,31 +259,40 @@ function updateForecastWithRealData() {
     predictiveChartInstance.data.datasets[0].data = dataPoints;
     predictiveChartInstance.update();
 
-    const avgDays = calculateAvgProcessingTime();
-    generateSmartAnalytics(avgDays, dataPoints);
+    // ✅ UPDATED: Pass ONLY forecastCounts (removed avgDays)
+    generateSmartAnalytics(dataPoints);
 }
 
-// --- SMART ANALYTICS ---
-function generateSmartAnalytics(avgDays, forecastCounts) {
-    // Default if forecast data is missing
+// --- ✅ SMART ANALYTICS (VOLUME ONLY) ---
+function generateSmartAnalytics(forecastCounts) {
     if (!forecastCounts || forecastCounts.length < 4) forecastCounts = [10, 12, 15, 20, 25, 30];
 
     const summaryEl = document.getElementById('predictive-summary-text');
-    const forecastDescEl = document.getElementById('forecast-description'); // ✅ NEW ELEMENT
+    const forecastDescEl = document.getElementById('forecast-description');
     const actionContent = document.getElementById('prescriptive-actions-content');
     const optContent = document.getElementById('prescriptive-opt-content');
     const actionBox = document.getElementById('prescriptive-action-box');
 
     // 1. Forecast Logic
-    const currentVal = forecastCounts[3]; // Current month
-    const futureVal = forecastCounts[5];  // 2 months ahead
+    const currentVal = forecastCounts[3]; 
+    const futureVal = forecastCounts[5];  
     const percentChange = currentVal > 0 ? Math.round(((futureVal - currentVal) / currentVal) * 100) : 100;
-    const isSlow = avgDays > 3.0; 
+    
+    let predictiveTitle = "";
+    let predictiveDesc = "";
 
-    let predictiveTitle = percentChange > 10 ? "📈 High Applicant Volume" : (percentChange < -5 ? "📉 Low Applicant Volume" : "⚖️ Steady Volume");
-    let predictiveDesc = `We expect <strong>${Math.abs(percentChange)}% ${percentChange > 0 ? 'more' : 'less'}</strong> applicants next month compared to today.`;
+    // Simplified Trend Analysis
+    if (percentChange > 10) {
+        predictiveTitle = "📈 Rising Applicant Trend";
+        predictiveDesc = `We expect <strong>${Math.abs(percentChange)}% more</strong> applicants next month.`;
+    } else if (percentChange < -5) {
+        predictiveTitle = "📉 Declining Trend";
+        predictiveDesc = `We expect <strong>${Math.abs(percentChange)}% fewer</strong> applicants next month.`;
+    } else {
+        predictiveTitle = "⚖️ Steady Trend";
+        predictiveDesc = `Applicant volume is expected to remain stable.`;
+    }
 
-    // Update Side Box
     if (summaryEl) {
         summaryEl.innerHTML = `
             <strong class="block text-blue-800 mb-1" style="font-size: 14px;">${predictiveTitle}</strong>
@@ -318,12 +300,11 @@ function generateSmartAnalytics(avgDays, forecastCounts) {
         `;
     }
 
-    // ✅ NEW: Update Bottom Description for Forecast
     if (forecastDescEl) {
-        forecastDescEl.innerHTML = `Based on current registration trends, we anticipate <strong>${futureVal} new applicants</strong> in the next 2 months. This is a <strong>${percentChange > 0 ? 'rising' : 'falling'} trend</strong>. Please prepare resources accordingly.`;
+        forecastDescEl.innerHTML = `Based on current registration trends, we anticipate <strong>${futureVal} new applicants</strong> in the next 2 months. Please prepare resources accordingly.`;
     }
 
-    // 2. Benefit Recommendations
+    // 2. Recommendations (Based on Categories)
     const counts = {};
     allUsersData.forEach(user => {
         let code = user.category || "unknown";
@@ -337,21 +318,24 @@ function generateSmartAnalytics(avgDays, forecastCounts) {
     function getRecommendation(code) {
         const name = CATEGORY_MAP[code] || "General";
         switch (code) {
-            case 'f': return { label: name, action: `Prioritize <strong>Health Assistance & Maternal Kits</strong>.`, tip: `Coordinate with Health Centers.` };
-            case 'a2': return { label: name, action: `Prioritize <strong>Educational Scholarships</strong>.`, tip: `Offer psychosocial support.` };
-            case 'b1': 
-            case 'b2': return { label: name, action: `Focus on <strong>Livelihood Assistance</strong>.`, tip: `Check for legal support needs.` };
-            case 'a1': 
-            case 'a3': return { label: name, action: `Provide <strong>Legal & Psychological Support</strong>.`, tip: `Ensure privacy and cash aid.` };
-            case 'a5': 
-            case 'a6': 
-            case 'a7': return { label: name, action: `Prioritize <strong>Crisis Intervention (CIU)</strong>.`, tip: `Verify custody for scholarships.` };
-            case 'c': return { label: name, action: `Focus on <strong>Job Placement & Skills Training</strong>.`, tip: `Encourage TESDA programs.` };
-            default: return { label: "General", action: `Provide standard <strong>Monthly Cash Subsidy</strong>.`, tip: `Review renewal requirements.` };
+            case 'f': return { label: name, action: `Prioritize <strong>Health Assistance & Maternal Kits</strong> (RA 11861).`, tip: `Coordinate with local Health Centers.` };
+            case 'a2': return { label: name, action: `Prioritize <strong>Educational Scholarships</strong> for children.`, tip: `Offer psychosocial support services.` };
+            case 'b1': case 'b2': return { label: name, action: `Focus on <strong>Livelihood Assistance</strong>.`, tip: `Check for legal support needs.` };
+            case 'a1': case 'a3': return { label: name, action: `Provide <strong>Legal & Psychological Support</strong>.`, tip: `Ensure privacy and fast-track cash aid.` };
+            case 'a5': case 'a6': case 'a7': return { label: name, action: `Prioritize <strong>Crisis Intervention (CIU)</strong>.`, tip: `Verify custody documents for scholarships.` };
+            case 'c': return { label: name, action: `Focus on <strong>Job Placement & Skills Training</strong>.`, tip: `Encourage TESDA livelihood programs.` };
+            default: return { label: "General", action: `Provide standard <strong>Monthly Cash Subsidy</strong>.`, tip: `Review general renewal requirements.` };
         }
     }
 
     const topRec = getRecommendation(topCategoryCode);
+    
+    // ✅ UPDATED: Styling for recommendations (No Red/Green speed logic)
+    if (actionBox) {
+        actionBox.className = "bg-blue-50 p-4 rounded-lg border border-blue-200";
+        actionBox.querySelector('h3').className = "font-medium text-blue-800 mb-2";
+    }
+
     const actionsHTML = `
         <li class="flex items-start">
             <div class="mr-2 mt-0.5"><i data-feather="star" class="text-yellow-500 w-4 h-4"></i></div>
@@ -390,25 +374,23 @@ function updateRecentActivity(users) {
     });
 }
 
-// --- UPDATED: Dashboard Stats + Status Description ---
 function updateDashboardStats(filter) {
     let startDate, endDate;
     
-    if (filter === 'this_month') { 
-        startDate = new Date(); startDate.setDate(1); 
-        endDate = new Date(); endDate.setMonth(endDate.getMonth() + 1); endDate.setDate(0); 
+    if (filter === 'this_week') { 
+        startDate = new Date(); startDate.setDate(startDate.getDate() - startDate.getDay()); startDate.setHours(0,0,0,0);
+        endDate = new Date(startDate); endDate.setDate(startDate.getDate() + 6); endDate.setHours(23,59,59,999);
+    } else if (filter === 'this_month') { 
+        startDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1); 
+        endDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0); 
     } else if (filter === 'this_year') { 
         startDate = new Date(new Date().getFullYear(), 0, 1); 
         endDate = new Date(new Date().getFullYear(), 11, 31); 
     } else if (filter === 'custom') {
         const startVal = document.getElementById('start-date').value;
         const endVal = document.getElementById('end-date').value;
-        if (startVal && endVal) {
-            startDate = new Date(startVal);
-            endDate = new Date(endVal);
-        } else {
-            startDate = new Date(0); endDate = new Date();
-        }
+        if (startVal && endVal) { startDate = new Date(startVal); endDate = new Date(endVal); } 
+        else { startDate = new Date(0); endDate = new Date(); }
     } else {
         startDate = new Date(0); endDate = new Date();
     }
@@ -444,21 +426,18 @@ function updateDashboardStats(filter) {
     document.getElementById('chart-label-pending').textContent = `Pending (${pPending}%)`;
     document.getElementById('chart-label-rejected').textContent = `Rejected (${pRejected}%)`;
 
-    // ✅ NEW: Update Status Description at the bottom of Status Card
     const statusDescEl = document.getElementById('status-description');
     if (statusDescEl) {
         if (pending > 0) {
-            statusDescEl.innerHTML = `You have <strong>${pending} pending applications</strong> waiting for review. The majority of processed applications are currently <strong>${approved > rejected ? 'Approved' : 'Rejected'}</strong>.`;
+            statusDescEl.innerHTML = `You have <strong>${pending} pending applications</strong> waiting for review.`;
         } else {
-            statusDescEl.innerHTML = `Great job! You have <strong>no pending applications</strong>. The system has successfully processed <strong>${approved + rejected}</strong> records in this range.`;
+            statusDescEl.innerHTML = `Great job! You have <strong>no pending applications</strong>. The system has processed <strong>${registered}</strong> records in this range.`;
         }
     }
 
     updateRecentActivity(filteredUsers.slice(0, 5));
-    
     updateCategoryChart(filteredUsers, filter);
     updateForecastWithRealData(); 
-    calculateAvgProcessingTime();
 }
 
 // --- Initialization ---
@@ -494,23 +473,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     feather.replace();
 });
 
-// ✅ Report Generation
+// ✅ Report Generation (Fixed: Shows Date Range)
 function handleGenerateReport() {
     const printContainer = document.getElementById('print-report-container');
     if (!printContainer) return;
     
     const date = new Date().toLocaleDateString();
+    
+    // 1. Get Selected Range Text
+    const filterType = document.getElementById('date-range-select').value;
+    let rangeLabel = "All Time";
+    const now = new Date();
+    
+    if (filterType === 'this_week') {
+        const start = new Date(now);
+        start.setDate(now.getDate() - now.getDay()); // Sunday
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6); // Saturday
+        rangeLabel = `This Week (${start.toLocaleDateString()} - ${end.toLocaleDateString()})`;
+    } 
+    else if (filterType === 'this_month') rangeLabel = `This Month (${now.toLocaleString('default', { month: 'long' })} ${now.getFullYear()})`;
+    else if (filterType === 'this_year') rangeLabel = `This Year (${now.getFullYear()})`;
+    else if (filterType === 'custom') {
+        const s = document.getElementById('start-date').value;
+        const e = document.getElementById('end-date').value;
+        if (s && e) rangeLabel = `${new Date(s).toLocaleDateString()} - ${new Date(e).toLocaleDateString()}`;
+    }
+
+    // 2. Get Data
     const registered = document.getElementById('registered-count').textContent;
     const pending = document.getElementById('pending-count').textContent;
     const approved = document.getElementById('approved-count').textContent;
-    
-    // Text
+
     const predictiveText = document.getElementById('predictive-summary-text').innerHTML;
     const actionsText = document.getElementById('prescriptive-actions-content').innerHTML;
     const optsText = document.getElementById('prescriptive-opt-content').innerHTML;
-    
-    // Get new descriptions
-    const demoText = document.getElementById('demographics-description') ? document.getElementById('demographics-description').innerHTML : "No data.";
+    const demoText = document.getElementById('demographics-description') ? document.getElementById('demographics-description').innerHTML : "No data available.";
     const forecastDesc = document.getElementById('forecast-description') ? document.getElementById('forecast-description').innerHTML : "No forecast.";
     const statusDesc = document.getElementById('status-description') ? document.getElementById('status-description').innerHTML : "No status.";
 
@@ -519,12 +517,14 @@ function handleGenerateReport() {
         There are <strong>${pending} new applications</strong> pending review, and <strong>${approved} members</strong> have been fully verified.
     `;
 
+    // 3. Build HTML
     let html = `
     <div class="letterhead" style="display: flex; align-items: center; border-bottom: 2px solid #3b82f6; padding-bottom: 15px; margin-bottom: 20px;">
         <img src="LOGO_SPDA.jpg" alt="SPDA Logo" style="width: 80px; height: 80px; margin-right: 15px; object-fit: contain;">
         <div>
             <h1 style="margin: 0; font-size: 22px; font-weight: bold; color: #1e3a8a;">SPDA Analytics Report</h1>
             <p style="margin: 0; font-size: 11px; color: #6b7280;">Official Executive Summary • Generated: ${date}</p>
+            <p style="margin: 5px 0 0 0; font-size: 12px; color: #000;"><strong>Reporting Period: ${rangeLabel}</strong></p>
         </div>
     </div>
     
@@ -540,7 +540,7 @@ function handleGenerateReport() {
         <p>${demoText}</p>
     </div>
 
-    <h3 style="font-size:16px; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">3. Predictive Analytics (Forecast)</h3>
+    <h3 style="font-size:16px; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">3. Applicant Forecast</h3>
     <div style="background:#f9fafb; padding:15px; border-radius:8px; border:1px solid #e5e7eb; font-size: 14px; line-height: 1.6; margin-bottom:20px;">
         ${predictiveText}
         <p style="margin-top:10px; border-top:1px solid #ccc; padding-top:10px;">${forecastDesc}</p>
