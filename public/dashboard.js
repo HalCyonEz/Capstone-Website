@@ -476,62 +476,90 @@ document.addEventListener('DOMContentLoaded', async () => {
     feather.replace();
 });
 
-// ✅ Report Generation
+// ✅ Report Generation (Text-Only / Executive Summary Style)
 function handleGenerateReport() {
     const printContainer = document.getElementById('print-report-container');
     if (!printContainer) return;
     
     const date = new Date().toLocaleDateString();
+    
+    // 1. Get Data
     const registered = document.getElementById('registered-count').textContent;
     const pending = document.getElementById('pending-count').textContent;
     const approved = document.getElementById('approved-count').textContent;
-    
-    let forecastImg = '';
-    const forecastCanvas = document.getElementById('predictiveChart');
-    if (forecastCanvas) forecastImg = `<div style="text-align:center; margin: 20px 0;"><img src="${forecastCanvas.toDataURL()}" style="max-width:100%; height:auto; border:1px solid #eee;"></div>`;
+    const avgTime = document.getElementById('avg-processing-time').textContent;
 
-    let demoImg = '';
-    const demoCanvas = document.getElementById('categoryChart');
-    if (demoCanvas) demoImg = `<div style="text-align:center; margin: 20px 0;"><img src="${demoCanvas.toDataURL()}" style="max-width:60%; height:auto; margin: 0 auto;"></div>`;
-
+    // 2. Get Explanations (The Smart Analytics Text)
     const predictiveText = document.getElementById('predictive-summary-text').innerHTML;
-    // Safe retrieval of content
-    const actionsContent = document.getElementById('prescriptive-actions-content');
-    const optsContent = document.getElementById('prescriptive-opt-content');
+    const actionsText = document.getElementById('prescriptive-actions-content').innerHTML;
+    const optsText = document.getElementById('prescriptive-opt-content').innerHTML;
     
-    const actionsText = actionsContent ? actionsContent.innerHTML : "No actions available.";
-    const optsText = optsContent ? optsContent.innerHTML : "No tips available.";
-    const demoText = document.getElementById('demographics-description') ? document.getElementById('demographics-description').innerHTML : "";
+    // Get the Demographic text sentence we built earlier
+    const demoText = document.getElementById('demographics-description') ? document.getElementById('demographics-description').innerHTML : "No data available.";
 
+    // 3. Build "Descriptive" Narrative
+    const descriptiveNarrative = `
+        The SPDA System currently manages a total of <strong>${registered} registered solo parents</strong>. 
+        There are <strong>${pending} new applications</strong> pending review, and <strong>${approved} members</strong> have been fully verified. 
+        The administrative team is currently processing applications with an average turnaround time of <strong>${avgTime}</strong>.
+    `;
+
+    // 4. Build the HTML Layout (No Charts, Just Clean Text)
     let html = `
     <div class="letterhead">
         <h1>SPDA Analytics Report</h1>
-        <p>Official Report • Generated: ${date}</p>
+        <p>Official Executive Summary • Generated: ${date}</p>
     </div>
     
-    <h2 class="report-title">1. System Overview</h2>
-    <table><thead><tr><th>Metric</th><th>Count</th></tr></thead><tbody>
-    <tr><td>Registered Solo Parents</td><td>${registered}</td></tr>
-    <tr><td>Pending Applications</td><td>${pending}</td></tr>
-    <tr><td>Verified/Approved Members</td><td>${approved}</td></tr>
-    </tbody></table>
+    <h2 class="report-title">1. Descriptive Analytics (Current Status)</h2>
+    <div style="margin-bottom: 20px; font-size: 14px; line-height: 1.6; text-align: justify;">
+        ${descriptiveNarrative}
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Metric</th>
+                <th>Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>Total Registered Solo Parents</td><td>${registered}</td></tr>
+            <tr><td>Pending Applications</td><td>${pending}</td></tr>
+            <tr><td>Verified/Approved Members</td><td>${approved}</td></tr>
+        </tbody>
+    </table>
     
     <h2 class="report-title">2. Applicant Demographics</h2>
-    <p style="font-size:12px; color:#666; text-align:center; margin-bottom:10px;">${demoText}</p>
-    ${demoImg}
+    <div style="background:#f9fafb; padding:15px; border-radius:8px; border:1px solid #e5e7eb; font-size: 14px; line-height: 1.6;">
+        <p style="color:#4b5563; margin-bottom:5px; font-weight:bold;">Demographic Breakdown:</p>
+        <p>${demoText}</p>
+    </div>
 
-    <h2 class="report-title">3. Applicant Forecast</h2>
-    <div style="background:#f9fafb; padding:15px; border:1px solid #e5e7eb; margin-bottom:15px;">${predictiveText}</div>
-    ${forecastImg}
+    <h2 class="report-title">3. Predictive Analytics (Forecast)</h2>
+    <div style="background:#f9fafb; padding:15px; border-radius:8px; border:1px solid #e5e7eb; font-size: 14px; line-height: 1.6;">
+        ${predictiveText}
+    </div>
     
-    <h2 class="report-title">4. Benefit Recommendations</h2>
+    <h2 class="report-title">4. Prescriptive Analytics (Recommendations)</h2>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-        <div><h3 style="font-size:14px; border-bottom:2px solid #10B981;">Primary Recommendation</h3><ul style="margin-top:10px;">${actionsText}</ul></div>
-        <div><h3 style="font-size:14px; border-bottom:2px solid #F59E0B;">Secondary Focus</h3><ul style="margin-top:10px;">${optsText}</ul></div>
+        <div style="border: 1px solid #e5e7eb; padding: 15px; border-radius: 8px;">
+            <h3 style="font-size:14px; border-bottom:2px solid #10B981; padding-bottom:5px; margin-top:0; color:#065f46;">Recommended Actions</h3>
+            <ul style="margin-top:10px; font-size:13px; line-height: 1.5; padding-left: 15px;">${actionsText}</ul>
+        </div>
+        <div style="border: 1px solid #e5e7eb; padding: 15px; border-radius: 8px;">
+            <h3 style="font-size:14px; border-bottom:2px solid #F59E0B; padding-bottom:5px; margin-top:0; color:#92400e;">Optimization Tips</h3>
+            <ul style="margin-top:10px; font-size:13px; line-height: 1.5; padding-left: 15px;">${optsText}</ul>
+        </div>
+    </div>
+    
+    <div style="margin-top: 50px; text-align: center; font-size: 12px; color: #9ca3af;">
+        <p><em>End of Report. Automatically generated by SPDA System.</em></p>
     </div>
     `;
     
     printContainer.innerHTML = html;
     printContainer.style.display = 'block';
-    setTimeout(() => { window.print(); }, 500);
+    
+    // Small delay to ensure styles apply before print dialog opens
+    setTimeout(() => { window.print(); }, 100);
 }
