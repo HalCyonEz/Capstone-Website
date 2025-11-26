@@ -476,7 +476,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     feather.replace();
 });
 
-// ✅ Report Generation (Text-Only / Executive Summary Style)
+// ✅ Report Generation (Text-Only with Logo)
 function handleGenerateReport() {
     const printContainer = document.getElementById('print-report-container');
     if (!printContainer) return;
@@ -489,65 +489,68 @@ function handleGenerateReport() {
     const approved = document.getElementById('approved-count').textContent;
     const avgTime = document.getElementById('avg-processing-time').textContent;
 
-    // 2. Get Explanations (The Smart Analytics Text)
+    // 2. Get Explanations
     const predictiveText = document.getElementById('predictive-summary-text').innerHTML;
     const actionsText = document.getElementById('prescriptive-actions-content').innerHTML;
     const optsText = document.getElementById('prescriptive-opt-content').innerHTML;
-    
-    // Get the Demographic text sentence we built earlier
     const demoText = document.getElementById('demographics-description') ? document.getElementById('demographics-description').innerHTML : "No data available.";
 
-    // 3. Build "Descriptive" Narrative
+    // 3. Build Narrative
     const descriptiveNarrative = `
         The SPDA System currently manages a total of <strong>${registered} registered solo parents</strong>. 
         There are <strong>${pending} new applications</strong> pending review, and <strong>${approved} members</strong> have been fully verified. 
         The administrative team is currently processing applications with an average turnaround time of <strong>${avgTime}</strong>.
     `;
 
-    // 4. Build the HTML Layout (No Charts, Just Clean Text)
+    // 4. Build HTML (Added Logo Section)
+    // ⚠️ REPLACE 'logo.png' below with your actual file name if different ⚠️
     let html = `
-    <div class="letterhead">
-        <h1>SPDA Analytics Report</h1>
-        <p>Official Executive Summary • Generated: ${date}</p>
+    <div class="letterhead" style="display: flex; align-items: center; border-bottom: 2px solid #3b82f6; padding-bottom: 15px; margin-bottom: 20px;">
+        <img src="LOGO_SPDA.jpg" alt="SPDA Logo" style="width: 70px; height: 70px; margin-right: 15px; object-fit: contain;">
+        
+        <div>
+            <h1 style="margin: 0; font-size: 22px; font-weight: bold; color: #1e3a8a;">SPDA Analytics Report</h1>
+            <p style="margin: 0; font-size: 11px; color: #6b7280;">Official Executive Summary • Generated: ${date}</p>
+        </div>
     </div>
     
-    <h2 class="report-title">1. Descriptive Analytics (Current Status)</h2>
+    <h3 style="font-size:16px; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">1. Descriptive Analytics (Current Status)</h3>
     <div style="margin-bottom: 20px; font-size: 14px; line-height: 1.6; text-align: justify;">
         ${descriptiveNarrative}
     </div>
-    <table>
+    <table style="width:100%; border-collapse:collapse; margin-bottom:20px; font-size:12px;">
         <thead>
-            <tr>
-                <th>Metric</th>
-                <th>Count</th>
+            <tr style="background:#f3f4f6;">
+                <th style="border:1px solid #ddd; padding:8px; text-align:left;">Metric</th>
+                <th style="border:1px solid #ddd; padding:8px; text-align:left;">Count</th>
             </tr>
         </thead>
         <tbody>
-            <tr><td>Total Registered Solo Parents</td><td>${registered}</td></tr>
-            <tr><td>Pending Applications</td><td>${pending}</td></tr>
-            <tr><td>Verified/Approved Members</td><td>${approved}</td></tr>
+            <tr><td style="border:1px solid #ddd; padding:8px;">Total Registered Solo Parents</td><td style="border:1px solid #ddd; padding:8px;">${registered}</td></tr>
+            <tr><td style="border:1px solid #ddd; padding:8px;">Pending Applications</td><td style="border:1px solid #ddd; padding:8px;">${pending}</td></tr>
+            <tr><td style="border:1px solid #ddd; padding:8px;">Verified/Approved Members</td><td style="border:1px solid #ddd; padding:8px;">${approved}</td></tr>
         </tbody>
     </table>
     
-    <h2 class="report-title">2. Applicant Demographics</h2>
-    <div style="background:#f9fafb; padding:15px; border-radius:8px; border:1px solid #e5e7eb; font-size: 14px; line-height: 1.6;">
+    <h3 style="font-size:16px; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">2. Applicant Demographics</h3>
+    <div style="background:#f9fafb; padding:15px; border-radius:8px; border:1px solid #e5e7eb; font-size: 14px; line-height: 1.6; margin-bottom:20px;">
         <p style="color:#4b5563; margin-bottom:5px; font-weight:bold;">Demographic Breakdown:</p>
         <p>${demoText}</p>
     </div>
 
-    <h2 class="report-title">3. Predictive Analytics (Forecast)</h2>
-    <div style="background:#f9fafb; padding:15px; border-radius:8px; border:1px solid #e5e7eb; font-size: 14px; line-height: 1.6;">
+    <h3 style="font-size:16px; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">3. Predictive Analytics (Forecast)</h3>
+    <div style="background:#f9fafb; padding:15px; border-radius:8px; border:1px solid #e5e7eb; font-size: 14px; line-height: 1.6; margin-bottom:20px;">
         ${predictiveText}
     </div>
     
-    <h2 class="report-title">4. Prescriptive Analytics (Recommendations)</h2>
+    <h3 style="font-size:16px; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">4. Prescriptive Analytics (Recommendations)</h3>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
         <div style="border: 1px solid #e5e7eb; padding: 15px; border-radius: 8px;">
-            <h3 style="font-size:14px; border-bottom:2px solid #10B981; padding-bottom:5px; margin-top:0; color:#065f46;">Recommended Actions</h3>
+            <h4 style="font-size:14px; border-bottom:2px solid #10B981; padding-bottom:5px; margin-top:0; color:#065f46;">Recommended Actions</h4>
             <ul style="margin-top:10px; font-size:13px; line-height: 1.5; padding-left: 15px;">${actionsText}</ul>
         </div>
         <div style="border: 1px solid #e5e7eb; padding: 15px; border-radius: 8px;">
-            <h3 style="font-size:14px; border-bottom:2px solid #F59E0B; padding-bottom:5px; margin-top:0; color:#92400e;">Optimization Tips</h3>
+            <h4 style="font-size:14px; border-bottom:2px solid #F59E0B; padding-bottom:5px; margin-top:0; color:#92400e;">Optimization Tips</h4>
             <ul style="margin-top:10px; font-size:13px; line-height: 1.5; padding-left: 15px;">${optsText}</ul>
         </div>
     </div>
@@ -560,6 +563,6 @@ function handleGenerateReport() {
     printContainer.innerHTML = html;
     printContainer.style.display = 'block';
     
-    // Small delay to ensure styles apply before print dialog opens
-    setTimeout(() => { window.print(); }, 100);
+    // Small delay to ensure image loads before print dialog
+    setTimeout(() => { window.print(); }, 200);
 }
