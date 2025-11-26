@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SPDA Dashboard</title>
     
+    <!-- Main Styles -->
     <link rel="stylesheet" href="style.css">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,28 +15,50 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+    <!-- ✅ DASHBOARD-SPECIFIC PRINT STYLES -->
     <style>
-        /* --- PRINT STYLES --- */
         @media print {
-            body * { visibility: hidden; }
-            #sidebar, #mobile-sidebar, #sidebar-toggle, .no-print { display: none !important; }
-            #print-report-container, #print-report-container * { visibility: visible; }
-            #print-report-container {
-                position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 20px; background: white;
+            /* 1. Hide everything by default */
+            body * {
+                visibility: hidden;
             }
+
+            /* 2. Force the Report Container to be Visible */
+            #print-report-container, #print-report-container * {
+                visibility: visible !important;
+            }
+
+            /* 3. Position it properly on the paper */
+            #print-report-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 20px;
+                background: white;
+                z-index: 9999;
+                display: block !important;
+            }
+
+            /* 4. Hide UI Elements explicitly */
+            #sidebar, #mobile-sidebar, #sidebar-toggle, .no-print {
+                display: none !important;
+            }
+
+            /* 5. Report Styling */
             table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
             th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
             th { background-color: #f3f4f6; font-weight: bold; }
             .letterhead { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
-            .letterhead h1 { font-size: 24px; font-weight: bold; color: #1e3a8a; margin: 0; }
             .report-title { text-align: center; font-size: 18px; font-weight: bold; margin: 20px 0; text-transform: uppercase; }
         }
     </style>
-
 </head>
 <body class="bg-gray-50 font-sans">
     <div class="flex flex-col sm:flex-row h-screen">
         
+        <!-- SIDEBAR -->
         <div class="w-64 bg-white border-r border-gray-200 flex-col hidden sm:flex" id="sidebar">
             <div class="p-4 flex items-center space-x-2">
                 <div class="bg-blue-100 p-2 rounded-lg">
@@ -82,10 +105,12 @@
             </div>
         </div>
 
+        <!-- MOBILE SIDEBAR TOGGLE -->
         <button class="sm:hidden fixed top-4 left-4 z-50 p-2 bg-white border rounded-full no-print" id="sidebar-toggle">
             <i data-feather="menu"></i>
         </button>
 
+        <!-- MOBILE SIDEBAR -->
         <div class="fixed inset-0 bg-black bg-opacity-50 z-40 flex sm:hidden no-print" id="mobile-sidebar" style="display: none;">
              <div class="w-64 bg-white h-full shadow-lg p-4 overflow-auto">
                 <div class="p-4 flex items-center space-x-2">
@@ -100,8 +125,10 @@
             </div>
         </div>
 
+        <!-- MAIN CONTENT -->
         <div class="flex-1 overflow-auto">
             <div class="p-6">
+                <!-- Header -->
                 <div class="flex justify-between items-center mb-6 no-print">
                     <div>
                         <h1 class="text-2xl font-bold text-gray-800">Solo Parent Analytics Dashboard</h1>
@@ -114,6 +141,7 @@
                     </div>
                 </div>
 
+                <!-- Date Filters -->
                 <div class="mb-4 p-4 bg-white rounded-lg shadow-sm border border-gray-100 no-print">
                     <div class="flex flex-col sm:flex-row gap-4">
                         <div class="flex-1">
@@ -140,6 +168,7 @@
                     </div>
                 </div>
 
+                <!-- Stat Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6 no-print">
                     <div class="stat-card bg-white p-5 rounded-lg shadow-sm border border-gray-100">
                         <div class="flex justify-between">
@@ -181,34 +210,26 @@
                     </div>
                 </div>
 
-                <div class="mt-6 bg-white p-5 rounded-lg shadow-sm border border-gray-100 analytics-card no-print">
-                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Applicant Forecast (Predictive)</h2>
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div class="lg:col-span-2">
-                            <canvas id="predictiveChart" height="150"></canvas>
-                        </div>
-                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 flex flex-col justify-center">
-                             <h3 class="font-medium text-blue-800 mb-2">Forecast Summary</h3>
-                             <p id="predictive-summary-text" class="text-sm text-gray-600">Loading...</p>
-                        </div>
-                    </div>
-                    
-                    <div id="forecast-description" class="mt-4 pt-4 border-t border-gray-100 text-sm text-gray-600 leading-relaxed">
-                        Loading forecast analysis...
-                    </div>
-                </div>
-
-                <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6 no-print">
+                <!-- Forecast & Status Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 no-print">
+                     <!-- Applicant Forecast -->
                     <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100 analytics-card">
-                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Applicant Demographics</h2>
-                    <div class="relative h-64">
-                        <canvas id="categoryChart"></canvas>
+                        <h2 class="text-lg font-semibold text-gray-800 mb-4">Applicant Forecast (Predictive)</h2>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div>
+                                <canvas id="predictiveChart" height="150"></canvas>
+                            </div>
+                            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 flex flex-col justify-center">
+                                 <h3 class="font-medium text-blue-800 mb-2">Forecast Summary</h3>
+                                 <div id="predictive-summary-text" class="text-sm text-gray-600">Loading...</div>
+                            </div>
+                        </div>
+                        <div id="forecast-description" class="mt-4 pt-4 border-t border-gray-100 text-sm text-gray-600 leading-relaxed">
+                            Loading forecast analysis...
+                        </div>
                     </div>
-                    <div id="demographics-description" class="mt-4 pt-4 border-t border-gray-100 text-sm text-gray-600 leading-relaxed">
-                        Loading analysis...
-                    </div>
-                </div>
 
+                     <!-- Application Status -->
                     <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100 analytics-card">
                         <h2 class="text-lg font-semibold text-gray-800 mb-4">Application Status</h2>
                         <div class="relative h-64">
@@ -219,34 +240,43 @@
                             <div><div class="h-2 w-2 bg-yellow-500 rounded-full inline-block mr-1"></div><span id="chart-label-pending" class="text-xs">...</span></div>
                             <div><div class="h-2 w-2 bg-red-500 rounded-full inline-block mr-1"></div><span id="chart-label-rejected" class="text-xs">...</span></div>
                         </div>
-
                         <div id="status-description" class="mt-4 pt-4 border-t border-gray-100 text-sm text-gray-600 leading-relaxed">
                             Loading status analysis...
                         </div>
                     </div>
+                </div>
 
-                <div class="mt-6 bg-white p-5 rounded-lg shadow-sm border border-gray-100 analytics-card no-print">
+                <!-- Demographics -->
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100 analytics-card mb-6 no-print">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Applicant Demographics</h2>
+                    <div class="relative h-64">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                    <div id="demographics-description" class="mt-4 pt-4 border-t border-gray-100 text-sm text-gray-600 leading-relaxed">
+                        Loading analysis...
+                    </div>
+                </div>
+
+                <!-- Prescriptive Analytics -->
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100 analytics-card no-print">
                     <h2 class="text-lg font-semibold text-gray-800 mb-4">Prescriptive Analytics</h2>
-                    
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        
                         <div id="prescriptive-action-box" class="bg-green-50 p-4 rounded-lg border border-green-200">
                             <h3 class="font-medium text-green-800 mb-2">Recommended Actions</h3>
                             <div id="prescriptive-actions-content" class="text-sm text-gray-600 space-y-2">
                                 Loading recommendations...
                             </div>
                         </div>
-
                         <div id="prescriptive-opt-box" class="bg-orange-50 p-4 rounded-lg border border-orange-200">
                             <h3 class="font-medium text-orange-800 mb-2">Optimization Suggestions</h3>
                             <div id="prescriptive-opt-content" class="text-sm text-gray-600 space-y-2">
                                 Loading optimizations...
                             </div>
                         </div>
-
                     </div>
                 </div>
 
+                <!-- Recent Activity -->
                 <div class="mt-6 bg-white p-5 rounded-lg shadow-sm border border-gray-100 no-print">
                     <h2 class="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h2>
                     <div class="overflow-x-auto">
@@ -266,6 +296,7 @@
                     </div>
                 </div>
                 
+                <!-- ✅ THE HIDDEN REPORT CONTAINER -->
                 <div id="print-report-container" style="visibility: hidden; display: none;"></div>
 
             </div>
@@ -273,5 +304,9 @@
     </div>
 
     <script type="module" src="dashboard.js"></script>
+    
+    <script>
+        feather.replace();
+    </script>
 </body>
 </html>
