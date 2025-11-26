@@ -175,7 +175,6 @@ function updateCategoryChart(users, filterType) {
     categoryChartInstance.data.datasets[0].data = sortedData;
     categoryChartInstance.update();
 
-    // --- SAFE DESCRIPTION UPDATE ---
     const descEl = document.getElementById('demographics-description');
     if (descEl) {
         if (totalUsers === 0) {
@@ -195,6 +194,7 @@ function updateCategoryChart(users, filterType) {
 
         if (filterType === 'this_month') dateContext = `this ${monthName} ${year}`;
         else if (filterType === 'this_year') dateContext = `this year (${year})`;
+        else if (filterType === 'all') dateContext = `of all time`;
         else if (filterType === 'custom') {
             const startInput = document.getElementById('start-date');
             const endInput = document.getElementById('end-date');
@@ -226,12 +226,12 @@ function calculateAvgProcessingTime() {
             totalHours += (approved - created) / (1000 * 60 * 60);
         });
         avgDays = (totalHours / 24 / approvedUsers.length).toFixed(1);
+        document.getElementById('avg-processing-time').textContent = `${avgDays} Days`;
+    } else {
+        document.getElementById('avg-processing-time').textContent = "N/A";
+        avgDays = 0;
     }
     
-    // Update DOM safely
-    const el = document.getElementById('avg-processing-time');
-    if (el) el.textContent = (approvedUsers.length > 0) ? `${avgDays} Days` : "N/A";
-
     return Number(avgDays);
 }
 
@@ -290,23 +290,27 @@ function updateForecastWithRealData() {
     generateSmartAnalytics(avgDays, dataPoints);
 }
 
-// --- SMART ANALYTICS (SAFE & BENEFIT FOCUSED) ---
+// --- SMART ANALYTICS ---
 function generateSmartAnalytics(avgDays, forecastCounts) {
     // Default if forecast data is missing
     if (!forecastCounts || forecastCounts.length < 4) forecastCounts = [10, 12, 15, 20, 25, 30];
 
     const summaryEl = document.getElementById('predictive-summary-text');
+    const forecastDescEl = document.getElementById('forecast-description'); // ✅ NEW ELEMENT
     const actionContent = document.getElementById('prescriptive-actions-content');
     const optContent = document.getElementById('prescriptive-opt-content');
-    
-    // 1. Forecast Text
-    const currentVal = forecastCounts[3]; 
-    const futureVal = forecastCounts[5];  
+    const actionBox = document.getElementById('prescriptive-action-box');
+
+    // 1. Forecast Logic
+    const currentVal = forecastCounts[3]; // Current month
+    const futureVal = forecastCounts[5];  // 2 months ahead
     const percentChange = currentVal > 0 ? Math.round(((futureVal - currentVal) / currentVal) * 100) : 100;
-    
+    const isSlow = avgDays > 3.0; 
+
     let predictiveTitle = percentChange > 10 ? "📈 High Applicant Volume" : (percentChange < -5 ? "📉 Low Applicant Volume" : "⚖️ Steady Volume");
     let predictiveDesc = `We expect <strong>${Math.abs(percentChange)}% ${percentChange > 0 ? 'more' : 'less'}</strong> applicants next month compared to today.`;
 
+    // Update Side Box
     if (summaryEl) {
         summaryEl.innerHTML = `
             <strong class="block text-blue-800 mb-1" style="font-size: 14px;">${predictiveTitle}</strong>
@@ -314,7 +318,12 @@ function generateSmartAnalytics(avgDays, forecastCounts) {
         `;
     }
 
-    // 2. Recommendations
+    // ✅ NEW: Update Bottom Description for Forecast
+    if (forecastDescEl) {
+        forecastDescEl.innerHTML = `Based on current registration trends, we anticipate <strong>${futureVal} new applicants</strong> in the next 2 months. This is a <strong>${percentChange > 0 ? 'rising' : 'falling'} trend</strong>. Please prepare resources accordingly.`;
+    }
+
+    // 2. Benefit Recommendations
     const counts = {};
     allUsersData.forEach(user => {
         let code = user.category || "unknown";
@@ -363,7 +372,6 @@ function generateSmartAnalytics(avgDays, forecastCounts) {
         optsHTML = `<li>No secondary data available yet.</li>`;
     }
 
-    // SAFE UPDATES (Prevent Crash if elements missing)
     if (actionContent) actionContent.innerHTML = actionsHTML;
     if (optContent) optContent.innerHTML = optsHTML;
     feather.replace();
@@ -382,6 +390,7 @@ function updateRecentActivity(users) {
     });
 }
 
+// --- UPDATED: Dashboard Stats + Status Description ---
 function updateDashboardStats(filter) {
     let startDate, endDate;
     
@@ -435,6 +444,16 @@ function updateDashboardStats(filter) {
     document.getElementById('chart-label-pending').textContent = `Pending (${pPending}%)`;
     document.getElementById('chart-label-rejected').textContent = `Rejected (${pRejected}%)`;
 
+    // ✅ NEW: Update Status Description at the bottom of Status Card
+    const statusDescEl = document.getElementById('status-description');
+    if (statusDescEl) {
+        if (pending > 0) {
+            statusDescEl.innerHTML = `You have <strong>${pending} pending applications</strong> waiting for review. The majority of processed applications are currently <strong>${approved > rejected ? 'Approved' : 'Rejected'}</strong>.`;
+        } else {
+            statusDescEl.innerHTML = `Great job! You have <strong>no pending applications</strong>. The system has successfully processed <strong>${approved + rejected}</strong> records in this range.`;
+        }
+    }
+
     updateRecentActivity(filteredUsers.slice(0, 5));
     
     updateCategoryChart(filteredUsers, filter);
@@ -451,8 +470,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const dateSelect = document.getElementById('date-range-select');
     const customRangeDiv = document.getElementById('custom-date-range');
     
-    // ✅ FIXED: Correct logic to SHOW Custom Range inputs
-    if (dateSelect && customRangeDiv) {
+    if(dateSelect && customRangeDiv) {
         dateSelect.addEventListener('change', function() {
             if (this.value === 'custom') {
                 customRangeDiv.classList.remove('hidden');
@@ -476,61 +494,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     feather.replace();
 });
 
-// ✅ Report Generation (Text-Only with Logo)
+// ✅ Report Generation
 function handleGenerateReport() {
     const printContainer = document.getElementById('print-report-container');
     if (!printContainer) return;
     
     const date = new Date().toLocaleDateString();
-    
-    // 1. Get Data
     const registered = document.getElementById('registered-count').textContent;
     const pending = document.getElementById('pending-count').textContent;
     const approved = document.getElementById('approved-count').textContent;
-    const avgTime = document.getElementById('avg-processing-time').textContent;
-
-    // 2. Get Explanations
+    
+    // Text
     const predictiveText = document.getElementById('predictive-summary-text').innerHTML;
     const actionsText = document.getElementById('prescriptive-actions-content').innerHTML;
     const optsText = document.getElementById('prescriptive-opt-content').innerHTML;
-    const demoText = document.getElementById('demographics-description') ? document.getElementById('demographics-description').innerHTML : "No data available.";
+    
+    // Get new descriptions
+    const demoText = document.getElementById('demographics-description') ? document.getElementById('demographics-description').innerHTML : "No data.";
+    const forecastDesc = document.getElementById('forecast-description') ? document.getElementById('forecast-description').innerHTML : "No forecast.";
+    const statusDesc = document.getElementById('status-description') ? document.getElementById('status-description').innerHTML : "No status.";
 
-    // 3. Build Narrative
     const descriptiveNarrative = `
         The SPDA System currently manages a total of <strong>${registered} registered solo parents</strong>. 
-        There are <strong>${pending} new applications</strong> pending review, and <strong>${approved} members</strong> have been fully verified. 
-        The administrative team is currently processing applications with an average turnaround time of <strong>${avgTime}</strong>.
+        There are <strong>${pending} new applications</strong> pending review, and <strong>${approved} members</strong> have been fully verified.
     `;
 
-    // 4. Build HTML (Added Logo Section)
-    // ⚠️ REPLACE 'logo.png' below with your actual file name if different ⚠️
     let html = `
     <div class="letterhead" style="display: flex; align-items: center; border-bottom: 2px solid #3b82f6; padding-bottom: 15px; margin-bottom: 20px;">
-        <img src="LOGO_SPDA.jpg" alt="SPDA Logo" style="width: 70px; height: 70px; margin-right: 15px; object-fit: contain;">
-        
+        <img src="LOGO_SPDA.jpg" alt="SPDA Logo" style="width: 80px; height: 80px; margin-right: 15px; object-fit: contain;">
         <div>
             <h1 style="margin: 0; font-size: 22px; font-weight: bold; color: #1e3a8a;">SPDA Analytics Report</h1>
             <p style="margin: 0; font-size: 11px; color: #6b7280;">Official Executive Summary • Generated: ${date}</p>
         </div>
     </div>
     
-    <h3 style="font-size:16px; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">1. Descriptive Analytics (Current Status)</h3>
-    <div style="margin-bottom: 20px; font-size: 14px; line-height: 1.6; text-align: justify;">
+    <h3 style="font-size:16px; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">1. Descriptive Analytics (Status)</h3>
+    <div style="margin-bottom: 20px; font-size: 14px; line-height: 1.6;">
         ${descriptiveNarrative}
+        <p style="margin-top:10px;"><em>${statusDesc}</em></p>
     </div>
-    <table style="width:100%; border-collapse:collapse; margin-bottom:20px; font-size:12px;">
-        <thead>
-            <tr style="background:#f3f4f6;">
-                <th style="border:1px solid #ddd; padding:8px; text-align:left;">Metric</th>
-                <th style="border:1px solid #ddd; padding:8px; text-align:left;">Count</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr><td style="border:1px solid #ddd; padding:8px;">Total Registered Solo Parents</td><td style="border:1px solid #ddd; padding:8px;">${registered}</td></tr>
-            <tr><td style="border:1px solid #ddd; padding:8px;">Pending Applications</td><td style="border:1px solid #ddd; padding:8px;">${pending}</td></tr>
-            <tr><td style="border:1px solid #ddd; padding:8px;">Verified/Approved Members</td><td style="border:1px solid #ddd; padding:8px;">${approved}</td></tr>
-        </tbody>
-    </table>
     
     <h3 style="font-size:16px; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">2. Applicant Demographics</h3>
     <div style="background:#f9fafb; padding:15px; border-radius:8px; border:1px solid #e5e7eb; font-size: 14px; line-height: 1.6; margin-bottom:20px;">
@@ -541,16 +543,17 @@ function handleGenerateReport() {
     <h3 style="font-size:16px; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">3. Predictive Analytics (Forecast)</h3>
     <div style="background:#f9fafb; padding:15px; border-radius:8px; border:1px solid #e5e7eb; font-size: 14px; line-height: 1.6; margin-bottom:20px;">
         ${predictiveText}
+        <p style="margin-top:10px; border-top:1px solid #ccc; padding-top:10px;">${forecastDesc}</p>
     </div>
     
-    <h3 style="font-size:16px; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">4. Prescriptive Analytics (Recommendations)</h3>
+    <h3 style="font-size:16px; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">4. Benefit Recommendations</h3>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
         <div style="border: 1px solid #e5e7eb; padding: 15px; border-radius: 8px;">
-            <h4 style="font-size:14px; border-bottom:2px solid #10B981; padding-bottom:5px; margin-top:0; color:#065f46;">Recommended Actions</h4>
+            <h4 style="font-size:14px; border-bottom:2px solid #10B981; padding-bottom:5px; margin-top:0; color:#065f46;">Primary Action</h4>
             <ul style="margin-top:10px; font-size:13px; line-height: 1.5; padding-left: 15px;">${actionsText}</ul>
         </div>
         <div style="border: 1px solid #e5e7eb; padding: 15px; border-radius: 8px;">
-            <h4 style="font-size:14px; border-bottom:2px solid #F59E0B; padding-bottom:5px; margin-top:0; color:#92400e;">Optimization Tips</h4>
+            <h4 style="font-size:14px; border-bottom:2px solid #F59E0B; padding-bottom:5px; margin-top:0; color:#92400e;">Secondary Focus</h4>
             <ul style="margin-top:10px; font-size:13px; line-height: 1.5; padding-left: 15px;">${optsText}</ul>
         </div>
     </div>
@@ -562,7 +565,5 @@ function handleGenerateReport() {
     
     printContainer.innerHTML = html;
     printContainer.style.display = 'block';
-    
-    // Small delay to ensure image loads before print dialog
-    setTimeout(() => { window.print(); }, 200);
+    setTimeout(() => { window.print(); }, 1000);
 }
