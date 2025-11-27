@@ -7,7 +7,7 @@ initLogout();
 
 let allMembers = [];
 let filteredMembers = [];
-const MUNICIPALITY_LIST = ["Baguio", "La Trinidad", "Itogon", "Sablan", "Tuba", "Tublay", "Kapangan", "Kibungan", "Bakun", "Bokod", "Buguias", "Kabayan", "Mankayan"];
+const MUNICIPALITY_LIST = ["Atok","Baguio","Bakun","Bokod","Buguias","Itogon","Kabayan","Kapangan","Kibungan","La Trinidad","Mankayan","Sablan","Tuba", "Tublay",];
 
 document.addEventListener('DOMContentLoaded', async () => {
     await loadData();
