@@ -15,6 +15,7 @@ export const DESCRIPTION_TO_CODE_MAP = {
     "Relative of OFW": "b2",
     "Unmarried person": "c",
     "Legal guardian / Adoptive parent / Foster parent": "d",
+    "Relative within the fourth (4th) civil degree of consanguinity of affinity": "e",
     "Pregnant Woman": "f"
 };
 

@@ -2,6 +2,7 @@ import { db } from "./firebase-config.js";
 import { initSidebar, initLogout } from "./utils.js";
 import { collection, getDocs, query, where, orderBy, Timestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
+// Initialize UI
 initSidebar();
 initLogout();
 
@@ -15,7 +16,9 @@ const CATEGORY_MAP = {
     "a1": "Rape Victim", "a2": "Widow/er", "a3": "Spouse Detained",
     "a4": "Spouse Incapacitated", "a5": "Separated", "a6": "Annulled",
     "a7": "Abandoned", "b1": "Spouse OFW", "b2": "OFW Relative",
-    "c": "Unmarried", "d": "Legal Guardian", "f": "Pregnant"
+    "c": "Unmarried", "d": "Legal Guardian", 
+    "e": "Relative (4th Degree)",
+    "f": "Pregnant"
 };
 
 // --- 1. Fetch Data ---
@@ -32,9 +35,8 @@ async function fetchAllUsers() {
 
 async function fetchUpcomingEvents() {
     const eventsList = document.getElementById('upcoming-events-list');
-    const eventsCountEl = document.getElementById('events-count'); // Note: This ID might need removing from HTML if unused
     
-    if (!eventsList) return; // eventsCountEl check removed if you deleted that card too
+    if (!eventsList) return;
 
     eventsList.innerHTML = `<p class="text-sm text-gray-500">Loading upcoming events...</p>`;
     try {
@@ -208,6 +210,26 @@ function updateCategoryChart(users, filterType) {
     }
 }
 
+function calculateAvgProcessingTime() {
+    const approvedUsers = allUsersData.filter(u => u.status === 'approved' && u.createdAt && u.approvedAt);
+    let avgDays = 0;
+
+    if (approvedUsers.length > 0) {
+        let totalHours = 0;
+        approvedUsers.forEach(user => {
+            const created = user.createdAt.toDate();
+            const approved = user.approvedAt.toDate();
+            totalHours += (approved - created) / (1000 * 60 * 60);
+        });
+        avgDays = (totalHours / 24 / approvedUsers.length).toFixed(1);
+        
+        // Removed updating the DOM element since we deleted that card
+        // document.getElementById('avg-processing-time').textContent = `${avgDays} Days`;
+    } 
+    
+    return Number(avgDays);
+}
+
 // --- REAL TIME FORECAST LOGIC ---
 function updateForecastWithRealData() {
     if (!allUsersData || !predictiveChartInstance) return;
@@ -259,11 +281,11 @@ function updateForecastWithRealData() {
     predictiveChartInstance.data.datasets[0].data = dataPoints;
     predictiveChartInstance.update();
 
-    // ✅ UPDATED: Pass ONLY forecastCounts (removed avgDays)
+    // Pass only forecastCounts
     generateSmartAnalytics(dataPoints);
 }
 
-// --- ✅ SMART ANALYTICS (VOLUME ONLY) ---
+// --- SMART ANALYTICS ---
 function generateSmartAnalytics(forecastCounts) {
     if (!forecastCounts || forecastCounts.length < 4) forecastCounts = [10, 12, 15, 20, 25, 30];
 
@@ -281,7 +303,6 @@ function generateSmartAnalytics(forecastCounts) {
     let predictiveTitle = "";
     let predictiveDesc = "";
 
-    // Simplified Trend Analysis
     if (percentChange > 10) {
         predictiveTitle = "📈 Rising Applicant Trend";
         predictiveDesc = `We expect <strong>${Math.abs(percentChange)}% more</strong> applicants next month.`;
@@ -304,7 +325,7 @@ function generateSmartAnalytics(forecastCounts) {
         forecastDescEl.innerHTML = `Based on current registration trends, we anticipate <strong>${futureVal} new applicants</strong> in the next 2 months. Please prepare resources accordingly.`;
     }
 
-    // 2. Recommendations (Based on Categories)
+    // 2. Recommendations
     const counts = {};
     allUsersData.forEach(user => {
         let code = user.category || "unknown";
@@ -318,19 +339,20 @@ function generateSmartAnalytics(forecastCounts) {
     function getRecommendation(code) {
         const name = CATEGORY_MAP[code] || "General";
         switch (code) {
-            case 'f': return { label: name, action: `Prioritize <strong>Health Assistance & Maternal Kits</strong> (RA 11861).`, tip: `Coordinate with local Health Centers.` };
-            case 'a2': return { label: name, action: `Prioritize <strong>Educational Scholarships</strong> for children.`, tip: `Offer psychosocial support services.` };
+            case 'f': return { label: name, action: `Prioritize <strong>Health Assistance & Maternal Kits</strong>.`, tip: `Coordinate with Health Centers.` };
+            case 'a2': return { label: name, action: `Prioritize <strong>Educational Scholarships</strong>.`, tip: `Offer psychosocial support.` };
             case 'b1': case 'b2': return { label: name, action: `Focus on <strong>Livelihood Assistance</strong>.`, tip: `Check for legal support needs.` };
-            case 'a1': case 'a3': return { label: name, action: `Provide <strong>Legal & Psychological Support</strong>.`, tip: `Ensure privacy and fast-track cash aid.` };
-            case 'a5': case 'a6': case 'a7': return { label: name, action: `Prioritize <strong>Crisis Intervention (CIU)</strong>.`, tip: `Verify custody documents for scholarships.` };
-            case 'c': return { label: name, action: `Focus on <strong>Job Placement & Skills Training</strong>.`, tip: `Encourage TESDA livelihood programs.` };
-            default: return { label: "General", action: `Provide standard <strong>Monthly Cash Subsidy</strong>.`, tip: `Review general renewal requirements.` };
+            case 'a1': case 'a3': return { label: name, action: `Provide <strong>Legal & Psychological Support</strong>.`, tip: `Ensure privacy and cash aid.` };
+            case 'a5': case 'a6': case 'a7': return { label: name, action: `Prioritize <strong>Crisis Intervention (CIU)</strong>.`, tip: `Verify custody for scholarships.` };
+            case 'c': return { label: name, action: `Focus on <strong>Job Placement & Skills Training</strong>.`, tip: `Encourage TESDA programs.` };
+            case 'e': return { label: name, action: `Verify <strong>Guardianship/Dependency</strong> documents.`, tip: `Check for specific needs of the dependent.` };
+            
+            default: return { label: "General", action: `Provide standard <strong>Monthly Cash Subsidy</strong>.`, tip: `Review renewal requirements.` };
         }
     }
 
     const topRec = getRecommendation(topCategoryCode);
     
-    // ✅ UPDATED: Styling for recommendations (No Red/Green speed logic)
     if (actionBox) {
         actionBox.className = "bg-blue-50 p-4 rounded-lg border border-blue-200";
         actionBox.querySelector('h3').className = "font-medium text-blue-800 mb-2";
@@ -376,6 +398,7 @@ function updateRecentActivity(users) {
 
 function updateDashboardStats(filter) {
     let startDate, endDate;
+    const now = new Date();
     
     if (filter === 'this_week') { 
         startDate = new Date(); startDate.setDate(startDate.getDate() - startDate.getDay()); startDate.setHours(0,0,0,0);
@@ -473,14 +496,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     feather.replace();
 });
 
-// ✅ Report Generation (Fixed: Shows Date Range)
+// ✅ Report Generation
 function handleGenerateReport() {
     const printContainer = document.getElementById('print-report-container');
     if (!printContainer) return;
     
     const date = new Date().toLocaleDateString();
     
-    // 1. Get Selected Range Text
+    // Get Selected Range Text
     const filterType = document.getElementById('date-range-select').value;
     let rangeLabel = "All Time";
     const now = new Date();
@@ -500,7 +523,7 @@ function handleGenerateReport() {
         if (s && e) rangeLabel = `${new Date(s).toLocaleDateString()} - ${new Date(e).toLocaleDateString()}`;
     }
 
-    // 2. Get Data
+    // Get Data
     const registered = document.getElementById('registered-count').textContent;
     const pending = document.getElementById('pending-count').textContent;
     const approved = document.getElementById('approved-count').textContent;
@@ -517,10 +540,9 @@ function handleGenerateReport() {
         There are <strong>${pending} new applications</strong> pending review, and <strong>${approved} members</strong> have been fully verified.
     `;
 
-    // 3. Build HTML
     let html = `
     <div class="letterhead" style="display: flex; align-items: center; border-bottom: 2px solid #3b82f6; padding-bottom: 15px; margin-bottom: 20px;">
-        <img src="LOGO_SPDA.jpg" alt="SPDA Logo" style="width: 80px; height: 80px; margin-right: 15px; object-fit: contain;">
+        <img src="LOGO.png" alt="SPDA Logo" style="width: 80px; height: 80px; margin-right: 15px; object-fit: contain;">
         <div>
             <h1 style="margin: 0; font-size: 22px; font-weight: bold; color: #1e3a8a;">SPDA Analytics Report</h1>
             <p style="margin: 0; font-size: 11px; color: #6b7280;">Official Executive Summary • Generated: ${date}</p>

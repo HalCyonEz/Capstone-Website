@@ -291,7 +291,7 @@ function handlePrint() {
 
     container.innerHTML = `
         <div class="letterhead" style="display: flex; align-items: center; border-bottom: 2px solid #3b82f6; padding-bottom: 15px; margin-bottom: 20px;">
-            <img src="LOGO_SPDA.jpg" alt="Logo" style="width: 80px; height: 80px; margin-right: 15px; object-fit: contain;">
+            <img src="LOGO.png" alt="Logo" style="width: 80px; height: 80px; margin-right: 15px; object-fit: contain;">
             <div>
                 <h1 style="margin: 0; font-size: 22px; font-weight: bold; color: #1e3a8a;">SPDA Data Report</h1>
                 <p style="margin: 0; font-size: 11px; color: #6b7280;">Generated on: ${date}</p>
