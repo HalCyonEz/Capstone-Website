@@ -66,6 +66,9 @@ input {
         /* Standard & Webkit color adjustments */
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
+        .no-print {
+        display: none !important;
+    }
     }
 
     /* HIDE SIDEBAR AND NAVIGATION ON ALL PAGES */

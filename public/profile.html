@@ -51,10 +51,6 @@
 
         <div class="fixed inset-0 bg-black bg-opacity-50 z-40 flex sm:hidden" id="mobile-sidebar" style="display: none;">
             <div class="w-64 bg-white h-full shadow-lg p-4 overflow-auto">
-                <div class="p-4 flex items-center space-x-2">
-                    <div class="bg-blue-100 p-2 rounded-lg"><i data-feather="users" class="text-blue-600"></i></div>
-                    <span class="font-bold text-gray-800">SPDA System</span>
-                </div>
                 <nav class="flex-1 px-2 space-y-1">
                     <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 sidebar-link"><i data-feather="home" class="mr-3"></i> Dashboard</a>
                 </nav>
@@ -64,16 +60,24 @@
         <div class="flex-1 overflow-auto">
             <div class="p-6">
                 <div class="flex justify-between items-center mb-6">
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-800 mb-1">Applicant Profile</h1>
-                        <p id="profile-breadcrumb" class="text-gray-500 text-sm">Home / Applications / Profile</p>
-                    </div>
-                    <div id="print-button-container">
-                        <button id="print-profile-btn" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition">
-                            <i data-feather="printer" class="w-4 h-4"></i> Print to PDF
+                    <div class="flex items-center gap-4">
+                        <button onclick="history.back()" class="no-print flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors bg-white border border-gray-200 px-3 py-2 rounded-lg shadow-sm hover:shadow-md">
+                            <i data-feather="arrow-left" class="w-4 h-4"></i>
+                            <span class="text-sm font-medium">Go back</span>
                         </button>
-                    </div>
+        
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800 mb-1">Applicant Profile</h1>
+                    <p id="profile-breadcrumb" class="text-gray-500 text-sm">Home / Applications / Profile</p>
                 </div>
+            </div>
+
+            <div id="print-button-container">
+                <button id="print-profile-btn" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition">
+                    <i data-feather="printer" class="w-4 h-4"></i> Print to PDF
+                </button>
+                </div>
+        </div>
 
                 <div id="main-profile-grid" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     
@@ -117,84 +121,32 @@
                     </div>
 
                     <div class="lg:col-span-2 space-y-6">
-                        
                         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
                             <h3 class="text-lg font-semibold text-gray-800 mb-4">Personal Information</h3>
                             <div id="personal-info-grid" class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Full Name</h4>
-                                    <p id="detail-full-name" class="text-sm text-gray-800">...</p>
-                                </div>
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Email</h4>
-                                    <p id="detail-email" class="text-sm text-gray-800">...</p>
-                                </div>
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Date of Birth</h4>
-                                    <p id="detail-dob" class="text-sm text-gray-800">...</p>
-                                </div>
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Age</h4>
-                                    <p id="detail-age" class="text-sm text-gray-800">...</p>
-                                </div>
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Sex</h4>
-                                    <p id="detail-sex" class="text-sm text-gray-800">...</p>
-                                </div>
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Place of Birth</h4>
-                                    <p id="detail-pob" class="text-sm text-gray-800">...</p>
-                                </div>
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Civil Status</h4>
-                                    <p id="detail-civil-status" class="text-sm text-gray-800">...</p>
-                                </div>
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Ethnicity</h4>
-                                    <p id="detail-ethnicity" class="text-sm text-gray-800">...</p>
-                                </div>
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Religion</h4>
-                                    <p id="detail-religion" class="text-sm text-gray-800">...</p>
-                                </div>
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Date Registered</h4>
-                                    <p id="detail-created-at" class="text-sm text-gray-800">...</p>
-                                </div>
+                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Full Name</h4><p id="detail-full-name" class="text-sm text-gray-800">...</p></div>
+                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Email</h4><p id="detail-email" class="text-sm text-gray-800">...</p></div>
+                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Date of Birth</h4><p id="detail-dob" class="text-sm text-gray-800">...</p></div>
+                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Age</h4><p id="detail-age" class="text-sm text-gray-800">...</p></div>
+                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Sex</h4><p id="detail-sex" class="text-sm text-gray-800">...</p></div>
+                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Place of Birth</h4><p id="detail-pob" class="text-sm text-gray-800">...</p></div>
+                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Civil Status</h4><p id="detail-civil-status" class="text-sm text-gray-800">...</p></div>
+                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Ethnicity</h4><p id="detail-ethnicity" class="text-sm text-gray-800">...</p></div>
+                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Religion</h4><p id="detail-religion" class="text-sm text-gray-800">...</p></div>
+                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Date Registered</h4><p id="detail-created-at" class="text-sm text-gray-800">...</p></div>
                             </div>
                         </div>
                         
                         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
                             <h3 class="text-lg font-semibold text-gray-800 mb-4">Family & Employment</h3>
                             <div id="family-info-grid" class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Occupation</h4>
-                                    <p id="detail-occupation" class="text-sm text-gray-800">...</p>
-                                </div>
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Company / Agency</h4>
-                                    <p id="detail-company" class="text-sm text-gray-800">...</p>
-                                </div>
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Monthly Income</h4>
-                                    <p id="detail-income" class="text-sm text-gray-800">...</p>
-                                </div>
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Number of Children</h4>
-                                    <p id="detail-num-children" class="text-sm text-gray-800">...</p>
-                                </div>
-                                <div class="md:col-span-2">
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Ages of Children</h4>
-                                    <p id="detail-children-ages" class="text-sm text-gray-800">...</p>
-                                </div>
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase">PhilHealth Member</h4>
-                                    <p id="detail-has-philhealth" class="text-sm text-gray-800">...</p>
-                                </div>
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase">PhilHealth ID</h4>
-                                    <p id="detail-philhealth-id" class="text-sm text-gray-800">...</p>
-                                </div>
+                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Occupation</h4><p id="detail-occupation" class="text-sm text-gray-800">...</p></div>
+                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Company / Agency</h4><p id="detail-company" class="text-sm text-gray-800">...</p></div>
+                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Monthly Income</h4><p id="detail-income" class="text-sm text-gray-800">...</p></div>
+                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Number of Children</h4><p id="detail-num-children" class="text-sm text-gray-800">...</p></div>
+                                <div class="md:col-span-2"><h4 class="text-xs font-medium text-gray-500 uppercase">Ages of Children</h4><p id="detail-children-ages" class="text-sm text-gray-800">...</p></div>
+                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">PhilHealth Member</h4><p id="detail-has-philhealth" class="text-sm text-gray-800">...</p></div>
+                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">PhilHealth ID</h4><p id="detail-philhealth-id" class="text-sm text-gray-800">...</p></div>
                             </div>
                         </div>
 
@@ -232,5 +184,9 @@
     </div>
 
     <script type="module" src="profile.js"></script>
+    <script>
+        // Ensure the new icon is rendered
+        feather.replace();
+    </script>
 </body>
 </html>
