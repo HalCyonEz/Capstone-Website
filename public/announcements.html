@@ -10,8 +10,9 @@
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-gray-50 font-sans">
+<body class="bg-gray-50 font-sans relative">
     <div class="flex flex-col sm:flex-row h-screen">
+        
         <div class="w-64 bg-white border-r border-gray-200 flex-col hidden sm:flex" id="sidebar">
             <div class="p-4 flex items-center space-x-2">
                 <div class="bg-blue-100 p-2 rounded-lg">
@@ -20,110 +21,55 @@
                 <span class="font-bold text-gray-800">SPDA System</span>
             </div>
             <nav class="flex-1 px-2 space-y-1">
-                <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 sidebar-link">
+                <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
                     <i data-feather="home" class="mr-3"></i> Dashboard
                 </a>
                 <a href="reports.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100 sidebar-link">
-                    <i data-feather="file" class="mr-3"></i> Data Reports</a>
-                <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 sidebar-link">
+                        <i data-feather="file" class="mr-3"></i> Data Reports
+                </a>
+                <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
                     <i data-feather="users" class="mr-3"></i> Members
                 </a>
-                <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 sidebar-link">
+                <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
                     <i data-feather="file-text" class="mr-3"></i> Applications
                 </a>
-                <a href="renewals.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 sidebar-link">
-                    <i data-feather="refresh-cw" class="mr-3"></i> Renewals
+                <a href="renewals.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                <i data-feather="refresh-cw" class="mr-3"></i> Renewals
                 </a>
                 <a href="announcements.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100">
                     <i data-feather="bell" class="mr-3"></i> Announcements
                 </a>
             </nav>
             <div class="p-4 border-t border-gray-200">
-                <div class="flex items-center space-x-3">
-                    <img src="https://static.photos/people/200x200/1" class="w-10 h-10 rounded-full" alt="Admin">
-                    <div>
-                        <p class="text-sm font-medium text-gray-900">Admin Name</p>
-                        <p class="text-xs text-gray-500">System Administrator</p>
-                    </div>
-                </div>
                 <button class="mt-4 w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                     <i data-feather="log-out" class="mr-2"></i> Log Out
                 </button>
             </div>
         </div>
-        
-        <button class="sm:hidden fixed top-4 left-4 z-50 p-2 bg-white border rounded-full" id="sidebar-toggle">
-            <i data-feather="menu"></i>
-        </button>
-        
-        <div class="fixed inset-0 bg-black bg-opacity-50 z-40 flex sm:hidden" id="mobile-sidebar" style="display: none;">
-            <div class="w-64 bg-white h-full shadow-lg p-4 overflow-auto">
-                <div class="p-4 flex items-center space-x-2">
-                    <div class="bg-blue-100 p-2 rounded-lg">
-                        <i data-feather="users" class="text-blue-600"></i>
-                    </div>
-                    <span class="font-bold text-gray-800">SPDA System</span>
-                </div>
-                <nav class="flex-1 px-2 space-y-1">
-                    <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 sidebar-link">
-                        <i data-feather="home" class="mr-3"></i> Dashboard
-                    </a>
-                    <a href="reports.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100 sidebar-link">
-                        <i data-feather="file" class="mr-3"></i> Data Reports</a>
-                    <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 sidebar-link">
-                        <i data-feather="users" class="mr-3"></i> Members
-                    </a>
-                    <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 sidebar-link">
-                        <i data-feather="file-text" class="mr-3"></i> Applications
-                    </a>
-                    <a href="renewals.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 sidebar-link">
-                    <i data-feather="refresh-cw" class="mr-3"></i> Renewals
-                    </a>
-                    <a href="announcements.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100">
-                        <i data-feather="bell" class="mr-3"></i> Announcements
-                    </a>
-                </nav>
-                <div class="p-4 border-t border-gray-200">
-                    <div class="flex items-center space-x-3">
-                        <img src="https://static.photos/people/200x200/1" class="w-10 h-10 rounded-full" alt="Admin">
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">Admin Name</p>
-                            <p class="text-xs text-gray-500">System Administrator</p>
-                        </div>
-                    </div>
-                    <button class="mt-4 w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                        <i data-feather="log-out" class="mr-2"></i> Log Out
-                    </button>
-                </div>
-            </div>
-        </div>
 
         <div class="flex-1 overflow-auto">
             <div class="p-6">
-                <header class="flex justify-between items-center mb-8">
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-800">Manage Announcements</h1>
-                        <p class="text-gray-500 text-sm mt-1">Create updates that will be sent to all app users.</p>
-                    </div>
-                </header>
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-gray-800 mb-1">Manage Announcements</h1>
+                    <p class="text-gray-500 text-sm">Create updates that will be sent to all app users.</p>
+                </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="lg:col-span-1">
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                             <h3 class="font-semibold text-gray-800 mb-4">Create New Announcement</h3>
                             <form id="create-announcement-form" class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                                    <input type="text" id="ann-title" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g., Relief Goods Distribution">
+                                    <input type="text" id="ann-title" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="e.g. Relief Goods Distribution">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Message Body</label>
-                                    <textarea id="ann-body" rows="4" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter the details..."></textarea>
+                                    <textarea id="ann-body" rows="4" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Enter the details..."></textarea>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Upload Image (Optional)</label>
-                                    <input type="file" id="ann-image-file" accept="image/*" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                    <p class="text-xs text-gray-500 mt-1">Select an image from your computer.</p>
+                                    <input type="file" id="ann-image-file" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                                 </div>
                                 <button type="submit" id="publish-btn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-200 font-medium flex justify-center items-center gap-2">
                                     <i data-feather="send" class="w-4 h-4"></i> Publish & Notify
@@ -131,20 +77,77 @@
                             </form>
                         </div>
                     </div>
-
+                
+                
                     <div class="lg:col-span-2">
                         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                            <div class="px-6 py-4 border-b border-gray-100">
+                            
+                            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
                                 <h3 class="font-semibold text-gray-800">Announcement History</h3>
+                                
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs text-gray-500 font-medium">From</span>
+                                        <input type="date" id="start-date-filter" 
+                                            class="pl-2 pr-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none text-gray-600 bg-white">
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs text-gray-500 font-medium">To</span>
+                                        <input type="date" id="end-date-filter" 
+                                            class="pl-2 pr-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none text-gray-600 bg-white">
+                                    </div>
+
+                                    <button id="clear-date-filter" class="hidden text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full transition" title="Clear Filters">
+                                        <i data-feather="x" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <div id="announcement-list" class="divide-y divide-gray-100 max-h-[600px] overflow-y-auto p-6 space-y-4">
-                                <p class="text-center text-gray-500">Loading announcements...</p>
+
+                            <div id="announcement-list" class="divide-y divide-gray-100 max-h-[600px] overflow-y-auto p-0">
+                                <p class="text-center text-gray-500 py-6">Loading announcements...</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div id="view-announcement-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform transition-all">
+            
+            <div class="flex justify-between items-center p-5 border-b border-gray-100">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900" id="modal-title">Announcement Title</h3>
+                    <p class="text-sm text-gray-500 mt-1" id="modal-date">Posted on...</p>
+                </div>
+                <button onclick="closeAnnouncementModal()" class="text-gray-400 hover:text-gray-600 transition">
+                    <i data-feather="x" class="w-6 h-6"></i>
+                </button>
             </div>
+
+            <div class="p-6 space-y-4">
+                <div id="modal-image-container" class="hidden rounded-lg overflow-hidden border border-gray-100">
+                    <img id="modal-image" src="" alt="Announcement Image" class="w-full h-auto object-cover max-h-80">
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    <p id="modal-body" class="text-gray-700 whitespace-pre-wrap leading-relaxed text-sm md:text-base">
+                        Announcement details will appear here.
+                    </p>
+                </div>
+            </div>
+
+            <div class="p-5 border-t border-gray-100 flex justify-end gap-3 bg-gray-50 rounded-b-lg">
+                <button onclick="deleteCurrentAnnouncement()" class="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition font-medium flex items-center gap-2">
+                    <i data-feather="trash-2" class="w-4 h-4"></i> Delete
+                </button>
+                <button onclick="closeAnnouncementModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-medium">
+                    Close
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
