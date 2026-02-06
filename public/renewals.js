@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (!tbody) return;
 
     try {
-        tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-blue-500">Loading Renewals...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">Loading, please wait...</td></tr>';
 
         const firebaseConfig = {
             apiKey: "AIzaSyBjO4P1-Ir_iJSkLScTiyshEd28GdskN24",

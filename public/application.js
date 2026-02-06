@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (!tbody) return;
 
     try {
-        tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-blue-500">Connecting to Firebase...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-blue-500">Loading, please wait...</td></tr>';
 
         // 1. Initialize Firebase
         const firebaseConfig = {
