@@ -152,10 +152,78 @@
         </div>
     </div>
 
+    <div id="rejectModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center px-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden transform transition-all">
+            
+            <div class="bg-red-50 px-6 py-4 border-b border-red-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-red-800 flex items-center gap-2">
+                    <i data-feather="alert-circle" class="w-5 h-5"></i> Reject Application
+                </h3>
+                <button onclick="closeRejectModal()" class="text-red-400 hover:text-red-600 transition">
+                    <i data-feather="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-4">
+                <p class="text-sm text-gray-600">Please select or enter a reason for rejecting this renewal. This message will be sent to the user.</p>
+                
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Select Reason</label>
+                    <select id="reject-select" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition bg-white" onchange="updateRejectText()">
+                        <option value="">-- Choose a common reason --</option>
+                        <option value="Submitted documents are blurry or unreadable.">Blurry / Unreadable Documents</option>
+                        <option value="The ID or documents provided have expired.">Expired Documents</option>
+                        <option value="Information in profile does not match documents.">Information Mismatch</option>
+                        <option value="Missing required pages or documents.">Incomplete Requirements</option>
+                        <option value="Other">Other (Type manually)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Detailed Reason</label>
+                    <textarea id="reject-reason-text" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition" placeholder="Type the specific reason here..."></textarea>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
+                <button onclick="closeRejectModal()" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition">Cancel</button>
+                <button onclick="confirmRejectSubmission()" class="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700 transition shadow-sm flex items-center gap-2">
+                    Submit Rejection
+                </button>
+            </div>
+        </div>
+    </div>
+
+<div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center px-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center transform transition-all">
+            
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <i data-feather="alert-triangle" class="h-6 w-6 text-red-600"></i>
+            </div>
+
+            <h3 class="text-lg leading-6 font-medium text-gray-900" id="confirm-title">Confirm Action</h3>
+            <div class="mt-2">
+                <p class="text-sm text-gray-500" id="confirm-message">
+                    Are you sure you want to proceed?
+                </p>
+            </div>
+
+            <div class="mt-6 flex justify-center gap-3">
+                <button onclick="closeConfirmModal()" 
+                    class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Cancel
+                </button>
+                <button id="confirm-btn-action" 
+                    class="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    Yes, Proceed
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         feather.replace();
     </script>
-    
     <script src="renewals.js"></script>
 </body>
 </html>
