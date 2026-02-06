@@ -22,7 +22,7 @@ async function initProfilePage() {
         const setDoc = (id, url) => { const link = document.getElementById(`doc-link-${id}`); const img = document.getElementById(`doc-img-${id}`); const error = document.getElementById(`doc-error-${id}`); if (url) { if (link) link.href = url; if (img) img.src = url; } else { if (link) link.style.display = 'none'; if (error) error.classList.remove('hidden'); } };
         
         document.getElementById('profile-avatar').src = user.profileImageUrl || `https://placehold.co/128x128/EBF4FF/7F9CF5?text=${user.firstName?.charAt(0) || 'A'}&font=inter`;
-        setText('profile-name', `${user.firstName} ${user.lastName}`);
+        setText('profile-name', `${user.firstName} ${user.middleInitial ? user.middleInitial + '.' : ''} ${user.lastName}`);
         setText('profile-category', CODE_TO_DESCRIPTION_MAP[user.category] || user.category);
         setText('profile-email', user.email);
         setText('profile-contact', user.contact);
@@ -48,7 +48,7 @@ async function initProfilePage() {
         else if (user.status === 'pending') { statusBadge.textContent = 'Pending'; statusBadge.className = 'px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800'; approveBtn.style.display = 'flex'; rejectBtn.style.display = 'flex'; }
         else { statusBadge.textContent = 'Rejected'; statusBadge.className = 'px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800'; approveBtn.style.display = 'flex'; rejectBtn.style.display = 'none'; }
         
-        setText('detail-full-name', `${user.firstName} ${user.lastName}`);
+        setText('detail-full-name', `${user.firstName} ${user.middleInitial} ${user.lastName}`);
         setText('detail-email', user.email);
         setText('detail-dob', user.dateOfBirth);
         setText('detail-age', user.age);
