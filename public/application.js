@@ -1,73 +1,163 @@
-import { db } from "./firebase-config.js";
-import { initSidebar, initLogout, approveUser, rejectUser } from "./utils.js";
-import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+// public/applications.js - DEBUG VERSION
 
-initSidebar();
-initLogout();
+console.log("🎯 applications.js loaded! (DEBUG MODE)");
 
-async function loadPendingApplications() {
+let cachedApps = {};
+let rejectTargetId = null;
+let pendingRejectReason = "";
+
+document.addEventListener('DOMContentLoaded', async function() {
     const tbody = document.getElementById('applications-table-body');
-    if (!tbody || !db) return;
-    
-    tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">Loading applications...</td></tr>';
-    
+    if (!tbody) return;
+
     try {
-        const q = query(collection(db, "users"), where("status", "==", "pending"));
-        const querySnapshot = await getDocs(q);
+        tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-blue-500">Connecting to Firebase...</td></tr>';
+
+        // 1. Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBjO4P1-Ir_iJSkLScTiyshEd28GdskN24",
+            authDomain: "solo-parent-app.firebaseapp.com",
+            databaseURL: "https://solo-parent-app-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "solo-parent-app",
+            storageBucket: "solo-parent-app.firebasestorage.app",
+            messagingSenderId: "292578110807",
+            appId: "1:292578110807:web:9f5e5c0dcd73c9975e6212"
+        };
         
-        tbody.innerHTML = "";
-        
-        if (querySnapshot.size === 0) { 
-            tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">No pending applications found.</td></tr>`; 
-            return; 
+        if (!firebase.apps.length) { 
+            firebase.initializeApp(firebaseConfig); 
+        }
+        const db = firebase.firestore();
+        console.log("✅ Firebase initialized");
+
+        // 2. DIAGNOSTIC QUERY: No filters, No sorting. Just get ANY 10 users.
+        console.log("🔍 Attempting to fetch first 10 users (raw)...");
+        const snapshot = await db.collection("users").limit(10).get();
+
+        if (snapshot.empty) {
+            console.warn("⚠️ Snapshot is empty. No documents found in 'users' collection.");
+            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-red-500">❌ Connected, but found 0 users in the database.</td></tr>`;
+            return;
         }
 
-        querySnapshot.forEach(docSnapshot => {
-            const data = docSnapshot.data();
-            const name = `${data.firstName} ${data.lastName}`;
+        console.log(`✅ Found ${snapshot.size} users. Rendering...`);
+        tbody.innerHTML = ""; // Clear loading message
+
+        // 3. RENDER EVERYTHING (Even if not pending)
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            cachedApps[doc.id] = data;
             
-            const row = document.createElement('tr'); 
-            row.className = 'hover:bg-gray-50';
+            // LOG DATA TO CONSOLE FOR YOU TO SEE
+            console.log("--------------------------------");
+            console.log(`User ID: ${doc.id}`);
+            console.log("Fields found:", Object.keys(data)); // This lists all field names
+            console.log("Status Field Value:", data.status); // Check exactly what this is
+            console.log("Full Data:", data);
+
+            const name = `${data.firstName || 'NoFirst'} ${data.lastName || 'NoLast'}`;
+            const status = data.status ? data.status : "MISSING STATUS"; 
             
-            // FIX: Removed target="_blank" from the View button below so it opens in the same tab
+            // Handle Date
+            let dateDisplay = "N/A";
+            if (data.createdAt && data.createdAt.toDate) dateDisplay = data.createdAt.toDate().toLocaleDateString();
+            else if (data.createdAt) dateDisplay = data.createdAt;
+
+            const row = document.createElement('tr');
+            row.className = "hover:bg-gray-50 border-b";
+            
+            // Highlight row color based on status
+            let statusColor = "bg-gray-100 text-gray-800";
+            if(status === "pending") statusColor = "bg-yellow-100 text-yellow-800";
+            if(status === "verified" || status === "approved") statusColor = "bg-green-100 text-green-800";
+
             row.innerHTML = `
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <input type="checkbox" class="rounded text-blue-600 focus:ring-blue-500">
+                <td class="px-6 py-4 font-bold text-gray-900">
+                    ${name}<br>
+                    <span class="text-xs font-normal text-gray-400">${doc.id}</span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
-                        <div class="ml-4">
-                            <div class="text-sm font-medium text-gray-900">${name}</div>
-                        </div>
-                    </div>
+                <td class="px-6 py-4 text-sm text-gray-600">User Reg</td>
+                <td class="px-6 py-4 text-sm text-gray-500">${dateDisplay}</td>
+                <td class="px-6 py-4">
+                    <span class="px-2 py-1 rounded-full text-xs font-bold ${statusColor}">
+                        ${status}
+                    </span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-gray-900">${data.soloParentIdNumber || 'N/A'}</div>
+                <td class="px-6 py-4 text-right">
+                    <button class="bg-blue-600 text-white px-3 py-1 rounded text-xs" onclick="openViewModal('${doc.id}')">View</button>
+                    <button class="bg-green-600 text-white px-3 py-1 rounded text-xs" onclick="approveApplication('${doc.id}')">Approve</button>
+                    <button class="bg-red-600 text-white px-3 py-1 rounded text-xs" onclick="openRejectModal('${doc.id}')">Reject</button>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-gray-900">${data.createdAt ? data.createdAt.toDate().toLocaleDateString() : 'N/A'}</div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div class="flex justify-end items-center space-x-3">
-                        <a href="profile.html?id=${docSnapshot.id}" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700">View</a>
-                        <button data-action="approve" data-id="${docSnapshot.id}" class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700">Approve</button>
-                        <button data-action="reject" data-id="${docSnapshot.id}" class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700">Reject</button>
-                    </div>
-                </td>`;
-            
+            `;
             tbody.appendChild(row);
         });
 
-        tbody.querySelectorAll('[data-action="approve"]').forEach(btn => btn.addEventListener('click', () => approveUser(btn.dataset.id)));
-        tbody.querySelectorAll('[data-action="reject"]').forEach(btn => btn.addEventListener('click', () => rejectUser(btn.dataset.id)));
-        
-        feather.replace();
-    } catch (error) { 
-        console.error('❌ Error loading applications:', error); 
+    } catch (error) {
+        console.error("❌ CRITICAL ERROR:", error);
+        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-red-500">Error: ${error.message}</td></tr>`;
     }
-}
+});
 
-document.addEventListener('DOMContentLoaded', loadPendingApplications);
+// --- ACTIONS (Keep these so buttons don't crash) ---
+window.openViewModal = function(id) { 
+    const data = cachedApps[id];
+    // ALERT THE RAW DATA SO WE CAN SEE IT
+    alert("Raw Data:\n" + JSON.stringify(data, null, 2)); 
+};
+
+window.approveApplication = async function(userId) {
+    if (!confirm("Approve this application?")) return;
+    try {
+        await firebase.firestore().collection("users").doc(userId).update({ 
+            status: "verified", 
+            isVerified: true, 
+            verificationDate: firebase.firestore.FieldValue.serverTimestamp() 
+        });
+        showSuccessModal("Approved!");
+    } catch (error) { alert("Error: " + error.message); }
+};
+
+window.openRejectModal = function(userId) {
+    rejectTargetId = userId;
+    document.getElementById('rejectModal').classList.remove('hidden');
+};
+
+window.closeRejectModal = function() {
+    document.getElementById('rejectModal').classList.add('hidden');
+};
+
+window.updateRejectText = function() {
+    const select = document.getElementById('reject-select');
+    const text = document.getElementById('reject-reason-text');
+    if(select.value === "Other") { text.value = ""; } else { text.value = select.value; }
+};
+
+window.confirmRejectSubmission = function() {
+    pendingRejectReason = document.getElementById('reject-reason-text').value;
+    document.getElementById('rejectModal').classList.add('hidden');
+    document.getElementById('confirmModal').classList.remove('hidden');
+    document.getElementById('confirm-btn-action').onclick = finalizeRejection;
+};
+
+window.closeConfirmModal = function() {
+    document.getElementById('confirmModal').classList.add('hidden');
+};
+
+window.finalizeRejection = async function() {
+    try {
+        await firebase.firestore().collection("users").doc(rejectTargetId).update({ 
+            status: "rejected", rejectionReason: pendingRejectReason 
+        });
+        document.getElementById('confirmModal').classList.add('hidden');
+        showSuccessModal("Rejected.");
+    } catch (error) { alert("Error: " + error.message); }
+};
+
+window.showSuccessModal = function(msg) {
+    if (document.getElementById('successModal')) {
+        document.getElementById('success-message').innerText = msg;
+        document.getElementById('successModal').classList.remove('hidden');
+    } else { alert(msg); location.reload(); }
+};
+
+window.closeSuccessModal = function() { location.reload(); };
