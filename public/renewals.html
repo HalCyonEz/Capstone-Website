@@ -69,6 +69,7 @@
                             <button id="btn-reject-view" class="w-full py-3 bg-red-600 text-white rounded-md font-bold hover:bg-red-700 flex items-center justify-center gap-2"><i data-feather="x-circle" class="w-5 h-5"></i> Reject</button>
                         </div>
                     </div>
+                    
                     <div class="w-full md:w-2/3 space-y-6">
                         <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
                             <h4 class="text-lg font-bold text-gray-800 mb-6 border-b pb-2">Personal Information</h4>
@@ -94,27 +95,9 @@
                         <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
                             <h4 class="text-lg font-bold text-gray-800 mb-6 border-b pb-2">Uploaded Documents</h4>
                             <div class="space-y-8">
-                                <div>
-                                    <p class="text-sm font-bold text-gray-600 uppercase mb-2">Valid ID</p>
-                                    <div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 h-64 w-full flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-100 transition">
-                                        <img id="img-validId" class="w-full h-full object-contain hidden" onclick="window.open(this.src, '_blank')">
-                                        <p id="no-img-validId" class="text-sm text-gray-400">No Image</p>
-                                    </div>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-bold text-gray-600 uppercase mb-2">Solo Parent ID</p>
-                                    <div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 h-64 w-full flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-100 transition">
-                                        <img id="img-soloParent" class="w-full h-full object-contain hidden" onclick="window.open(this.src, '_blank')">
-                                        <p id="no-img-soloParent" class="text-sm text-gray-400">No Image</p>
-                                    </div>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-bold text-gray-600 uppercase mb-2">PhilHealth ID</p>
-                                    <div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 h-64 w-full flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-100 transition">
-                                        <img id="img-philhealth" class="w-full h-full object-contain hidden" onclick="window.open(this.src, '_blank')">
-                                        <p id="no-img-philhealth" class="text-sm text-gray-400">No Image</p>
-                                    </div>
-                                </div>
+                                <div><p class="text-sm font-bold text-gray-600 uppercase mb-2">Valid ID</p><div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 h-64 w-full flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-100 transition"><img id="img-validId" class="w-full h-full object-contain hidden" onclick="window.open(this.src, '_blank')"><p id="no-img-validId" class="text-sm text-gray-400">No Image</p></div></div>
+                                <div><p class="text-sm font-bold text-gray-600 uppercase mb-2">Solo Parent ID</p><div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 h-64 w-full flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-100 transition"><img id="img-soloParent" class="w-full h-full object-contain hidden" onclick="window.open(this.src, '_blank')"><p id="no-img-soloParent" class="text-sm text-gray-400">No Image</p></div></div>
+                                <div><p class="text-sm font-bold text-gray-600 uppercase mb-2">PhilHealth ID</p><div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 h-64 w-full flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-100 transition"><img id="img-philhealth" class="w-full h-full object-contain hidden" onclick="window.open(this.src, '_blank')"><p id="no-img-philhealth" class="text-sm text-gray-400">No Image</p></div></div>
                             </div>
                         </div>
                     </div>
@@ -172,13 +155,15 @@
             setTxt('m-email-card', data.email);
             
             // Address (with street)
-            const street = data.street || data.streetName || "";
-            let addr = [data.houseNumber, street, data.subdivision].filter(Boolean).join(' ');
-            if (data.barangay) addr += (addr ? ', ' : '') + data.barangay;
-            if (data.municipality || data.city) addr += ', ' + (data.municipality || data.city);
-            setTxt('m-address-card', addr || data.address);
+            const fullAddress = [
+                data.houseNumber, 
+                data.street || data.streetName || data.subdivision, 
+                data.barangay, 
+                data.municipality || data.city
+            ].filter(Boolean).join(', ');
+            setTxt('m-address-card', fullAddress || "N/A");
 
-            // Detailed Fields (Restored)
+            // --- DETAILED FIELDS (Restored) ---
             setTxt('m-fullname', data.firstName + " " + data.lastName);
             setTxt('m-dob', data.dateOfBirth);
             setTxt('m-age', data.age);
