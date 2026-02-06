@@ -7,516 +7,271 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/feather-icons"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        /* Custom Scrollbar for Modal */
-        .modal-scroll::-webkit-scrollbar { width: 6px; }
-        .modal-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
-        .modal-scroll::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
-        .modal-scroll::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
-    </style>
+    <style> body { font-family: 'Inter', sans-serif; } .modal-scroll::-webkit-scrollbar { width: 6px; } .modal-scroll::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; } </style>
 </head>
 <body class="bg-gray-50 font-sans relative h-screen overflow-hidden flex">
 
-    <div class="w-64 bg-white border-r border-gray-200 flex-col hidden sm:flex z-10" id="sidebar">
-        <div class="p-4 flex items-center space-x-2">
-            <div class="bg-blue-100 p-2 rounded-lg">
-                <i data-feather="users" class="text-blue-600"></i>
-            </div>
-            <span class="font-bold text-gray-800">SPDA System</span>
-        </div>
+    <div class="w-64 bg-white border-r border-gray-200 flex-col hidden sm:flex z-10">
+        <div class="p-4 flex items-center space-x-2"><div class="bg-blue-100 p-2 rounded-lg"><i data-feather="users" class="text-blue-600"></i></div><span class="font-bold text-gray-800">SPDA System</span></div>
         <nav class="flex-1 px-2 space-y-1 overflow-y-auto">
-            <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
-                <i data-feather="home" class="mr-3"></i> Dashboard </a>
-            <a href="reports.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100 sidebar-link">
-                <i data-feather="file" class="mr-3"></i> Data Reports </a>
-            <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
-                <i data-feather="users" class="mr-3"></i> Members </a>
-            <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100">
-                <i data-feather="file-text" class="mr-3"></i> Applications </a>
-            <a href="renewals.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
-                <i data-feather="refresh-cw" class="mr-3"></i> Renewals </a>
-            <a href="announcements.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
-                <i data-feather="bell" class="mr-3"></i> Announcements </a>
+            <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100"><i data-feather="home" class="mr-3"></i> Dashboard </a>
+            <a href="reports.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100"><i data-feather="file" class="mr-3"></i> Data Reports </a>
+            <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100"><i data-feather="users" class="mr-3"></i> Members </a>
+            <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100"><i data-feather="file-text" class="mr-3"></i> Applications </a>
+            <a href="renewals.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100"><i data-feather="refresh-cw" class="mr-3"></i> Renewals </a>
+            <a href="announcements.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100"><i data-feather="bell" class="mr-3"></i> Announcements </a>
         </nav>
-        <div class="p-4 border-t border-gray-200">
-            <button id="logout-btn" class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                <i data-feather="log-out" class="mr-2"></i> Log Out
-            </button>
-        </div>
+        <div class="p-4 border-t border-gray-200"><button id="logout-btn" class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"><i data-feather="log-out" class="mr-2"></i> Log Out</button></div>
     </div>
 
     <div class="flex-1 flex flex-col overflow-hidden relative">
         <div class="flex-1 overflow-auto p-6">
-            <div class="mb-6">
-                <h1 class="text-2xl font-bold text-gray-800 mb-1">Solo Parent Applications</h1>
-                <p class="text-gray-500 text-sm">Manage and track all new user registrations.</p>
-            </div>
-
+            <div class="mb-6"><h1 class="text-2xl font-bold text-gray-800 mb-1">Solo Parent Applications</h1><p class="text-gray-500 text-sm">Manage new registrations.</p></div>
             <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applicant Name</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Submitted</th>
-                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="applications-table-body" class="bg-white divide-y divide-gray-200">
-                            <tr>
-                                <td colspan="4" class="px-6 py-4 text-center text-gray-500">
-                                    Loading applications...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Applicant Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date Submitted</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="applications-table-body" class="bg-white divide-y divide-gray-200">
+                        <tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Loading...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
     <div id="viewModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 flex items-center justify-center px-4">
-        <div class="relative bg-gray-100 rounded-xl shadow-2xl max-w-6xl w-full m-auto flex flex-col max-h-[90vh] overflow-hidden">
-            
+        <div class="relative bg-gray-100 rounded-xl shadow-2xl max-w-6xl w-full m-auto flex flex-col max-h-[95vh] overflow-hidden">
             <div class="flex justify-between items-center px-6 py-4 bg-white border-b border-gray-200">
-                <div>
-                    <h3 class="text-xl font-bold text-gray-800">Applicant Profile</h3>
-                    <p class="text-xs text-gray-500">Home / Applications / Profile</p>
-                </div>
-                <button onclick="closeViewModal()" class="text-gray-400 hover:text-gray-600 transition"><i data-feather="x" class="w-6 h-6"></i></button>
+                <div><h3 class="text-xl font-bold text-gray-800">Applicant Profile</h3></div>
+                <button onclick="closeViewModal()" class="text-gray-400 hover:text-gray-600"><i data-feather="x" class="w-6 h-6"></i></button>
             </div>
-
             <div class="overflow-y-auto modal-scroll p-6">
                 <div class="flex flex-col md:flex-row gap-6">
-                    
                     <div class="w-full md:w-1/3 space-y-6">
                         <div class="bg-white rounded-lg shadow-sm p-6 text-center border border-gray-200">
-                            <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <span id="v-avatar" class="text-4xl font-bold text-blue-600">A</span>
-                            </div>
-                            
-                            <h2 id="v-fullname-header" class="text-xl font-bold text-gray-900">Applicant Name</h2>
-                            <p id="v-category-header" class="text-sm text-gray-500 mb-6">Relative of OFW</p>
-
+                            <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4"><span id="v-avatar" class="text-4xl font-bold text-blue-600">A</span></div>
+                            <h2 id="v-fullname-header" class="text-xl font-bold text-gray-900">Name</h2>
+                            <p id="v-category-header" class="text-sm text-gray-500 mb-6">Category</p>
                             <div class="border-t border-gray-100 my-4"></div>
-
                             <div class="text-left space-y-4">
-                                <div>
-                                    <p class="text-xs text-gray-400 uppercase font-bold mb-1">Email</p>
-                                    <p id="v-email-card" class="text-sm font-medium text-gray-800 break-all">email@example.com</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-gray-400 uppercase font-bold mb-1">Contact</p>
-                                    <p id="v-contact-card" class="text-sm font-medium text-gray-800">+63 900 000 0000</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-gray-400 uppercase font-bold mb-1">Address</p>
-                                    <p id="v-address-card" class="text-sm font-medium text-gray-800">Baguio City</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-gray-400 uppercase font-bold mb-1">Application ID</p>
-                                    <p id="v-id-card" class="text-sm font-mono text-gray-500">#ID123456</p>
-                                </div>
+                                <div><p class="text-xs text-gray-400 uppercase font-bold mb-1">Email</p><p id="v-email-card" class="text-sm font-medium text-gray-800 break-all"></p></div>
+                                <div><p class="text-xs text-gray-400 uppercase font-bold mb-1">Contact</p><p id="v-contact-card" class="text-sm font-medium text-gray-800"></p></div>
+                                <div><p class="text-xs text-gray-400 uppercase font-bold mb-1">Address</p><p id="v-address-card" class="text-sm font-medium text-gray-800"></p></div>
+                                <div><p class="text-xs text-gray-400 uppercase font-bold mb-1">ID</p><p id="v-id-card" class="text-sm font-mono text-gray-500"></p></div>
                             </div>
                         </div>
-
                         <div class="space-y-2">
-                            <button id="btn-approve-view" class="w-full py-2 bg-green-600 text-white rounded-md font-medium hover:bg-green-700 transition flex items-center justify-center gap-2">
-                                <i data-feather="check-circle" class="w-4 h-4"></i> Approve
-                            </button>
-                            <button id="btn-reject-view" class="w-full py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 transition flex items-center justify-center gap-2">
-                                <i data-feather="x-circle" class="w-4 h-4"></i> Reject
-                            </button>
+                            <button id="btn-approve-view" class="w-full py-3 bg-green-600 text-white rounded-md font-bold hover:bg-green-700 flex items-center justify-center gap-2"><i data-feather="check-circle" class="w-5 h-5"></i> Approve</button>
+                            <button id="btn-reject-view" class="w-full py-3 bg-red-600 text-white rounded-md font-bold hover:bg-red-700 flex items-center justify-center gap-2"><i data-feather="x-circle" class="w-5 h-5"></i> Reject</button>
                         </div>
                     </div>
-
+                    
                     <div class="w-full md:w-2/3 space-y-6">
-                        
                         <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-                            <h4 class="text-lg font-bold text-gray-800 mb-6">Personal Information</h4>
+                            <h4 class="text-lg font-bold text-gray-800 mb-6 border-b pb-2">Personal Information</h4>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-4">
-                                <div><p class="text-xs text-gray-400 uppercase font-bold">Full Name</p><p id="v-fullname-detail" class="text-sm font-medium text-gray-900"></p></div>
-                                <div><p class="text-xs text-gray-400 uppercase font-bold">Email</p><p id="v-email-detail" class="text-sm font-medium text-gray-900"></p></div>
-                                <div><p class="text-xs text-gray-400 uppercase font-bold">Date of Birth</p><p id="v-dob" class="text-sm font-medium text-gray-900"></p></div>
-                                <div><p class="text-xs text-gray-400 uppercase font-bold">Age</p><p id="v-age" class="text-sm font-medium text-gray-900"></p></div>
-                                <div><p class="text-xs text-gray-400 uppercase font-bold">Sex</p><p id="v-sex" class="text-sm font-medium text-gray-900"></p></div>
-                                <div><p class="text-xs text-gray-400 uppercase font-bold">Place of Birth</p><p id="v-pob" class="text-sm font-medium text-gray-900"></p></div>
-                                <div><p class="text-xs text-gray-400 uppercase font-bold">Civil Status</p><p id="v-civil" class="text-sm font-medium text-gray-900"></p></div>
-                                <div><p class="text-xs text-gray-400 uppercase font-bold">Ethnicity</p><p id="v-ethnicity" class="text-sm font-medium text-gray-900"></p></div>
-                                <div><p class="text-xs text-gray-400 uppercase font-bold">Religion</p><p id="v-religion" class="text-sm font-medium text-gray-900"></p></div>
-                                <div><p class="text-xs text-gray-400 uppercase font-bold">Date Registered</p><p id="v-dateReg" class="text-sm font-medium text-gray-900"></p></div>
+                                <div><p class="text-xs text-gray-400 uppercase font-bold">Full Name</p><p id="v-fullname-detail" class="text-sm font-semibold text-gray-900"></p></div>
+                                <div><p class="text-xs text-gray-400 uppercase font-bold">Email</p><p id="v-email-detail" class="text-sm font-semibold text-gray-900"></p></div>
+                                <div><p class="text-xs text-gray-400 uppercase font-bold">Date of Birth</p><p id="v-dob" class="text-sm font-semibold text-gray-900"></p></div>
+                                <div><p class="text-xs text-gray-400 uppercase font-bold">Age</p><p id="v-age" class="text-sm font-semibold text-gray-900"></p></div>
+                                <div><p class="text-xs text-gray-400 uppercase font-bold">Sex</p><p id="v-sex" class="text-sm font-semibold text-gray-900"></p></div>
+                                <div><p class="text-xs text-gray-400 uppercase font-bold">Place of Birth</p><p id="v-pob" class="text-sm font-semibold text-gray-900"></p></div>
+                                <div><p class="text-xs text-gray-400 uppercase font-bold">Civil Status</p><p id="v-civil" class="text-sm font-semibold text-gray-900"></p></div>
+                                <div><p class="text-xs text-gray-400 uppercase font-bold">Ethnicity</p><p id="v-ethnicity" class="text-sm font-semibold text-gray-900"></p></div>
+                                <div><p class="text-xs text-gray-400 uppercase font-bold">Religion</p><p id="v-religion" class="text-sm font-semibold text-gray-900"></p></div>
+                                <div><p class="text-xs text-gray-400 uppercase font-bold">Date Registered</p><p id="v-dateReg" class="text-sm font-semibold text-gray-900"></p></div>
                             </div>
                         </div>
 
                         <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-                            <h4 class="text-lg font-bold text-gray-800 mb-6">Family & Employment</h4>
+                            <h4 class="text-lg font-bold text-gray-800 mb-6 border-b pb-2">Family & Employment</h4>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-4">
-                                <div><p class="text-xs text-gray-400 uppercase font-bold">Occupation</p><p id="v-occupation" class="text-sm font-medium text-gray-900"></p></div>
-                                <div><p class="text-xs text-gray-400 uppercase font-bold">Company / Agency</p><p id="v-company" class="text-sm font-medium text-gray-900"></p></div>
-                                <div><p class="text-xs text-gray-400 uppercase font-bold">Monthly Income</p><p id="v-income" class="text-sm font-medium text-gray-900"></p></div>
-                                <div><p class="text-xs text-gray-400 uppercase font-bold">Number of Children</p><p id="v-children-count" class="text-sm font-medium text-gray-900"></p></div>
-                                <div class="sm:col-span-2"><p class="text-xs text-gray-400 uppercase font-bold">Ages of Children</p><p id="v-children-ages" class="text-sm font-medium text-gray-900"></p></div>
-                                <div><p class="text-xs text-gray-400 uppercase font-bold">PhilHealth ID</p><p id="v-philhealth" class="text-sm font-medium text-gray-900"></p></div>
+                                <div><p class="text-xs text-gray-400 uppercase font-bold">Occupation</p><p id="v-occupation" class="text-sm font-semibold text-gray-900"></p></div>
+                                <div><p class="text-xs text-gray-400 uppercase font-bold">Company / Agency</p><p id="v-company" class="text-sm font-semibold text-gray-900"></p></div>
+                                <div><p class="text-xs text-gray-400 uppercase font-bold">Monthly Income</p><p id="v-income" class="text-sm font-semibold text-gray-900"></p></div>
+                                <div><p class="text-xs text-gray-400 uppercase font-bold">Children Count</p><p id="v-children-count" class="text-sm font-semibold text-gray-900"></p></div>
+                                <div class="sm:col-span-2"><p class="text-xs text-gray-400 uppercase font-bold">Children's Ages</p><p id="v-children-ages" class="text-sm font-semibold text-gray-900"></p></div>
+                                <div><p class="text-xs text-gray-400 uppercase font-bold">PhilHealth ID</p><p id="v-philhealth" class="text-sm font-semibold text-gray-900"></p></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+                            <h4 class="text-lg font-bold text-gray-800 mb-6 border-b pb-2">Uploaded Documents</h4>
+                            <div class="space-y-8">
+                                <div>
+                                    <p class="text-sm font-bold text-gray-600 uppercase mb-2">Valid Government ID</p>
+                                    <div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 h-64 w-full flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-100 transition">
+                                        <img id="v-img-valid" class="w-full h-full object-contain hidden" onclick="window.open(this.src, '_blank')">
+                                        <p id="v-txt-valid" class="text-sm text-gray-400">No Image Uploaded</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-gray-600 uppercase mb-2">Proof of Solo Parent</p>
+                                    <div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 h-64 w-full flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-100 transition">
+                                        <img id="v-img-proof" class="w-full h-full object-contain hidden" onclick="window.open(this.src, '_blank')">
+                                        <p id="v-txt-proof" class="text-sm text-gray-400">No Image Uploaded</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-gray-600 uppercase mb-2">PhilHealth ID</p>
+                                    <div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 h-64 w-full flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-100 transition">
+                                        <img id="v-img-phil" class="w-full h-full object-contain hidden" onclick="window.open(this.src, '_blank')">
+                                        <p id="v-txt-phil" class="text-sm text-gray-400">No Image Uploaded</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
                     </div>
                 </div>
             </div>
-
             <div class="px-6 py-4 border-t border-gray-200 bg-white flex justify-end">
-                <button onclick="closeViewModal()" class="px-6 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 font-medium text-sm transition">Close Window</button>
+                <button onclick="closeViewModal()" class="px-6 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 font-medium text-sm">Close Window</button>
             </div>
         </div>
     </div>
 
-    <div id="rejectModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center px-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden">
-            <div class="bg-red-50 px-6 py-4 border-b border-red-100 flex justify-between items-center">
-                <h3 class="text-lg font-bold text-red-800 flex items-center gap-2">
-                    <i data-feather="alert-circle" class="w-5 h-5"></i> Reject Application
-                </h3>
-                <button onclick="closeRejectModal()" class="text-red-400 hover:text-red-600"><i data-feather="x" class="w-5 h-5"></i></button>
-            </div>
-            <div class="p-6 space-y-4">
-                <p class="text-sm text-gray-600">Please select or enter a reason for rejection.</p>
-                <select id="reject-select" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-red-500 focus:border-red-500" onchange="updateRejectText()">
-                    <option value="">-- Choose a common reason --</option>
-                    <option value="Blurry or unreadable documents.">Blurry Documents</option>
-                    <option value="Information mismatch.">Information Mismatch</option>
-                    <option value="Applicant does not meet criteria.">Not Qualified</option>
-                    <option value="Other">Other (Type manually)</option>
-                </select>
-                <textarea id="reject-reason-text" rows="3" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-red-500 focus:border-red-500" placeholder="Type specific reason here..."></textarea>
-            </div>
-            <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
-                <button onclick="closeRejectModal()" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50">Cancel</button>
-                <button onclick="confirmRejectSubmission()" class="px-4 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700">Submit Rejection</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[70] flex items-center justify-center px-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center">
-            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4" id="confirm-icon-bg">
-                <i data-feather="alert-triangle" class="h-6 w-6 text-blue-600" id="confirm-icon"></i>
-            </div>
-            <h3 class="text-lg font-bold text-gray-900" id="confirm-title">Confirm Action</h3>
-            <p class="text-sm text-gray-500 mt-2" id="confirm-message">Are you sure you want to proceed?</p>
-            <div class="mt-6 flex justify-center gap-3">
-                <button onclick="closeConfirmModal()" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50">Cancel</button>
-                <button id="confirm-btn-action" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700">Yes, Proceed</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[80] flex items-center justify-center px-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center">
-            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                <i data-feather="check" class="h-6 w-6 text-green-600"></i>
-            </div>
-            <h3 class="text-lg font-bold text-gray-900">Success!</h3>
-            <p class="text-sm text-gray-500 mt-2" id="success-message">Action completed successfully.</p>
-            <div class="mt-6">
-                <button onclick="closeSuccessModal()" class="w-full px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 shadow-sm">OK</button>
-            </div>
-        </div>
-    </div>
+    <div id="rejectModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center px-4"><div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6"><h3 class="text-lg font-bold text-red-800 mb-4">Reject Application</h3><select id="reject-select" class="w-full border rounded px-3 py-2 text-sm mb-3" onchange="updateRejectText()"><option value="">-- Reason --</option><option value="Blurry Documents">Blurry Documents</option><option value="Not Qualified">Not Qualified</option><option value="Other">Other</option></select><textarea id="reject-reason-text" rows="3" class="w-full border rounded px-3 py-2 text-sm"></textarea><div class="flex justify-end gap-3 mt-4"><button onclick="closeRejectModal()" class="px-4 py-2 border rounded text-sm">Cancel</button><button onclick="confirmRejectSubmission()" class="px-4 py-2 bg-red-600 text-white rounded text-sm">Submit</button></div></div></div>
+    <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[70] flex items-center justify-center px-4"><div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center"><h3 class="text-lg font-bold" id="confirm-title">Confirm</h3><p class="text-sm text-gray-500 mt-2" id="confirm-message">Proceed?</p><div class="mt-6 flex justify-center gap-3"><button onclick="closeConfirmModal()" class="px-4 py-2 border rounded text-sm">Cancel</button><button id="confirm-btn-action" class="px-4 py-2 text-white rounded text-sm">Yes</button></div></div></div>
+    <div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[80] flex items-center justify-center px-4"><div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center"><i data-feather="check" class="h-8 w-8 text-green-600 mx-auto mb-2"></i><h3 class="text-lg font-bold">Success!</h3><p class="text-sm text-gray-500 mt-2" id="success-message">Done.</p><button onclick="closeSuccessModal()" class="mt-4 w-full px-4 py-2 bg-green-600 text-white rounded text-sm">OK</button></div></div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script>
         feather.replace();
-
-        // --- JS LOGIC STARTS HERE ---
-        console.log("🎯 Internal Script Loaded!");
-
-        let cachedApps = {};
-        let rejectTargetId = null;
-        let approveTargetId = null; 
-        let pendingRejectReason = "";
+        let cachedApps = {}, rejectTargetId = null, approveTargetId = null, pendingRejectReason = "";
 
         document.addEventListener('DOMContentLoaded', async function() {
             const tbody = document.getElementById('applications-table-body');
+            const firebaseConfig = { apiKey: "AIzaSyBjO4P1-Ir_iJSkLScTiyshEd28GdskN24", authDomain: "solo-parent-app.firebaseapp.com", databaseURL: "https://solo-parent-app-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "solo-parent-app", storageBucket: "solo-parent-app.firebasestorage.app", messagingSenderId: "292578110807", appId: "1:292578110807:web:9f5e5c0dcd73c9975e6212" };
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
 
-            try {
-                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-blue-500">Connecting to Firebase...</td></tr>';
+            const snapshot = await db.collection("users").orderBy("createdAt", "desc").limit(50).get();
+            if (snapshot.empty) { tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center">No users found.</td></tr>'; return; }
 
-                // 1. Initialize Firebase
-                const firebaseConfig = {
-                    apiKey: "AIzaSyBjO4P1-Ir_iJSkLScTiyshEd28GdskN24",
-                    authDomain: "solo-parent-app.firebaseapp.com",
-                    databaseURL: "https://solo-parent-app-default-rtdb.asia-southeast1.firebasedatabase.app",
-                    projectId: "solo-parent-app",
-                    storageBucket: "solo-parent-app.firebasestorage.app",
-                    messagingSenderId: "292578110807",
-                    appId: "1:292578110807:web:9f5e5c0dcd73c9975e6212"
-                };
-                
-                if (!firebase.apps.length) { 
-                    firebase.initializeApp(firebaseConfig); 
+            tbody.innerHTML = "";
+            let count = 0;
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if ((data.status || "").toLowerCase() === "pending") {
+                    count++;
+                    cachedApps[doc.id] = data;
+                    renderRow(doc.id, data, tbody);
                 }
-                const db = firebase.firestore();
-                console.log("✅ Firebase initialized");
-
-                // 2. Fetch Users
-                const snapshot = await db.collection("users")
-                    .orderBy("createdAt", "desc")
-                    .limit(50)
-                    .get();
-
-                if (snapshot.empty) {
-                    tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-yellow-500">ℹ️ No users found in database.</td></tr>`;
-                    return;
-                }
-
-                // 3. Filter & Render
-                tbody.innerHTML = "";
-                let pendingCount = 0;
-
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const status = (data.status || "").toLowerCase();
-
-                    // Only show if status is 'pending'
-                    if (status === "pending") {
-                        pendingCount++;
-                        cachedApps[doc.id] = data;
-                        renderRow(doc.id, data, tbody);
-                    }
-                });
-
-                if (pendingCount === 0) {
-                    tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">No pending applications found.</td></tr>`;
-                }
-
-            } catch (error) {
-                console.error("❌ Error:", error);
-                tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-red-500">Error: ${error.message}</td></tr>`;
-            }
+            });
+            if (count === 0) tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center">No pending applications.</td></tr>';
         });
 
         function renderRow(id, data, tbody) {
-            const name = `${data.firstName || ''} ${data.middleInitial ? data.middleInitial + '.' : ''} ${data.lastName || ''}`.trim() || 'Unknown';
-            let dateDisplay = "N/A";
-            if (data.createdAt && data.createdAt.toDate) {
-                dateDisplay = data.createdAt.toDate().toLocaleDateString();
-            } else if (data.createdAt) {
-                dateDisplay = new Date(data.createdAt).toLocaleDateString();
-            }
-
+            const date = data.createdAt && data.createdAt.toDate ? data.createdAt.toDate().toLocaleDateString() : "N/A";
             const row = document.createElement('tr');
-            row.className = "hover:bg-gray-50 border-b border-gray-100 last:border-0 transition";
+            row.className = "hover:bg-gray-50 border-b";
             row.innerHTML = `
-                <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm font-bold text-gray-900">${name}</div><div class="text-xs text-gray-500">ID: ${id}</div></td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">New Registration</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${dateDisplay}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div class="flex justify-end gap-2">
-                        <button class="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-blue-700 shadow-sm" onclick="openViewModal('${id}')">View</button>
-                        <button class="bg-green-600 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-green-700 shadow-sm" onclick="confirmApprove('${id}')">Approve</button>
-                        <button class="bg-red-600 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-red-700 shadow-sm" onclick="openRejectModal('${id}')">Reject</button>
-                    </div>
-                </td>
-            `;
+                <td class="px-6 py-4 font-bold text-gray-900">${data.firstName} ${data.lastName}</td>
+                <td class="px-6 py-4 text-sm text-gray-600">New Registration</td>
+                <td class="px-6 py-4 text-sm text-gray-500">${date}</td>
+                <td class="px-6 py-4 text-right"><button class="bg-blue-600 text-white px-3 py-1.5 rounded text-xs mr-2" onclick="openViewModal('${id}')">View</button><button class="bg-green-600 text-white px-3 py-1.5 rounded text-xs mr-2" onclick="confirmApprove('${id}')">Approve</button><button class="bg-red-600 text-white px-3 py-1.5 rounded text-xs" onclick="openRejectModal('${id}')">Reject</button></td>`;
             tbody.appendChild(row);
         }
 
-        // --- ACTIONS ---
-
-        // View Modal Logic
-        window.openViewModal = function(id) { 
+        window.openViewModal = function(id) {
             const data = cachedApps[id];
             if (!data) return;
-
-            const setTxt = (elId, val) => { const el = document.getElementById(elId); if(el) el.textContent = val || "N/A"; };
-
-            // Left Sidebar
-            const fullName = `${data.firstName || ''} ${data.middleInitial ? data.middleInitial + '.' : ''} ${data.lastName || ''}`.trim();
-            setTxt('v-fullname-header', fullName);
-            setTxt('v-avatar', (data.firstName || 'U').charAt(0).toUpperCase());
+            const setTxt = (id, val) => document.getElementById(id).textContent = val || "N/A";
             
-            const catMap = { 'a1': 'Solo Parent', 'a2': 'Relative of OFW', 'a3': 'Spouse Detained' };
-            setTxt('v-category-header', catMap[data.category] || data.category || "Solo Parent Applicant");
-
+            // SIDEBAR
+            setTxt('v-fullname-header', data.firstName + " " + data.lastName);
+            setTxt('v-avatar', (data.firstName || 'U').charAt(0));
+            setTxt('v-category-header', data.category || "Applicant");
             setTxt('v-email-card', data.email);
             setTxt('v-contact-card', data.contact);
-            const address = [data.barangay, data.municipality].filter(Boolean).join(', ') || data.address;
-            setTxt('v-address-card', address);
+            setTxt('v-address-card', (data.barangay || "") + ", " + (data.municipality || ""));
             setTxt('v-id-card', id);
-
-            // BUTTON BINDING
-            document.getElementById('btn-approve-view').onclick = () => { closeViewModal(); confirmApprove(id); };
-            document.getElementById('btn-reject-view').onclick = () => { closeViewModal(); openRejectModal(id); };
-
-            // Right Details
-            setTxt('v-fullname-detail', fullName);
+            
+            // PERSONAL INFO (Restored Fields)
+            setTxt('v-fullname-detail', data.firstName + " " + data.lastName);
             setTxt('v-email-detail', data.email);
             setTxt('v-dob', data.dateOfBirth);
             setTxt('v-age', data.age);
-            setTxt('v-sex', data.sex || data.gender);
+            setTxt('v-sex', data.sex);
             setTxt('v-pob', data.placeOfBirth);
             setTxt('v-civil', data.civilStatus);
             setTxt('v-ethnicity', data.ethnicity);
             setTxt('v-religion', data.religion);
-            
-            let regDate = "N/A";
-            if(data.createdAt && data.createdAt.toDate) regDate = data.createdAt.toDate().toLocaleDateString();
-            setTxt('v-dateReg', regDate);
+            setTxt('v-dateReg', data.createdAt && data.createdAt.toDate ? data.createdAt.toDate().toLocaleDateString() : "N/A");
 
+            // FAMILY & EMPLOYMENT
             setTxt('v-occupation', data.occupation);
             setTxt('v-company', data.companyAgency);
             setTxt('v-income', data.monthlyIncome);
+            setTxt('v-children-count', Array.isArray(data.childrenAges) ? data.childrenAges.length : "0");
+            setTxt('v-children-ages', Array.isArray(data.childrenAges) ? data.childrenAges.join(', ') : "None");
             setTxt('v-philhealth', data.philhealthId || data.philhealthIdNumber);
 
-            if (Array.isArray(data.childrenAges)) {
-                setTxt('v-children-count', data.childrenAges.length);
-                setTxt('v-children-ages', data.childrenAges.join(', '));
-            } else {
-                setTxt('v-children-count', "0");
-                setTxt('v-children-ages', "None");
-            }
+            // IMAGES
+            const setImg = (imgId, txtId, url) => {
+                const img = document.getElementById(imgId), txt = document.getElementById(txtId);
+                if (url && url.length > 5) { img.src = url; img.classList.remove('hidden'); txt.classList.add('hidden'); }
+                else { img.classList.add('hidden'); txt.classList.remove('hidden'); }
+            };
+            setImg('v-img-valid', 'v-txt-valid', data.proofIdUrl || data.validIdUrl);
+            setImg('v-img-proof', 'v-txt-proof', data.proofSoloParentUrl || data.soloParentIdUrl);
+            setImg('v-img-phil', 'v-txt-phil', data.philhealthIdUrl);
 
+            document.getElementById('btn-approve-view').onclick = () => { closeViewModal(); confirmApprove(id); };
+            document.getElementById('btn-reject-view').onclick = () => { closeViewModal(); openRejectModal(id); };
             document.getElementById('viewModal').classList.remove('hidden');
         };
+        window.closeViewModal = () => document.getElementById('viewModal').classList.add('hidden');
 
-        window.closeViewModal = function() {
-            document.getElementById('viewModal').classList.add('hidden');
-        };
-
-        // ==========================================
-        //         APPROVAL LOGIC (UPDATED)
-        // ==========================================
-
-        // 1. Trigger Confirmation Modal (No Browser Alert!)
-        window.confirmApprove = function(userId) {
-            approveTargetId = userId;
-            
-            // Set Modal Text
+        // Approve
+        window.confirmApprove = function(id) {
+            approveTargetId = id;
             document.getElementById('confirm-title').innerText = "Confirm Approval";
-            document.getElementById('confirm-message').innerText = "Are you sure you want to approve this application? The user will be approved.";
-            
-            // Style Button as GREEN
+            document.getElementById('confirm-message').innerText = "Approve this user? They will be marked as 'approved'.";
             const btn = document.getElementById('confirm-btn-action');
-            btn.className = "px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 transition";
+            btn.className = "px-4 py-2 bg-green-600 text-white rounded text-sm";
             btn.innerText = "Yes, Approve";
-            btn.onclick = finalizeApprove; // Bind to approve function
-
+            btn.onclick = async () => {
+                // FIXED: Status = approved
+                await firebase.firestore().collection("users").doc(id).update({ status: "approved", isVerified: true, verificationDate: firebase.firestore.FieldValue.serverTimestamp() });
+                document.getElementById('confirmModal').classList.add('hidden');
+                showSuccess("Approved!");
+            };
             document.getElementById('confirmModal').classList.remove('hidden');
         };
 
-        // 2. Finalize Approval (Send to Firebase)
-        window.finalizeApprove = async function() {
-            const btn = document.getElementById('confirm-btn-action');
-            btn.innerText = "Processing...";
-            btn.disabled = true;
-
-            try {
-                const db = firebase.firestore();
-                
-                // ✅ UPDATED: Set status to "approved"
-                await db.collection("users").doc(approveTargetId).update({ 
-                    status: "approved", 
-                    isVerified: true, 
-                    verificationDate: firebase.firestore.FieldValue.serverTimestamp() 
-                });
-                
-                document.getElementById('confirmModal').classList.add('hidden');
-                showSuccessModal("Application Approved Successfully!");
-                
-            } catch (error) { 
-                alert("Error: " + error.message); 
-                document.getElementById('confirmModal').classList.add('hidden');
-                btn.disabled = false;
-            }
-        };
-
-        // ==========================================
-        //         REJECTION LOGIC (UPDATED)
-        // ==========================================
-
-        window.openRejectModal = function(userId) {
-            rejectTargetId = userId;
-            document.getElementById('reject-select').value = "";
-            document.getElementById('reject-reason-text').value = "";
-            document.getElementById('rejectModal').classList.remove('hidden');
-        };
-
-        window.closeRejectModal = function() {
-            document.getElementById('rejectModal').classList.add('hidden');
-            rejectTargetId = null;
-        };
-
-        window.updateRejectText = function() {
-            const select = document.getElementById('reject-select');
-            const text = document.getElementById('reject-reason-text');
-            if (select.value === "Other") { text.value = ""; text.placeholder = "Please type specific reason..."; text.focus(); } 
-            else { text.value = select.value; }
-        };
-
+        // Reject
+        window.openRejectModal = function(id) { rejectTargetId = id; document.getElementById('rejectModal').classList.remove('hidden'); };
+        window.closeRejectModal = () => document.getElementById('rejectModal').classList.add('hidden');
+        window.updateRejectText = () => { const sel = document.getElementById('reject-select'); document.getElementById('reject-reason-text').value = sel.value === "Other" ? "" : sel.value; };
+        
         window.confirmRejectSubmission = function() {
             pendingRejectReason = document.getElementById('reject-reason-text').value;
-            if (!pendingRejectReason) { alert("Please select or type a reason for rejection."); return; }
-            
             document.getElementById('rejectModal').classList.add('hidden');
-            
-            // Set Modal Text
             document.getElementById('confirm-title').innerText = "Confirm Rejection";
-            document.getElementById('confirm-message').innerText = "Are you sure you want to reject this application? This cannot be undone.";
-            
-            // Style Button as RED
+            document.getElementById('confirm-message').innerText = "Reject this user?";
             const btn = document.getElementById('confirm-btn-action');
-            btn.className = "px-4 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700 transition";
+            btn.className = "px-4 py-2 bg-red-600 text-white rounded text-sm";
             btn.innerText = "Yes, Reject";
-            btn.onclick = finalizeRejection; // Bind to reject function
-
+            btn.onclick = async () => {
+                await firebase.firestore().collection("users").doc(rejectTargetId).update({ status: "rejected", rejectionReason: pendingRejectReason });
+                document.getElementById('confirmModal').classList.add('hidden');
+                showSuccess("Rejected.");
+            };
             document.getElementById('confirmModal').classList.remove('hidden');
         };
+        window.closeConfirmModal = () => document.getElementById('confirmModal').classList.add('hidden');
 
-        window.closeConfirmModal = function() {
-            document.getElementById('confirmModal').classList.add('hidden');
-            if (rejectTargetId && !approveTargetId) {
-                document.getElementById('rejectModal').classList.remove('hidden');
-            }
-            approveTargetId = null;
-        };
-
-        window.finalizeRejection = async function() {
-            const btn = document.getElementById('confirm-btn-action');
-            btn.innerText = "Processing...";
-            btn.disabled = true;
-
-            try {
-                const db = firebase.firestore();
-                await db.collection("users").doc(rejectTargetId).update({ 
-                    status: "rejected", rejectionReason: pendingRejectReason 
-                });
-                document.getElementById('confirmModal').classList.add('hidden');
-                showSuccessModal("Application Rejected Successfully.");
-            } catch (error) { 
-                alert("Error: " + error.message); 
-                closeConfirmModal();
-                btn.disabled = false;
-            }
-        };
-
-        // ==========================================
-        //           SUCCESS MODAL LOGIC
-        // ==========================================
-
-        window.showSuccessModal = function(msg) {
-            if (document.getElementById('successModal')) {
-                document.getElementById('success-message').innerText = msg;
-                document.getElementById('successModal').classList.remove('hidden');
-            } else { alert(msg); location.reload(); }
-        };
-
-        window.closeSuccessModal = function() {
-            document.getElementById('successModal').classList.add('hidden');
-            location.reload();
-        };
+        window.showSuccess = (msg) => { document.getElementById('success-message').innerText = msg; document.getElementById('successModal').classList.remove('hidden'); };
+        window.closeSuccessModal = () => location.reload();
     </script>
 </body>
 </html>
