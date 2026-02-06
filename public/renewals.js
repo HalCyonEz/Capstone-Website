@@ -19,6 +19,7 @@ function waitForFirebase() {
     });
 }
 
+// --- INITIALIZATION ---
 async function initRenewalsPage() {
     console.log("🚀 Initializing Renewals Page...");
     
@@ -31,15 +32,9 @@ async function initRenewalsPage() {
     try {
         tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-blue-500">Loading Firebase...</td></tr>';
         
-        // Load Firebase from CDN
         await loadFirebaseScripts();
-        console.log("✅ Firebase scripts loaded");
-        
-        // Wait for Firebase to be ready
         await waitForFirebase();
-        console.log("✅ Firebase is ready");
         
-        // Initialize Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBjO4P1-Ir_iJSkLScTiyshEd28GdskN24",
             authDomain: "solo-parent-app.firebaseapp.com",
@@ -51,7 +46,6 @@ async function initRenewalsPage() {
             measurementId: "G-QZ9EYD02ZV"
         };
         
-        // Initialize Firebase
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
@@ -60,7 +54,6 @@ async function initRenewalsPage() {
         console.log("✅ Firebase initialized");
         tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-green-500">✅ Connected! Loading renewals...</td></tr>';
         
-        // Load renewals
         await loadRenewals(db, tbody);
         
     } catch (error) {
@@ -71,17 +64,12 @@ async function initRenewalsPage() {
 
 function loadFirebaseScripts() {
     return new Promise((resolve, reject) => {
-        // Check if already loaded
         if (typeof firebase !== 'undefined') {
             resolve();
             return;
         }
-        
-        // Load Firebase App
         const script1 = document.createElement('script');
         script1.src = "https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js";
-        
-        // Load Firestore
         const script2 = document.createElement('script');
         script2.src = "https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js";
         
@@ -95,28 +83,22 @@ function loadFirebaseScripts() {
     });
 }
 
+// --- DATA LOADING ---
 async function loadRenewals(db, tbody) {
     try {
         console.log("🔍 Loading renewals from Firestore...");
-        
-        // Reset cache
         cachedRenewals = {};
 
-        // FIXED: Query using renewal_status instead of status
         const pendingSnapshot = await db.collection("renewalSubmissions")
             .where("renewal_status", "==", "pending")
             .get();
             
-        console.log(`📊 Pending renewals (using renewal_status): ${pendingSnapshot.size}`);
-        
         if (pendingSnapshot.size === 0) {
-            // Also try with 'status' field as fallback
+            // Fallback for older data structure
             const statusSnapshot = await db.collection("renewalSubmissions")
                 .where("status", "==", "pending")
                 .get();
                 
-            console.log(`📊 Pending renewals (using status): ${statusSnapshot.size}`);
-            
             if (statusSnapshot.size === 0) {
                 tbody.innerHTML = `
                     <tr>
@@ -127,12 +109,10 @@ async function loadRenewals(db, tbody) {
                 `;
                 return;
             } else {
-                // Use the status field results
-                displayRenewals(statusSnapshot, tbody, 'status');
+                displayRenewals(statusSnapshot, tbody);
             }
         } else {
-            // Use the renewal_status field results
-            displayRenewals(pendingSnapshot, tbody, 'renewal_status');
+            displayRenewals(pendingSnapshot, tbody);
         }
         
     } catch (error) {
@@ -147,16 +127,17 @@ async function loadRenewals(db, tbody) {
     }
 }
 
-function displayRenewals(snapshot, tbody, fieldUsed) {
+// --- TABLE RENDERING ---
+function displayRenewals(snapshot, tbody) {
     tbody.innerHTML = "";
     
     snapshot.forEach(doc => {
         const data = doc.data();
-        
-        // 1. Store data in cache for the View Modal
         cachedRenewals[doc.id] = data;
         
-        const name = `${data.firstName || ''} ${data.middleInitial || ''} ${data.lastName || ''}`.trim() || 'Unknown Name';
+        // Add middle initial dot logic here if needed for the table too
+        const name = `${data.firstName || ''} ${data.middleInitial ? data.middleInitial + '.' : ''} ${data.lastName || ''}`.trim() || 'Unknown Name';
+        
         const date = data.submittedAt ? 
             data.submittedAt.toDate().toLocaleDateString() : 
             (data.createdAt ? data.createdAt.toDate().toLocaleDateString() : 'N/A');
@@ -217,16 +198,15 @@ function displayRenewals(snapshot, tbody, fieldUsed) {
     });
 }
 
-// --- MODAL LOGIC ---
+// ... existing code ...
 
+// --- MODAL LOGIC ---
 function handleView(id) {
     const data = cachedRenewals[id];
     if (!data) {
         alert("Error: Data not found in cache.");
         return;
     }
-
-    console.log("👁️ Viewing data:", data);
 
     // Helper to safely set text
     const setText = (id, val) => {
@@ -249,8 +229,43 @@ function handleView(id) {
         }
     };
 
-    // 1. Personal Info
-    const fullName = `${data.firstName || ''} ${data.middleInitial || ''} ${data.lastName || ''}`.trim();
+    // 1. Personal Info & Address
+    
+    // ✅ UPDATED ADDRESS LOGIC
+    // Format: House/Street/Subd, Barangay, and Municipality
+    let addressParts = [];
+
+    // Part 1: House / Street / Subdivision
+    // (Note: Make sure these field names match your Firebase document fields exactly)
+    const streetPart = [
+        data.houseNumber || data.houseNo, 
+        data.streetName || data.street, 
+        data.subdivision
+    ].filter(Boolean).join(' '); // Joins them with a space
+
+    if (streetPart) addressParts.push(streetPart);
+
+    // Part 2: Barangay
+    if (data.barangay) addressParts.push(data.barangay);
+
+    // Join the first parts with a comma
+    let fullAddress = addressParts.join(', ');
+
+    // Part 3: Municipality (Add "and" before it)
+    if (data.municipality || data.city) {
+        const city = data.municipality || data.city;
+        fullAddress += (fullAddress ? ", and " : "") + city;
+    }
+
+    // Fallback: If the specific fields are empty, try the generic 'address' field
+    if (!fullAddress && data.address) {
+        fullAddress = data.address;
+    }
+
+    setText('m-address', fullAddress);
+
+    // ... Rest of Personal Info ...
+    const fullName = `${data.firstName || ''} ${data.middleInitial ? data.middleInitial + '.' : ''} ${data.lastName || ''}`.trim();
     setText('m-fullname', fullName);
     setText('m-email', data.email);
     setText('m-dob', data.dateOfBirth);
@@ -267,7 +282,6 @@ function handleView(id) {
     setText('m-income', data.monthlyIncome);
     setText('m-numChildren', data.numberOfChildren);
     
-    // Handle array of children ages
     let kidsAges = "None";
     if (Array.isArray(data.childrenAges) && data.childrenAges.length > 0) {
         kidsAges = data.childrenAges.join(', ');
@@ -287,7 +301,8 @@ function handleView(id) {
     document.getElementById('viewModal').classList.remove('hidden');
 }
 
-// Function to close modal (attached to window so onclick works)
+
+// Close Modal Function
 window.closeModal = function() {
     document.getElementById('viewModal').classList.add('hidden');
 }
@@ -305,6 +320,7 @@ async function handleApprove(submissionId, userId) {
         const updateData = {};
         const systemFields = ['id', 'userId', 'submittedAt', 'renewal_status', 'status', 'createdAt', 'submissionId', 'reviewedDate'];
         
+        // Copy user data fields to update main profile
         for (const [key, value] of Object.entries(submissionData)) {
             if (!systemFields.includes(key)) {
                 updateData[key] = value;
@@ -340,8 +356,6 @@ async function handleReject(submissionId, userId) {
     const reason = prompt("Please provide a reason for rejection:", "Incomplete documentation");
     if (reason === null) return;
 
-    if (!confirm(`Reject this renewal request? Reason: ${reason}`)) return;
-    
     try {
         const db = firebase.firestore();
         const batch = db.batch();
