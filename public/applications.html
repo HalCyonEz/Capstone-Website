@@ -28,7 +28,7 @@
         <nav class="flex-1 px-2 space-y-1 overflow-y-auto">
             <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
                 <i data-feather="home" class="mr-3"></i> Dashboard </a>
-            <a href="reports.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+            <a href="reports.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100 sidebar-link">
                 <i data-feather="file" class="mr-3"></i> Data Reports </a>
             <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
                 <i data-feather="users" class="mr-3"></i> Members </a>
@@ -200,14 +200,14 @@
 
     <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[70] flex items-center justify-center px-4">
         <div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center">
-            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                <i data-feather="alert-triangle" class="h-6 w-6 text-red-600"></i>
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4" id="confirm-icon-bg">
+                <i data-feather="alert-triangle" class="h-6 w-6 text-blue-600" id="confirm-icon"></i>
             </div>
             <h3 class="text-lg font-bold text-gray-900" id="confirm-title">Confirm Action</h3>
             <p class="text-sm text-gray-500 mt-2" id="confirm-message">Are you sure you want to proceed?</p>
             <div class="mt-6 flex justify-center gap-3">
                 <button onclick="closeConfirmModal()" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50">Cancel</button>
-                <button id="confirm-btn-action" class="px-4 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700">Yes, Proceed</button>
+                <button id="confirm-btn-action" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700">Yes, Proceed</button>
             </div>
         </div>
     </div>
@@ -235,14 +235,14 @@
 
         let cachedApps = {};
         let rejectTargetId = null;
-        let approveTargetId = null; // New variable for approval
+        let approveTargetId = null; 
         let pendingRejectReason = "";
 
         document.addEventListener('DOMContentLoaded', async function() {
             const tbody = document.getElementById('applications-table-body');
 
             try {
-                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">Loading, please wait...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-blue-500">Connecting to Firebase...</td></tr>';
 
                 // 1. Initialize Firebase
                 const firebaseConfig = {
@@ -347,7 +347,7 @@
             setTxt('v-address-card', address);
             setTxt('v-id-card', id);
 
-            // BUTTON BINDING (Now calls confirmApprove instead of approving immediately)
+            // BUTTON BINDING
             document.getElementById('btn-approve-view').onclick = () => { closeViewModal(); confirmApprove(id); };
             document.getElementById('btn-reject-view').onclick = () => { closeViewModal(); openRejectModal(id); };
 
@@ -396,7 +396,7 @@
             
             // Set Modal Text
             document.getElementById('confirm-title').innerText = "Confirm Approval";
-            document.getElementById('confirm-message').innerText = "Are you sure you want to approve this application? The user will be verified.";
+            document.getElementById('confirm-message').innerText = "Are you sure you want to approve this application? The user will be approved.";
             
             // Style Button as GREEN
             const btn = document.getElementById('confirm-btn-action');
@@ -409,15 +409,16 @@
 
         // 2. Finalize Approval (Send to Firebase)
         window.finalizeApprove = async function() {
-            // Show loading state
             const btn = document.getElementById('confirm-btn-action');
             btn.innerText = "Processing...";
             btn.disabled = true;
 
             try {
                 const db = firebase.firestore();
+                
+                // ✅ UPDATED: Set status to "approved"
                 await db.collection("users").doc(approveTargetId).update({ 
-                    status: "verified", 
+                    status: "approved", 
                     isVerified: true, 
                     verificationDate: firebase.firestore.FieldValue.serverTimestamp() 
                 });
@@ -476,11 +477,9 @@
 
         window.closeConfirmModal = function() {
             document.getElementById('confirmModal').classList.add('hidden');
-            // If we were rejecting, reopen the reject modal
             if (rejectTargetId && !approveTargetId) {
                 document.getElementById('rejectModal').classList.remove('hidden');
             }
-            // Reset IDs
             approveTargetId = null;
         };
 
