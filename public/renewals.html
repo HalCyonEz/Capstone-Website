@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/feather-icons"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style> body { font-family: 'Inter', sans-serif; } .modal-scroll::-webkit-scrollbar { width: 6px; } .modal-scroll::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; } </style>
+    <style> body { font-family: 'Inter', sans-serif; } .modal-scroll::-webkit-scrollbar { width: 6px; } .modal-scroll::-webkit-scrollbar-track { background: #f1f1f1; } .modal-scroll::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; } </style>
 </head>
 <body class="bg-gray-50 font-sans relative h-screen overflow-hidden flex">
 
@@ -78,26 +78,30 @@
                                 <div><p class="text-xs text-gray-400 uppercase font-bold">DOB</p><p id="m-dob" class="text-sm font-semibold text-gray-900"></p></div>
                                 <div><p class="text-xs text-gray-400 uppercase font-bold">Age</p><p id="m-age" class="text-sm font-semibold text-gray-900"></p></div>
                                 <div><p class="text-xs text-gray-400 uppercase font-bold">Sex</p><p id="m-sex" class="text-sm font-semibold text-gray-900"></p></div>
+                                <div><p class="text-xs text-gray-400 uppercase font-bold">Place of Birth</p><p id="m-pob" class="text-sm font-semibold text-gray-900"></p></div>
                                 <div><p class="text-xs text-gray-400 uppercase font-bold">Civil Status</p><p id="m-civil" class="text-sm font-semibold text-gray-900"></p></div>
                                 <div><p class="text-xs text-gray-400 uppercase font-bold">Ethnicity</p><p id="m-ethnicity" class="text-sm font-semibold text-gray-900"></p></div>
                                 <div><p class="text-xs text-gray-400 uppercase font-bold">Religion</p><p id="m-religion" class="text-sm font-semibold text-gray-900"></p></div>
                             </div>
                         </div>
+                        
                         <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
                             <h4 class="text-lg font-bold text-gray-800 mb-6 border-b pb-2">Family & Employment</h4>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-4">
                                 <div><p class="text-xs text-gray-400 uppercase font-bold">Occupation</p><p id="m-occupation" class="text-sm font-semibold text-gray-900"></p></div>
+                                <div><p class="text-xs text-gray-400 uppercase font-bold">Company / Agency</p><p id="m-company" class="text-sm font-semibold text-gray-900"></p></div>
                                 <div><p class="text-xs text-gray-400 uppercase font-bold">Income</p><p id="m-income" class="text-sm font-semibold text-gray-900"></p></div>
                                 <div><p class="text-xs text-gray-400 uppercase font-bold">Kids</p><p id="m-numChildren" class="text-sm font-semibold text-gray-900"></p></div>
                                 <div class="sm:col-span-2"><p class="text-xs text-gray-400 uppercase font-bold">Ages</p><p id="m-childrenAges" class="text-sm font-semibold text-gray-900"></p></div>
                             </div>
                         </div>
+                        
                         <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
                             <h4 class="text-lg font-bold text-gray-800 mb-6 border-b pb-2">Uploaded Documents</h4>
                             <div class="space-y-8">
-                                <div><p class="text-sm font-bold text-gray-600 uppercase mb-2">Valid ID</p><div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 h-64 w-full flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-100 transition"><img id="img-validId" class="w-full h-full object-contain hidden" onclick="window.open(this.src, '_blank')"><p id="no-img-validId" class="text-sm text-gray-400">No Image</p></div></div>
-                                <div><p class="text-sm font-bold text-gray-600 uppercase mb-2">Solo Parent ID</p><div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 h-64 w-full flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-100 transition"><img id="img-soloParent" class="w-full h-full object-contain hidden" onclick="window.open(this.src, '_blank')"><p id="no-img-soloParent" class="text-sm text-gray-400">No Image</p></div></div>
-                                <div><p class="text-sm font-bold text-gray-600 uppercase mb-2">PhilHealth ID</p><div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 h-64 w-full flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-100 transition"><img id="img-philhealth" class="w-full h-full object-contain hidden" onclick="window.open(this.src, '_blank')"><p id="no-img-philhealth" class="text-sm text-gray-400">No Image</p></div></div>
+                                <div><p class="text-sm font-bold text-gray-600 uppercase mb-2">Valid ID</p><div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 h-96 w-full flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-100 transition"><img id="img-validId" class="w-full h-full object-contain hidden" onclick="window.open(this.src, '_blank')"><p id="no-img-validId" class="text-sm text-gray-400">No Image</p></div></div>
+                                <div><p class="text-sm font-bold text-gray-600 uppercase mb-2">Solo Parent ID</p><div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 h-96 w-full flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-100 transition"><img id="img-soloParent" class="w-full h-full object-contain hidden" onclick="window.open(this.src, '_blank')"><p id="no-img-soloParent" class="text-sm text-gray-400">No Image</p></div></div>
+                                <div><p class="text-sm font-bold text-gray-600 uppercase mb-2">PhilHealth ID</p><div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 h-96 w-full flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-100 transition"><img id="img-philhealth" class="w-full h-full object-contain hidden" onclick="window.open(this.src, '_blank')"><p id="no-img-philhealth" class="text-sm text-gray-400">No Image</p></div></div>
                             </div>
                         </div>
                     </div>
@@ -168,10 +172,12 @@
             setTxt('m-dob', data.dateOfBirth);
             setTxt('m-age', data.age);
             setTxt('m-sex', data.sex);
+            setTxt('m-pob', data.placeOfBirth);
             setTxt('m-civil', data.civilStatus);
             setTxt('m-ethnicity', data.ethnicity);
             setTxt('m-religion', data.religion);
             setTxt('m-occupation', data.occupation);
+            setTxt('m-company', data.companyAgency);
             setTxt('m-income', data.monthlyIncome);
             setTxt('m-numChildren', data.numberOfChildren);
             setTxt('m-childrenAges', (Array.isArray(data.childrenAges) ? data.childrenAges.join(', ') : "None"));
@@ -191,21 +197,61 @@
         };
         window.closeModal = () => document.getElementById('viewModal').classList.add('hidden');
 
-        // Approve (Status = approved)
+        // Approve (Status = approved, AND Copy Data)
         window.confirmApprove = function(subId, userId) {
             approveId = subId; approveUserId = userId;
             document.getElementById('confirm-title').innerText = "Confirm Approval";
-            document.getElementById('confirm-message').innerText = "Approve renewal?";
+            document.getElementById('confirm-message').innerText = "Approve renewal? This will UPDATE the user's profile with the new details.";
             const btn = document.getElementById('confirm-btn-action');
             btn.className = "px-4 py-2 bg-green-600 text-white rounded text-sm";
             btn.innerText = "Yes, Approve";
             btn.onclick = async () => {
-                const batch = firebase.firestore().batch();
-                batch.update(firebase.firestore().collection("renewalSubmissions").doc(approveId), { status: "approved", renewal_status: "approved", reviewedDate: firebase.firestore.FieldValue.serverTimestamp() });
-                batch.update(firebase.firestore().collection("users").doc(approveUserId), { renewal_status: "approved", lastRenewalDate: firebase.firestore.FieldValue.serverTimestamp() });
-                await batch.commit();
-                document.getElementById('confirmModal').classList.add('hidden');
-                showSuccess("Approved!");
+                const btn = document.getElementById('confirm-btn-action');
+                btn.innerText = "Updating...";
+                btn.disabled = true;
+
+                try {
+                    const db = firebase.firestore();
+                    const batch = db.batch();
+                    const newData = cachedRenewals[approveId];
+
+                    if (!newData) throw new Error("Missing renewal data");
+
+                    // 1. Update Renewal Doc
+                    batch.update(db.collection("renewalSubmissions").doc(approveId), { 
+                        status: "approved", 
+                        renewal_status: "approved", 
+                        reviewedDate: firebase.firestore.FieldValue.serverTimestamp() 
+                    });
+
+                    // 2. Update User Profile with NEW Data
+                    batch.update(db.collection("users").doc(approveUserId), {
+                        renewal_status: "approved",
+                        lastRenewalDate: firebase.firestore.FieldValue.serverTimestamp(),
+                        // Map renewal fields to user profile
+                        civilStatus: newData.civilStatus || "",
+                        occupation: newData.occupation || "",
+                        monthlyIncome: newData.monthlyIncome || "",
+                        companyAgency: newData.companyAgency || "",
+                        // Address
+                        houseNumber: newData.houseNumber || "",
+                        street: newData.street || newData.streetName || "",
+                        subdivision: newData.subdivision || "",
+                        barangay: newData.barangay || "",
+                        municipality: newData.municipality || newData.city || "",
+                        // Family
+                        numberOfChildren: newData.numberOfChildren || 0,
+                        childrenAges: newData.childrenAges || []
+                    });
+
+                    await batch.commit();
+                    document.getElementById('confirmModal').classList.add('hidden');
+                    showSuccess("Approved & Updated!");
+                } catch (e) {
+                    alert("Error: " + e.message);
+                    document.getElementById('confirmModal').classList.add('hidden');
+                    btn.disabled = false;
+                }
             };
             document.getElementById('confirmModal').classList.remove('hidden');
         };

@@ -104,9 +104,9 @@
                         <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
                             <h4 class="text-lg font-bold text-gray-800 mb-6 border-b pb-2">Uploaded Documents</h4>
                             <div class="space-y-8">
-                                <div><p class="text-sm font-bold text-gray-600 uppercase mb-2">Valid Government ID</p><div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 h-64 w-full flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-100 transition"><img id="v-img-valid" class="w-full h-full object-contain hidden" onclick="window.open(this.src, '_blank')"><p id="v-txt-valid" class="text-sm text-gray-400">No Image Uploaded</p></div></div>
-                                <div><p class="text-sm font-bold text-gray-600 uppercase mb-2">Proof of Solo Parent</p><div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 h-64 w-full flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-100 transition"><img id="v-img-proof" class="w-full h-full object-contain hidden" onclick="window.open(this.src, '_blank')"><p id="v-txt-proof" class="text-sm text-gray-400">No Image Uploaded</p></div></div>
-                                <div><p class="text-sm font-bold text-gray-600 uppercase mb-2">PhilHealth ID</p><div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 h-64 w-full flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-100 transition"><img id="v-img-phil" class="w-full h-full object-contain hidden" onclick="window.open(this.src, '_blank')"><p id="v-txt-phil" class="text-sm text-gray-400">No Image Uploaded</p></div></div>
+                                <div><p class="text-sm font-bold text-gray-600 uppercase mb-2">Valid Government ID</p><div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 h-96 w-full flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-100 transition"><img id="v-img-valid" class="w-full h-full object-contain hidden" onclick="window.open(this.src, '_blank')"><p id="v-txt-valid" class="text-sm text-gray-400">No Image Uploaded</p></div></div>
+                                <div><p class="text-sm font-bold text-gray-600 uppercase mb-2">Proof of Solo Parent</p><div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 h-96 w-full flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-100 transition"><img id="v-img-proof" class="w-full h-full object-contain hidden" onclick="window.open(this.src, '_blank')"><p id="v-txt-proof" class="text-sm text-gray-400">No Image Uploaded</p></div></div>
+                                <div><p class="text-sm font-bold text-gray-600 uppercase mb-2">PhilHealth ID</p><div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 h-96 w-full flex items-center justify-center overflow-hidden cursor-pointer hover:bg-gray-100 transition"><img id="v-img-phil" class="w-full h-full object-contain hidden" onclick="window.open(this.src, '_blank')"><p id="v-txt-phil" class="text-sm text-gray-400">No Image Uploaded</p></div></div>
                             </div>
                         </div>
                     </div>
@@ -174,18 +174,17 @@
             setTxt('v-email-card', data.email);
             setTxt('v-contact-card', data.contact);
             
-            // --- ADDRESS FIX: House, Street, Brgy, City ---
+            // Address Builder
             const fullAddress = [
                 data.houseNumber, 
                 data.street || data.streetName || data.subdivision, 
                 data.barangay, 
                 data.municipality || data.city
             ].filter(Boolean).join(', ');
-            
             setTxt('v-address-card', fullAddress || "N/A");
             setTxt('v-id-card', id);
             
-            // --- DETAILED FIELDS ---
+            // --- DETAILS ---
             setTxt('v-fullname-detail', data.firstName + " " + data.lastName);
             setTxt('v-email-detail', data.email);
             setTxt('v-dob', data.dateOfBirth);
