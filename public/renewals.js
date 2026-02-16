@@ -163,55 +163,101 @@ window.handleApprove = async function(submissionId, userId) {
     } catch (error) { alert("Error: " + error.message); }
 };
 
-// Reject Modal Logic
-window.openRejectModal = function(subId, userId) {
-    rejectTargetId = subId;
-    rejectTargetUserId = userId;
-    document.getElementById('rejectModal').classList.remove('hidden');
-};
+// ============================
+//    REJECT LOGIC (UPDATED)
+// ============================
 
-window.closeRejectModal = function() { document.getElementById('rejectModal').classList.add('hidden'); };
+        window.openRejectModal = function(subId, userId) { 
+            rejectTargetId = subId; 
+            rejectUserId = userId;
+            
+            // Reset Fields
+            document.getElementById('reject-select').value = "";
+            document.getElementById('reject-reason-text').value = "";
+            
+            // Reset Button State
+            handleRejectValidation();
+            
+            document.getElementById('rejectModal').classList.remove('hidden'); 
+        };
 
-window.updateRejectText = function() {
-    const select = document.getElementById('reject-select');
-    const text = document.getElementById('reject-reason-text');
-    if(select.value === "Other") { text.value = ""; text.placeholder = "Type reason..."; } 
-    else { text.value = select.value; }
-};
+        window.closeRejectModal = () => document.getElementById('rejectModal').classList.add('hidden');
 
-window.confirmRejectSubmission = function() {
-    pendingRejectReason = document.getElementById('reject-reason-text').value;
-    if(!pendingRejectReason) { alert("Please enter a reason"); return; }
-    
-    document.getElementById('rejectModal').classList.add('hidden');
-    document.getElementById('confirm-title').innerText = "Confirm Rejection";
-    document.getElementById('confirm-message').innerText = "Are you sure you want to reject this renewal?";
-    document.getElementById('confirm-btn-action').onclick = finalizeRejection;
-    document.getElementById('confirmModal').classList.remove('hidden');
-};
+        // Validation Function
+        window.handleRejectValidation = function() {
+            const selectVal = document.getElementById('reject-select').value;
+            const textVal = document.getElementById('reject-reason-text').value.trim();
+            const btn = document.getElementById('btn-reject-submit');
 
-window.closeConfirmModal = function() {
-    document.getElementById('confirmModal').classList.add('hidden');
-    document.getElementById('rejectModal').classList.remove('hidden');
-};
+            let isValid = false;
 
-window.finalizeRejection = async function() {
-    try {
-        const db = firebase.firestore();
-        const batch = db.batch();
+            if (!selectVal) {
+                isValid = false;
+            } else if (selectVal === "Other") {
+                // Mandatory Text Box for 'Other'
+                isValid = textVal.length > 0;
+                if (!isValid) document.getElementById('reject-reason-text').placeholder = "Please explain the reason here...";
+            } else {
+                isValid = true;
+                document.getElementById('reject-reason-text').placeholder = "Additional comments (Optional)...";
+            }
 
-        batch.update(db.collection("renewalSubmissions").doc(rejectTargetId), { 
-            status: "rejected", renewal_status: "rejected", rejectionReason: pendingRejectReason, reviewedDate: firebase.firestore.FieldValue.serverTimestamp() 
-        });
-        batch.update(db.collection("users").doc(rejectTargetUserId), { 
-            renewal_status: "rejected" 
-        });
+            if (isValid) {
+                btn.disabled = false;
+                btn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                btn.classList.add('bg-red-600', 'hover:bg-red-700');
+            } else {
+                btn.disabled = true;
+                btn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                btn.classList.remove('bg-red-600', 'hover:bg-red-700');
+            }
+        };
         
-        await batch.commit();
-        document.getElementById('confirmModal').classList.add('hidden');
-        showSuccessModal("Renewal Rejected Successfully.");
-    } catch (error) { alert("Error: " + error.message); }
-};
+        window.confirmRejectSubmission = function() {
+            const selectVal = document.getElementById('reject-select').value;
+            const textVal = document.getElementById('reject-reason-text').value;
+            
+            if (selectVal === "Other") {
+                pendingRejectReason = textVal;
+            } else {
+                pendingRejectReason = selectVal + (textVal ? `: ${textVal}` : "");
+            }
+
+            document.getElementById('rejectModal').classList.add('hidden');
+            
+            document.getElementById('confirm-title').innerText = "Confirm Rejection";
+            document.getElementById('confirm-message').innerText = "Are you sure you want to reject this renewal?";
+            const btn = document.getElementById('confirm-btn-action');
+            btn.className = "px-4 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700";
+            btn.innerText = "Yes, Reject";
+            btn.onclick = executeRejection;
+
+            document.getElementById('confirmModal').classList.remove('hidden');
+        };
+
+        async function executeRejection() {
+            try {
+                const batch = firebase.firestore().batch();
+                
+                batch.update(firebase.firestore().collection("renewalSubmissions").doc(rejectTargetId), { 
+                    status: "rejected", 
+                    renewal_status: "rejected", 
+                    rejectionReason: pendingRejectReason, 
+                    reviewedDate: firebase.firestore.FieldValue.serverTimestamp() 
+                });
+                
+                batch.update(firebase.firestore().collection("users").doc(rejectUserId), { 
+                    renewal_status: "rejected" 
+                });
+                
+                await batch.commit();
+                document.getElementById('confirmModal').classList.add('hidden');
+                showSuccess("Renewal Rejected.");
+            } catch (e) {
+                alert("Error: " + e.message);
+                document.getElementById('confirmModal').classList.add('hidden');
+            }
+        }
 
 // Success Modal Logic
 window.showSuccessModal = function(msg) {

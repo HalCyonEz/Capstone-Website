@@ -113,7 +113,33 @@
         </div>
     </div>
 
-    <div id="rejectModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center px-4"><div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6"><h3 class="text-lg font-bold text-red-800 mb-4">Reject Renewal</h3><select id="reject-select" class="w-full border rounded px-3 py-2 text-sm mb-3" onchange="updateRejectText()"><option value="">-- Reason --</option><option value="Expired">Expired</option><option value="Mismatch">Mismatch</option><option value="Other">Other</option></select><textarea id="reject-reason-text" rows="3" class="w-full border rounded px-3 py-2 text-sm"></textarea><div class="flex justify-end gap-3 mt-4"><button onclick="closeRejectModal()" class="px-4 py-2 border rounded text-sm">Cancel</button><button onclick="confirmRejectSubmission()" class="px-4 py-2 bg-red-600 text-white rounded text-sm">Submit</button></div></div></div>
+    <div id="rejectModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center px-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-lg font-bold text-red-800">Reject Renewal</h3>
+                <button onclick="closeRejectModal()" class="text-gray-400 hover:text-gray-600"><i data-feather="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <p class="text-sm text-gray-600 mb-4">Please choose the reason why you are rejecting this renewal request.</p>
+
+            <select id="reject-select" class="w-full border border-gray-300 rounded px-3 py-2 text-sm mb-3 focus:ring-red-500 focus:border-red-500" onchange="handleRejectValidation()">
+                <option value="" disabled selected>Select a reason...</option>
+                <option value="Expired Documents">Expired Documents</option>
+                <option value="Incomplete Requirements">Incomplete Requirements</option>
+                <option value="Information Mismatch">Information Mismatch</option>
+                <option value="Not Qualified for Renewal">Not Qualified for Renewal</option>
+                <option value="Other">Other (Specify below)</option>
+            </select>
+
+            <textarea id="reject-reason-text" rows="3" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-red-500 focus:border-red-500" placeholder="Additional comments (Optional unless 'Other' is selected)..." oninput="handleRejectValidation()"></textarea>
+
+            <div class="flex justify-end gap-3 mt-4">
+                <button onclick="closeRejectModal()" class="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 text-sm">Cancel</button>
+                <button id="btn-reject-submit" onclick="confirmRejectSubmission()" disabled class="px-4 py-2 bg-gray-400 text-white rounded text-sm cursor-not-allowed transition-colors">Submit Rejection</button>
+            </div>
+        </div>
+    </div>
+
     <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[70] flex items-center justify-center px-4"><div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center"><h3 class="text-lg font-bold" id="confirm-title">Confirm</h3><p class="text-sm text-gray-500 mt-2" id="confirm-message">Proceed?</p><div class="mt-6 flex justify-center gap-3"><button onclick="closeConfirmModal()" class="px-4 py-2 border rounded text-sm">Cancel</button><button id="confirm-btn-action" class="px-4 py-2 text-white rounded text-sm">Yes</button></div></div></div>
     <div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[80] flex items-center justify-center px-4"><div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center"><i data-feather="check" class="h-8 w-8 text-green-600 mx-auto mb-2"></i><h3 class="text-lg font-bold">Success!</h3><p class="text-sm text-gray-500 mt-2" id="success-message">Done.</p><button onclick="closeSuccessModal()" class="mt-4 w-full px-4 py-2 bg-green-600 text-white rounded text-sm">OK</button></div></div>
 
@@ -121,7 +147,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script>
         feather.replace();
-        let cachedRenewals = {}, rejectTargetId = null, rejectUserId = null, approveId = null, approveUserId = null;
+        let cachedRenewals = {}, rejectTargetId = null, rejectUserId = null, approveId = null, approveUserId = null, pendingRejectReason = "";
 
         document.addEventListener('DOMContentLoaded', async function() {
             const tbody = document.getElementById('renewals-table-body');
@@ -158,7 +184,6 @@
             setTxt('m-avatar', data.firstName.charAt(0));
             setTxt('m-email-card', data.email);
             
-            // Address (with street)
             const fullAddress = [
                 data.houseNumber, 
                 data.street || data.streetName || data.subdivision, 
@@ -167,7 +192,6 @@
             ].filter(Boolean).join(', ');
             setTxt('m-address-card', fullAddress || "N/A");
 
-            // --- DETAILED FIELDS (Restored) ---
             setTxt('m-fullname', data.firstName + " " + data.lastName);
             setTxt('m-dob', data.dateOfBirth);
             setTxt('m-age', data.age);
@@ -200,6 +224,7 @@
         // Approve (Status = approved, AND Copy Data)
         window.confirmApprove = function(subId, userId) {
             approveId = subId; approveUserId = userId;
+            rejectTargetId = null; // Clear rejection state
             document.getElementById('confirm-title').innerText = "Confirm Approval";
             document.getElementById('confirm-message').innerText = "Approve renewal? This will UPDATE the user's profile with the new details.";
             const btn = document.getElementById('confirm-btn-action');
@@ -228,18 +253,15 @@
                     batch.update(db.collection("users").doc(approveUserId), {
                         renewal_status: "approved",
                         lastRenewalDate: firebase.firestore.FieldValue.serverTimestamp(),
-                        // Map renewal fields to user profile
                         civilStatus: newData.civilStatus || "",
                         occupation: newData.occupation || "",
                         monthlyIncome: newData.monthlyIncome || "",
                         companyAgency: newData.companyAgency || "",
-                        // Address
                         houseNumber: newData.houseNumber || "",
                         street: newData.street || newData.streetName || "",
                         subdivision: newData.subdivision || "",
                         barangay: newData.barangay || "",
                         municipality: newData.municipality || newData.city || "",
-                        // Family
                         numberOfChildren: newData.numberOfChildren || 0,
                         childrenAges: newData.childrenAges || []
                     });
@@ -256,13 +278,54 @@
             document.getElementById('confirmModal').classList.remove('hidden');
         };
 
-        // Reject
-        window.openRejectModal = function(subId, userId) { rejectTargetId = subId; rejectUserId = userId; document.getElementById('rejectModal').classList.remove('hidden'); };
+        // --- NEW REJECT LOGIC ---
+        window.openRejectModal = function(subId, userId) { 
+            rejectTargetId = subId; 
+            rejectUserId = userId;
+            approveId = null; // Clear approval state
+            document.getElementById('reject-select').value = "";
+            document.getElementById('reject-reason-text').value = "";
+            handleRejectValidation(); // Reset disabled state
+            document.getElementById('rejectModal').classList.remove('hidden'); 
+        };
         window.closeRejectModal = () => document.getElementById('rejectModal').classList.add('hidden');
-        window.updateRejectText = () => { const sel = document.getElementById('reject-select'); document.getElementById('reject-reason-text').value = sel.value === "Other" ? "" : sel.value; };
+
+        // Validation Logic
+        window.handleRejectValidation = function() {
+            const selectVal = document.getElementById('reject-select').value;
+            const textVal = document.getElementById('reject-reason-text').value.trim();
+            const btn = document.getElementById('btn-reject-submit');
+            let isValid = false;
+
+            if (selectVal) {
+                if (selectVal === "Other") {
+                    isValid = textVal.length > 0;
+                } else {
+                    isValid = true;
+                }
+            }
+
+            if (isValid) {
+                btn.disabled = false;
+                btn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                btn.classList.add('bg-red-600', 'hover:bg-red-700');
+            } else {
+                btn.disabled = true;
+                btn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                btn.classList.remove('bg-red-600', 'hover:bg-red-700');
+            }
+        };
         
         window.confirmRejectSubmission = function() {
-            const reason = document.getElementById('reject-reason-text').value;
+            const selectVal = document.getElementById('reject-select').value;
+            const textVal = document.getElementById('reject-reason-text').value;
+            
+            if (selectVal === "Other") {
+                pendingRejectReason = textVal;
+            } else {
+                pendingRejectReason = selectVal + (textVal ? `: ${textVal}` : "");
+            }
+
             document.getElementById('rejectModal').classList.add('hidden');
             document.getElementById('confirm-title').innerText = "Confirm Rejection";
             document.getElementById('confirm-message').innerText = "Reject renewal?";
@@ -271,7 +334,7 @@
             btn.innerText = "Yes, Reject";
             btn.onclick = async () => {
                 const batch = firebase.firestore().batch();
-                batch.update(firebase.firestore().collection("renewalSubmissions").doc(rejectTargetId), { status: "rejected", renewal_status: "rejected", rejectionReason: reason, reviewedDate: firebase.firestore.FieldValue.serverTimestamp() });
+                batch.update(firebase.firestore().collection("renewalSubmissions").doc(rejectTargetId), { status: "rejected", renewal_status: "rejected", rejectionReason: pendingRejectReason, reviewedDate: firebase.firestore.FieldValue.serverTimestamp() });
                 batch.update(firebase.firestore().collection("users").doc(rejectUserId), { renewal_status: "rejected" });
                 await batch.commit();
                 document.getElementById('confirmModal').classList.add('hidden');
@@ -279,7 +342,15 @@
             };
             document.getElementById('confirmModal').classList.remove('hidden');
         };
-        window.closeConfirmModal = () => document.getElementById('confirmModal').classList.add('hidden');
+
+        // NEW: Back to Reject Modal on Cancel
+        window.closeConfirmModal = function() {
+            document.getElementById('confirmModal').classList.add('hidden');
+            // If rejectTargetId is set but approveId is NOT set, we came from reject
+            if (rejectTargetId && !approveId) {
+                document.getElementById('rejectModal').classList.remove('hidden');
+            }
+        };
 
         window.showSuccess = (msg) => { document.getElementById('success-message').innerText = msg; document.getElementById('successModal').classList.remove('hidden'); };
         window.closeSuccessModal = () => location.reload();
