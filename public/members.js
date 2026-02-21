@@ -1,317 +1,403 @@
-import { db } from "./firebase-config.js";
-import { initSidebar, initLogout, DESCRIPTION_TO_CODE_MAP, CODE_TO_DESCRIPTION_MAP } from "./utils.js";
-import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+console.log("🎯 members.js loaded (State Persistence Enabled)");
+feather.replace();
 
-// Initialize Sidebar
-initSidebar();
-initLogout();
+const ITEMS_PER_PAGE = 100; 
+let currentPage = 1;
+let allMembersCache = []; 
+let filteredMembers = []; 
 
-// --- State Variables ---
-let allApprovedMembers = [];
-let filteredMembersList = [];
-const CATEGORY_LIST = Object.keys(DESCRIPTION_TO_CODE_MAP);
-const MUNICIPALITY_LIST = ["Atok", "Bakun", "Bokod", "Buguias", "Itogon", "Kabayan", "Kapangan", "Kibungan", "La Trinidad", "Mankayan", "Sablan", "Tuba", "Tublay"];
+// Default Filters
+let activeFilters = { 
+    category: "", municipality: "", gender: "", 
+    philhealth: "", search: "", ageMin: "", 
+    ageMax: "", dateFrom: "", dateTo: "", 
+    childrenMin: "" 
+};
+let searchTimeout = null;
 
-// --- Variables for DOM Elements ---
-let categoryListEl, municipalitySelectEl, categorySelect, memberGridEl, resultCountEl;
-let searchBoxEl, genderSelect, philhealthSelect, minAgeInput, maxAgeInput, childrenInput, dateStartInput, dateEndInput;
+// Categories
+const CATEGORIES = {
+    'a1': 'Birth of a child as a consequence of rape',
+    'a2': 'Widow/widower',
+    'a3': 'Spouse of person deprived of liberty',
+    'a4': 'Spouse with physical/mental incapacity',
+    'a5': 'Due to legal separation or de facto separation',
+    'a6': 'Due to nullity or annulment of marriage',
+    'a7': 'Abandonment by the spouse',
+    'b1': 'Spouse of OFW',
+    'b2': 'Relative of OFW',
+    'c': 'Unmarried mother/father',
+    'd': 'Legal guardian',
+    'e': 'Family member/relative',
+    'f': 'Foster parent'
+};
 
-// --- 1. Load Data ---
-async function loadAllData() {
-    if (!db) return;
+document.addEventListener('DOMContentLoaded', async function() {
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBjO4P1-Ir_iJSkLScTiyshEd28GdskN24", 
+        authDomain: "solo-parent-app.firebaseapp.com", 
+        databaseURL: "https://solo-parent-app-default-rtdb.asia-southeast1.firebasedatabase.app", 
+        projectId: "solo-parent-app", 
+        storageBucket: "solo-parent-app.firebasestorage.app", 
+        messagingSenderId: "292578110807", 
+        appId: "1:292578110807:web:9f5e5c0dcd73c9975e6212" 
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    window.db = db; 
+
+    // 1. Attempt to restore filters/page from previous session
+    const restored = restoreState();
+    
+    // 2. Fetch Data (Pass 'true' if we restored state to preserve the page number)
+    fetchAllMembers(restored);
+});
+
+// =============================================
+// 1. STATE MANAGEMENT (The Fix)
+// =============================================
+function saveState() {
+    const state = {
+        filters: activeFilters,
+        page: currentPage,
+        scroll: window.scrollY
+    };
+    sessionStorage.setItem('spda_member_state', JSON.stringify(state));
+}
+
+function restoreState() {
+    const saved = sessionStorage.getItem('spda_member_state');
+    if (!saved) return false;
+
     try {
-        const q = query(collection(db, "users"), where("status", "==", "approved"));
-        const snapshot = await getDocs(q);
-        allApprovedMembers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        renderFilterOptions();
-        applyFiltersAndRender();
-    } catch (error) {
-        console.error("❌ Error loading categories page:", error);
+        const state = JSON.parse(saved);
+        activeFilters = state.filters;
+        currentPage = state.page || 1;
+
+        // Restore DOM Input Values
+        document.getElementById('f-search').value = activeFilters.search || "";
+        document.getElementById('f-category').value = activeFilters.category || "";
+        document.getElementById('f-municipality').value = activeFilters.municipality || "";
+        document.getElementById('f-gender').value = activeFilters.gender || "";
+        document.getElementById('f-philhealth').value = activeFilters.philhealth || "";
+        document.getElementById('f-age-min').value = activeFilters.ageMin || "";
+        document.getElementById('f-age-max').value = activeFilters.ageMax || "";
+        document.getElementById('f-date-from').value = activeFilters.dateFrom || "";
+        document.getElementById('f-date-to').value = activeFilters.dateTo || "";
+        document.getElementById('f-children-min').value = activeFilters.childrenMin || "";
+
+        // Restore Sidebar Highlight
+        if (activeFilters.category) {
+            // Wait for DOM to allow highlighting
+            setTimeout(() => {
+                const row = document.getElementById(`cat-row-${activeFilters.category}`);
+                if(row) row.classList.add('bg-blue-50', 'border-blue-200');
+                document.getElementById('cat-all-btn').classList.remove('bg-blue-50', 'text-blue-700');
+            }, 500);
+        }
+
+        return true; // Signal that we restored something
+    } catch (e) {
+        console.error("Failed to restore state", e);
+        return false;
     }
 }
 
-// --- 2. Render Options ---
-function renderFilterOptions() {
-    if (!categorySelect || !municipalitySelectEl) return;
-
-    categorySelect.innerHTML = `<option value="All">All Categories</option>`;
-    CATEGORY_LIST.forEach(cat => { categorySelect.innerHTML += `<option value="${cat}">${cat}</option>`; });
-
-    municipalitySelectEl.innerHTML = `<option value="All">All Municipalities</option>`;
-    MUNICIPALITY_LIST.forEach(mun => { municipalitySelectEl.innerHTML += `<option value="${mun}">${mun}</option>`; });
-
-    categoryListEl.innerHTML = `<a href="#" data-category="All" class="flex justify-between items-center px-3 py-2 rounded-md bg-blue-50 text-blue-700 category-link active-category"><span>All Categories</span><span class="text-xs font-medium">${allApprovedMembers.length}</span></a>`;
-    
-    CATEGORY_LIST.forEach(cat => {
-        const code = DESCRIPTION_TO_CODE_MAP[cat];
-        const count = allApprovedMembers.filter(m => m.category === code).length;
-        categoryListEl.innerHTML += `<a href="#" data-category="${cat}" class="flex justify-between items-center px-3 py-2 rounded-md hover:bg-gray-50 category-link"><span class="flex items-start"><span class="text-xs font-mono w-8 text-gray-400 flex-shrink-0">${code}</span><span class="ml-1">${cat}</span></span><span class="text-xs font-medium text-gray-500">${count}</span></a>`;
-    });
+function clearState() {
+    sessionStorage.removeItem('spda_member_state');
 }
 
-// --- 3. Filter Logic ---
-function applyFiltersAndRender() {
-    if (!searchBoxEl) return;
-
-    const search = searchBoxEl.value.toLowerCase();
-    const category = categorySelect.value;
-    const municipality = municipalitySelectEl.value;
-    const gender = genderSelect.value;
-    const philhealth = philhealthSelect.value;
-    const minAge = minAgeInput.value ? parseInt(minAgeInput.value) : null;
-    const maxAge = maxAgeInput.value ? parseInt(maxAgeInput.value) : null;
-    const minChildren = childrenInput.value ? parseInt(childrenInput.value) : null;
-    const dateStart = dateStartInput.value ? new Date(dateStartInput.value) : null;
-    const dateEnd = dateEndInput.value ? new Date(dateEndInput.value) : null;
+// =============================================
+// 2. DATA FETCHING
+// =============================================
+async function fetchAllMembers(isRestoring = false) {
+    const grid = document.getElementById('members-grid');
+    grid.innerHTML = '<div class="col-span-2 text-center py-10 text-blue-500">Loading all members...</div>';
     
-    if (dateEnd) dateEnd.setHours(23, 59, 59);
-
-    filteredMembersList = allApprovedMembers.filter(member => {
-        const name = `${member.firstName || ''} ${member.lastName || ''}`.toLowerCase();
-        const id = (member.soloParentIdNumber || '').toLowerCase();
+    try {
+        const snapshot = await window.db.collection("users")
+            .where("status", "in", ["verified", "approved"])
+            .get();
         
-        if (search && !name.includes(search) && !id.includes(search)) return false;
-        if (category !== "All" && member.category !== DESCRIPTION_TO_CODE_MAP[category]) return false;
+        allMembersCache = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
         
-        const loc = member.municipality || member.placeOfBirth || "";
-        if (municipality !== "All" && loc !== municipality) return false;
-        if (gender !== "All" && member.sex !== gender) return false;
+        calculateCategoryStats(allMembersCache);
+        
+        // If we are restoring, we pass 'true' to keep the saved page number.
+        // If not, we pass 'false' to reset to Page 1.
+        applyFiltersLogic(isRestoring);
+        
+    } catch (e) {
+        console.error(e);
+        grid.innerHTML = `<div class="col-span-2 text-center py-10 text-red-500">Error loading data: ${e.message}</div>`;
+    }
+}
 
-        if (philhealth !== "All") {
-            const hasIt = (member.hasPhilhealth === true || member.hasPhilhealth === "true");
-            const wantIt = (philhealth === "true");
-            if (hasIt !== wantIt) return false;
+// =============================================
+// 3. FILTERING LOGIC
+// =============================================
+window.applyFilters = function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        // Capture inputs
+        activeFilters.search = document.getElementById('f-search').value.trim().toLowerCase();
+        activeFilters.category = document.getElementById('f-category').value;
+        activeFilters.municipality = document.getElementById('f-municipality').value;
+        activeFilters.gender = document.getElementById('f-gender').value;
+        activeFilters.philhealth = document.getElementById('f-philhealth').value;
+        activeFilters.ageMin = document.getElementById('f-age-min').value;
+        activeFilters.ageMax = document.getElementById('f-age-max').value;
+        activeFilters.dateFrom = document.getElementById('f-date-from').value;
+        activeFilters.dateTo = document.getElementById('f-date-to').value;
+        activeFilters.childrenMin = document.getElementById('f-children-min').value;
+
+        // When USER types/clicks, we always reset to Page 1
+        applyFiltersLogic(false);
+    }, 300);
+};
+
+window.filterByCategory = function(categoryCode) {
+    document.getElementById('f-category').value = categoryCode || "";
+    
+    document.querySelectorAll('.cat-item').forEach(el => el.classList.remove('bg-blue-50', 'border-blue-200'));
+    const allBtn = document.getElementById('cat-all-btn');
+    if(categoryCode) {
+        const row = document.getElementById(`cat-row-${categoryCode}`);
+        if(row) row.classList.add('bg-blue-50', 'border-blue-200');
+        allBtn.classList.remove('bg-blue-50', 'text-blue-700');
+    } else {
+        allBtn.classList.add('bg-blue-50', 'text-blue-700');
+    }
+    
+    window.applyFilters();
+};
+
+window.resetFilters = function() {
+    document.getElementById('f-search').value = "";
+    document.getElementById('f-category').selectedIndex = 0;
+    document.getElementById('f-municipality').selectedIndex = 0;
+    document.getElementById('f-gender').selectedIndex = 0;
+    document.getElementById('f-philhealth').selectedIndex = 0;
+    document.getElementById('f-age-min').value = "";
+    document.getElementById('f-age-max').value = "";
+    document.getElementById('f-date-from').value = "";
+    document.getElementById('f-date-to').value = "";
+    document.getElementById('f-children-min').value = "";
+    
+    activeFilters = { category: "", municipality: "", gender: "", philhealth: "", search: "", ageMin: "", ageMax: "", dateFrom: "", dateTo: "", childrenMin: "" };
+    
+    document.querySelectorAll('.cat-item').forEach(el => el.classList.remove('bg-blue-50', 'border-blue-200'));
+    document.getElementById('cat-all-btn').classList.add('bg-blue-50', 'text-blue-700');
+
+    clearState(); // Clear saved state on reset
+    applyFiltersLogic(false);
+};
+
+function applyFiltersLogic(keepPage = false) {
+    // 1. Filter the cache
+    filteredMembers = allMembersCache.filter(user => {
+        // --- SEARCH FIX: Check First Name OR Last Name OR ID ---
+        if (activeFilters.search) {
+            const s = activeFilters.search; // already lowercased in applyFilters()
+            const fName = (user.firstName || "").toLowerCase();
+            const lName = (user.lastName || "").toLowerCase();
+            const idNum = (user.soloParentIdNumber || "").toLowerCase();
+            
+            // Check if search term exists in any of these fields
+            const match = fName.includes(s) || lName.includes(s) || idNum.includes(s);
+            if (!match) return false;
         }
 
-        const age = parseInt(member.age);
-        if (minAge !== null && (isNaN(age) || age < minAge)) return false;
-        if (maxAge !== null && (isNaN(age) || age > maxAge)) return false;
+        // Exact Matches
+        if (activeFilters.category && (!user.category || !user.category.startsWith(activeFilters.category))) return false;
+        if (activeFilters.municipality && user.municipality !== activeFilters.municipality) return false;
+        if (activeFilters.gender && user.sex !== activeFilters.gender) return false;
+        
+        // PhilHealth
+        if (activeFilters.philhealth === 'Yes' && !user.philhealthIdNumber) return false;
+        if (activeFilters.philhealth === 'No' && user.philhealthIdNumber) return false;
 
-        const children = parseInt(member.numberOfChildren);
-        if (minChildren !== null && (isNaN(children) || children < minChildren)) return false;
+        // Ranges
+        let age = parseInt(user.age);
+        if (activeFilters.ageMin && (isNaN(age) || age < parseInt(activeFilters.ageMin))) return false;
+        if (activeFilters.ageMax && (isNaN(age) || age > parseInt(activeFilters.ageMax))) return false;
 
-        const regDate = member.createdAt ? member.createdAt.toDate() : null;
-        if (dateStart && (!regDate || regDate < dateStart)) return false;
-        if (dateEnd && (!regDate || regDate > dateEnd)) return false;
+        let childCount = Array.isArray(user.childrenAges) ? user.childrenAges.length : 0;
+        if (activeFilters.childrenMin && childCount < parseInt(activeFilters.childrenMin)) return false;
+
+        if (user.createdAt) {
+            let regDate = user.createdAt.toDate ? user.createdAt.toDate() : new Date(user.createdAt);
+            if (activeFilters.dateFrom && regDate < new Date(activeFilters.dateFrom)) return false;
+            if (activeFilters.dateTo) {
+                let endDate = new Date(activeFilters.dateTo);
+                endDate.setHours(23,59,59);
+                if (regDate > endDate) return false;
+            }
+        }
 
         return true;
     });
 
-    renderMemberProfiles(filteredMembersList);
-    if (resultCountEl) resultCountEl.textContent = filteredMembersList.length;
-}
+    // 2. Sort (Alphabetical Last Name)
+    filteredMembers.sort((a, b) => (a.lastName || "").localeCompare(b.lastName || ""));
 
-function renderMemberProfiles(members) {
-    if (!memberGridEl) return;
-    memberGridEl.innerHTML = "";
-    
-    if (members.length === 0) {
-        memberGridEl.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500">No members found matching your filters.</div>`;
-        return;
+    // 3. Reset Pagination (Only if NOT restoring state)
+    if (!keepPage) {
+        currentPage = 1;
     }
     
-    members.forEach(data => {
-        const name = `${data.firstName || ''} ${data.lastName || ''}`;
-        const location = data.address || data.municipality || 'N/A';
-        const idNum = data.soloParentIdNumber || 'N/A';
-        const imgUrl = data.profileImageUrl || 'https://i.pravatar.cc/200?img=12';
+    renderPage();
+}
 
-        memberGridEl.innerHTML += `
-            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:border-blue-200 transition flex items-center gap-4">
-                <img src="${imgUrl}" class="w-16 h-16 rounded-full object-cover flex-shrink-0 bg-gray-100">
-                <div class="flex-1 min-w-0">
-                    <h3 class="font-semibold text-gray-800 truncate">${name}</h3>
-                    <p class="text-xs text-gray-500">ID: ${idNum}</p>
-                    <p class="text-xs text-gray-500 mt-1 truncate">${location}</p>
-                </div>
-                <a href="profile.html?id=${data.id}" class="px-4 py-2 border border-blue-600 text-blue-600 text-sm font-medium rounded-md hover:bg-blue-50 transition whitespace-nowrap">View</a>
-            </div>`;
+// =============================================
+// 4. PAGINATION & RENDER
+// =============================================
+function renderPage() {
+    const grid = document.getElementById('members-grid');
+    grid.innerHTML = "";
+
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    const pageData = filteredMembers.slice(start, end);
+
+    if (pageData.length === 0) {
+        grid.innerHTML = '<div class="col-span-2 text-center py-10 text-gray-500">No members found matching criteria.</div>';
+    } else {
+        pageData.forEach(user => {
+            grid.appendChild(createMemberCard(user.id, user));
+        });
+    }
+
+    // Update UI
+    const totalPages = Math.ceil(filteredMembers.length / ITEMS_PER_PAGE) || 1;
+    document.getElementById('page-indicator').innerText = `Page ${currentPage} of ${totalPages}`;
+    
+    // Update Buttons
+    const prevBtns = [document.getElementById('btn-prev'), document.getElementById('btn-prev-btm')];
+    const nextBtns = [document.getElementById('btn-next'), document.getElementById('btn-next-btm')];
+
+    const isFirst = currentPage === 1;
+    const isLast = end >= filteredMembers.length;
+
+    prevBtns.forEach(b => {
+        b.disabled = isFirst;
+        b.classList.toggle('cursor-not-allowed', isFirst);
+    });
+    nextBtns.forEach(b => {
+        b.disabled = isLast;
+        b.classList.toggle('cursor-not-allowed', isLast);
     });
 }
 
-// --- ✅ UPDATED: Report Generation with Smart Description ---
-function handleGenerateReport() {
-    const printContainer = document.getElementById('print-report-container');
-    if (!printContainer) return;
-    if (filteredMembersList.length === 0) { alert("No data to print."); return; }
-
-    const date = new Date().toLocaleDateString();
-    const count = filteredMembersList.length;
-
-    // 1. Capture ALL active filters
-    const catFilter = document.getElementById('category-filter-select').value;
-    const munFilter = document.getElementById('municipality-filter-select').value;
-    const genderFilter = document.getElementById('gender-filter').value;
-    const philFilter = document.getElementById('philhealth-filter').value;
-    const minAge = document.getElementById('min-age-filter').value;
-    const maxAge = document.getElementById('max-age-filter').value;
-    const minKids = document.getElementById('children-filter').value;
-    const dStart = document.getElementById('date-start-filter').value;
-    const dEnd = document.getElementById('date-end-filter').value;
-
-    // 2. Build the Narrative
-    let filters = [];
-
-    // Location
-    if (munFilter !== "All") filters.push(`residing in <strong>${munFilter}</strong>`);
-    
-    // Category
-    if (catFilter !== "All") filters.push(`categorized as <strong>${catFilter}</strong>`);
-    
-    // Gender
-    if (genderFilter !== "All") filters.push(`who are <strong>${genderFilter}</strong>`);
-    
-    // Age Logic
-    if (minAge && maxAge) filters.push(`aged <strong>${minAge} to ${maxAge}</strong>`);
-    else if (minAge) filters.push(`aged <strong>${minAge} and above</strong>`);
-    else if (maxAge) filters.push(`aged <strong>${maxAge} and below</strong>`);
-
-    // PhilHealth
-    if (philFilter !== "All") {
-        filters.push(philFilter === "true" ? `<strong>with PhilHealth</strong>` : `<strong>without PhilHealth</strong>`);
+window.changePage = function(dir) {
+    if (dir === 'prev' && currentPage > 1) {
+        currentPage--;
+        renderPage();
+    } else if (dir === 'next' && (currentPage * ITEMS_PER_PAGE) < filteredMembers.length) {
+        currentPage++;
+        renderPage();
     }
+};
 
-    // Children
-    if (minKids) filters.push(`with at least <strong>${minKids} children</strong>`);
-
-    // Date Range
-    if (dStart && dEnd) filters.push(`registered between <strong>${dStart}</strong> and <strong>${dEnd}</strong>`);
-
-    // Construct Sentence
-    let narrative = `This report contains an official list of <strong>${count} verified solo parent members</strong>`;
+// =============================================
+// 5. REPORT GENERATION
+// =============================================
+window.generateReport = function() {
+    if (filteredMembers.length === 0) { alert("No members to report."); return; }
     
-    if (filters.length > 0) {
-        // Join them nicely: "residing in Baguio, aged 20-30, and with PhilHealth"
-        if (filters.length > 1) {
-            const last = filters.pop();
-            narrative += ` ` + filters.join(", ") + `, and ` + last + `.`;
-        } else {
-            narrative += ` ` + filters[0] + `.`;
-        }
-    } else {
-        narrative += ` from the entire database (no specific filters applied).`;
-    }
+    const btn = document.querySelector('button[onclick="generateReport()"]');
+    const originalText = btn.innerHTML;
+    btn.innerText = "Generating...";
+    btn.disabled = true;
 
-    // 3. Build Table
-    let rows = filteredMembersList.map(m => {
-        const catName = CODE_TO_DESCRIPTION_MAP[m.category] || m.category || 'N/A';
-        const regDate = m.createdAt ? m.createdAt.toDate().toLocaleDateString() : 'N/A';
-        return `
-        <tr>
-            <td style="border:1px solid #ddd; padding:8px;">${m.firstName} ${m.lastName}</td>
-            <td style="border:1px solid #ddd; padding:8px;">${m.sex || 'N/A'}</td>
-            <td style="border:1px solid #ddd; padding:8px;">${m.age || 'N/A'}</td>
-            <td style="border:1px solid #ddd; padding:8px;">${m.address || m.municipality || 'N/A'}</td>
-            <td style="border:1px solid #ddd; padding:8px;">${catName}</td>
-            <td style="border:1px solid #ddd; padding:8px;">${m.numberOfChildren || '0'}</td>
-            <td style="border:1px solid #ddd; padding:8px;">${regDate}</td>
-        </tr>`;
+    // Build Description
+    let desc = `This report contains an official list of <b>${filteredMembers.length} verified solo parent members</b>`;
+    let criteriaParts = [];
+    if (activeFilters.search) criteriaParts.push(`matching search "<b>${activeFilters.search}</b>"`);
+    if (activeFilters.gender && activeFilters.gender !== 'All') criteriaParts.push(`who are <b>${activeFilters.gender}</b>`);
+    if (activeFilters.municipality && activeFilters.municipality !== 'All Municipalities') criteriaParts.push(`residing in <b>${activeFilters.municipality}</b>`);
+    if (activeFilters.category) criteriaParts.push(`under category <b>${activeFilters.category}</b>`);
+    
+    if (criteriaParts.length > 0) desc += " " + criteriaParts.join(", ") + ".";
+    else desc += " from the entire database.";
+
+    // Build Rows
+    let rows = filteredMembers.map(m => {
+        const catCode = m.category ? m.category.split(' ')[0] : '-';
+        const date = m.createdAt && m.createdAt.toDate ? m.createdAt.toDate().toLocaleDateString() : '-';
+        const kids = Array.isArray(m.childrenAges) ? m.childrenAges.length : 0;
+        return `<tr><td style="padding:8px;border:1px solid #ddd">${m.firstName} ${m.lastName}</td><td style="padding:8px;border:1px solid #ddd">${m.sex||'-'}</td><td style="padding:8px;border:1px solid #ddd">${m.age||'-'}</td><td style="padding:8px;border:1px solid #ddd">${m.municipality||'-'}</td><td style="padding:8px;border:1px solid #ddd">${catCode}</td><td style="padding:8px;border:1px solid #ddd">${kids}</td><td style="padding:8px;border:1px solid #ddd">${date}</td></tr>`;
     }).join('');
 
-    // 4. Render HTML
-    let html = `
-        <div class="letterhead" style="display: flex; align-items: center; border-bottom: 2px solid #3b82f6; padding-bottom: 15px; margin-bottom: 20px;">
-            <img src="LOGO.png" alt="SPDA Logo" style="width: 80px; height: 80px; margin-right: 15px; object-fit: contain;">
-            <div>
-                <h1 style="margin: 0; font-size: 22px; font-weight: bold; color: #1e3a8a;">SPDA Category Report</h1>
-                <p style="margin: 0; font-size: 11px; color: #6b7280;">Official Member List • Generated: ${date}</p>
-            </div>
-        </div>
-        
-        <h3 style="font-size:16px; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">1. Report Description</h3>
-        <div style="margin-bottom: 20px; font-size: 14px; line-height: 1.6; text-align: justify; background:#f9fafb; padding:15px; border:1px solid #e5e7eb; border-radius:8px;">
-            ${narrative}
-        </div>
+    const iframe = document.getElementById('printFrame');
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(`<html><head><title>SPDA Report</title><style>body{font-family:sans-serif;padding:20px;color:#333}table{width:100%;border-collapse:collapse;font-size:12px;margin-top:20px}th{background:#f3f4f6;padding:8px;text-align:left;border:1px solid #ddd}td{padding:8px;border:1px solid #ddd}.header{text-align:center;margin-bottom:10px}h1{color:#1e3a8a;margin:0;font-size:22px}.meta{font-size:12px;color:#666;margin-top:5px}.desc-box{margin-top:20px;padding:15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;line-height:1.5}.desc-title{font-weight:bold;font-size:12px;text-transform:uppercase;border-bottom:2px solid #2563eb;padding-bottom:5px;margin-bottom:10px;margin-top:20px;color:#1e293b}</style></head><body><div class="header"><h1>SPDA Category Report</h1><div class="meta">Official Member List • Generated: ${new Date().toLocaleDateString()}</div></div><div class="desc-title">1. REPORT DESCRIPTION</div><div class="desc-box">${desc}</div><div class="desc-title">2. FILTERED RESULTS</div><table><thead><tr><th>Name</th><th>Gender</th><th>Age</th><th>Address</th><th>Cat</th><th>Kids</th><th>Date</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);
+    doc.close();
+    
+    setTimeout(() => { 
+        iframe.contentWindow.focus(); 
+        iframe.contentWindow.print(); 
+        btn.innerHTML = originalText; 
+        btn.disabled = false; 
+    }, 500);
+};
 
-        <h3 style="font-size:16px; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">2. Filtered Results</h3>
-        <table style="width:100%; border-collapse:collapse; font-size:12px;">
-            <thead>
-                <tr style="background:#f3f4f6;">
-                    <th style="border:1px solid #ddd; padding:8px;">Name</th>
-                    <th style="border:1px solid #ddd; padding:8px;">Gender</th>
-                    <th style="border:1px solid #ddd; padding:8px;">Age</th>
-                    <th style="border:1px solid #ddd; padding:8px;">Address</th>
-                    <th style="border:1px solid #ddd; padding:8px;">Category</th>
-                    <th style="border:1px solid #ddd; padding:8px;">Children</th>
-                    <th style="border:1px solid #ddd; padding:8px;">Date</th>
-                </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-        </table>
-        
-        <div style="margin-top: 50px; text-align: center; font-size: 12px; color: #9ca3af;">
-            <p><em>End of Report. Automatically generated by SPDA System.</em></p>
-        </div>
-    `;
+// =============================================
+// 6. HELPERS
+// =============================================
+function calculateCategoryStats(data) {
+    const counts = {};
+    for (let key in CATEGORIES) counts[key] = 0;
+    
+    data.forEach(user => {
+        const cat = (user.category || "").toLowerCase();
+        for(let key in CATEGORIES) { if (cat.includes(key)) { counts[key]++; break; } }
+    });
 
-    printContainer.innerHTML = html;
-    printContainer.style.display = 'block';
-    setTimeout(() => window.print(), 1000);
+    document.getElementById('total-count-display').innerText = data.length;
+    const listContainer = document.getElementById('category-list');
+    listContainer.innerHTML = ""; 
+    
+    for (let [code, label] of Object.entries(CATEGORIES)) {
+        const item = document.createElement('div');
+        item.id = `cat-row-${code}`;
+        item.className = "cat-item flex justify-between items-start text-sm text-gray-600 p-2 rounded cursor-pointer hover:bg-gray-50 border border-transparent transition";
+        item.onclick = () => filterByCategory(code);
+        item.innerHTML = `<div class="flex gap-3"><span class="text-gray-400 font-mono text-xs mt-0.5 w-6 shrink-0">${code}</span><span class="leading-tight select-none">${label}</span></div><span class="font-medium text-gray-800 ml-2">${counts[code] || 0}</span>`;
+        listContainer.appendChild(item);
+    }
 }
 
-// --- MAIN INITIALIZATION ---
-document.addEventListener('DOMContentLoaded', () => {
-    categoryListEl = document.getElementById('category-filter-list');
-    municipalitySelectEl = document.getElementById('municipality-filter-select');
-    categorySelect = document.getElementById('category-filter-select');
-    memberGridEl = document.getElementById('member-profile-grid');
-    resultCountEl = document.getElementById('result-count');
-    searchBoxEl = document.getElementById('search-box');
-    genderSelect = document.getElementById('gender-filter');
-    philhealthSelect = document.getElementById('philhealth-filter');
-    minAgeInput = document.getElementById('min-age-filter');
-    maxAgeInput = document.getElementById('max-age-filter');
-    childrenInput = document.getElementById('children-filter');
-    dateStartInput = document.getElementById('date-start-filter');
-    dateEndInput = document.getElementById('date-end-filter');
-    const resetBtn = document.getElementById('reset-filters-btn');
-    const reportBtn = document.getElementById('generate-category-report-btn');
+function createMemberCard(id, data) {
+    const div = document.createElement('div');
+    div.className = "bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition";
+    const name = `${data.firstName || ''} ${data.lastName || ''}`;
+    const address = data.municipality || data.city || data.address || "No Address";
+    const initial = (data.firstName || "U").charAt(0).toUpperCase();
+    const safeData = JSON.stringify({id, ...data}).replace(/"/g, '&quot;');
+    div.innerHTML = `<div class="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center"><span class="text-lg font-bold text-gray-500">${initial}</span></div><div class="flex-1 min-w-0"><h3 class="text-sm font-bold text-gray-900 truncate">${name}</h3><p class="text-xs text-gray-500 truncate font-mono">ID: ${data.soloParentIdNumber || id}</p><p class="text-xs text-gray-400 truncate">${address}</p></div><button onclick="openMemberModal(${safeData})" class="px-3 py-1.5 border border-blue-600 text-blue-600 rounded text-xs font-medium hover:bg-blue-50">View</button>`;
+    return div;
+}
 
-    // Event Listeners
-    const inputs = [searchBoxEl, categorySelect, municipalitySelectEl, genderSelect, philhealthSelect, minAgeInput, maxAgeInput, childrenInput, dateStartInput, dateEndInput];
-    inputs.forEach(el => { if (el) { el.addEventListener('input', applyFiltersAndRender); el.addEventListener('change', applyFiltersAndRender); } });
-
-    if (categoryListEl) {
-        categoryListEl.addEventListener('click', e => {
-            e.preventDefault();
-            const link = e.target.closest('.category-link');
-            if (!link) return;
-            const cat = link.dataset.category;
-            if(categorySelect) categorySelect.value = cat;
-            document.querySelectorAll('.category-link').forEach(l => {
-                l.classList.remove('bg-blue-50', 'text-blue-700', 'active-category');
-                l.classList.add('hover:bg-gray-50');
-                const countSpan = l.querySelector('span:last-child');
-                if(countSpan) { countSpan.classList.remove('text-blue-700'); countSpan.classList.add('text-gray-500'); }
-            });
-            link.classList.add('bg-blue-50', 'text-blue-700', 'active-category');
-            link.classList.remove('hover:bg-gray-50');
-            const activeCountSpan = link.querySelector('span:last-child');
-            if(activeCountSpan) { activeCountSpan.classList.remove('text-gray-500'); activeCountSpan.classList.add('text-blue-700'); }
-            applyFiltersAndRender();
-        });
-    }
-
-    if (resetBtn) {
-        resetBtn.addEventListener('click', e => {
-            e.preventDefault();
-            if(searchBoxEl) searchBoxEl.value = "";
-            if(categorySelect) categorySelect.value = "All";
-            if(municipalitySelectEl) municipalitySelectEl.value = "All";
-            if(genderSelect) genderSelect.value = "All";
-            if(philhealthSelect) philhealthSelect.value = "All";
-            if(minAgeInput) minAgeInput.value = "";
-            if(maxAgeInput) maxAgeInput.value = "";
-            if(childrenInput) childrenInput.value = "";
-            if(dateStartInput) dateStartInput.value = "";
-            if(dateEndInput) dateEndInput.value = "";
-            const allLink = document.querySelector('.category-link[data-category="All"]');
-            if(allLink) allLink.click(); else applyFiltersAndRender();
-        });
-    }
-
-    if (reportBtn) reportBtn.addEventListener('click', handleGenerateReport);
-
-    loadAllData();
-    feather.replace();
-});
+window.openMemberModal = function(data) {
+    document.getElementById('m-modal-avatar').innerText = (data.firstName || "U").charAt(0);
+    document.getElementById('m-modal-name').innerText = `${data.firstName} ${data.lastName}`;
+    document.getElementById('m-modal-id').innerText = data.soloParentIdNumber || data.id;
+    document.getElementById('m-modal-email').innerText = data.email || "N/A";
+    document.getElementById('m-modal-contact').innerText = data.contact || "N/A";
+    const code = data.category || "N/A";
+    let displayCat = code;
+    for(let key in CATEGORIES) { if(code.toLowerCase().includes(key)) { displayCat = `${key} (${CATEGORIES[key]})`; break; } }
+    document.getElementById('m-modal-category').innerText = displayCat;
+    const fullAddress = [data.houseNumber, data.street, data.barangay, data.municipality].filter(Boolean).join(', ');
+    document.getElementById('m-modal-address').innerText = fullAddress || data.address;
+    
+    // SAVE STATE BEFORE NAVIGATING AWAY
+    document.getElementById('btn-view-full-profile').onclick = () => {
+        saveState();
+        window.location.href = `profile.html?id=${data.id}`;
+    };
+    
+    document.getElementById('viewModal').classList.remove('hidden');
+};
