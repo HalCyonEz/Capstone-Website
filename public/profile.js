@@ -1,80 +1,256 @@
-import { db } from "./firebase-config.js";
-import { initSidebar, initLogout, CODE_TO_DESCRIPTION_MAP, approveUser, rejectUser } from "./utils.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+console.log("🎯 profile.js loaded - Edit Functionality Active");
 
-initSidebar();
-initLogout();
+// Global State Trackers
+let currentProfileData = null;
+let currentDocId = null;
+let isOfficialRecord = false;
+let linkedAuthUid = null;
 
-async function initProfilePage() {
-    const params = new URLSearchParams(window.location.search);
-    const userId = params.get('id');
-    if (!userId) return;
-    
-    const printBtn = document.getElementById('print-profile-btn');
-    if (printBtn) printBtn.addEventListener('click', () => window.print());
+document.addEventListener('DOMContentLoaded', async function() {
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBjO4P1-Ir_iJSkLScTiyshEd28GdskN24", 
+        authDomain: "solo-parent-app.firebaseapp.com", 
+        databaseURL: "https://solo-parent-app-default-rtdb.asia-southeast1.firebasedatabase.app", 
+        projectId: "solo-parent-app", 
+        storageBucket: "solo-parent-app.firebasestorage.app", 
+        messagingSenderId: "292578110807", 
+        appId: "1:292578110807:web:9f5e5c0dcd73c9975e6212" 
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    window.db = firebase.firestore();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const recordId = urlParams.get('id');
+
+    if (!recordId) {
+        alert("No profile ID found in URL.");
+        window.location.href = 'members.html';
+        return;
+    }
 
     try {
-        const docSnap = await getDoc(doc(db, "users", userId));
-        if (!docSnap.exists()) return;
-        const user = docSnap.data();
-        
-        const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text || 'N/A'; };
-        const setDoc = (id, url) => { const link = document.getElementById(`doc-link-${id}`); const img = document.getElementById(`doc-img-${id}`); const error = document.getElementById(`doc-error-${id}`); if (url) { if (link) link.href = url; if (img) img.src = url; } else { if (link) link.style.display = 'none'; if (error) error.classList.remove('hidden'); } };
-        
-        document.getElementById('profile-avatar').src = user.profileImageUrl || `https://placehold.co/128x128/EBF4FF/7F9CF5?text=${user.firstName?.charAt(0) || 'A'}&font=inter`;
-        setText('profile-name', `${user.firstName} ${user.middleInitial ? user.middleInitial + '.' : ''} ${user.lastName}`);
-        setText('profile-category', CODE_TO_DESCRIPTION_MAP[user.category] || user.category);
-        setText('profile-email', user.email);
-        setText('profile-contact', user.contact);
-        // --- FIX: Combine Address Fields ---
-        const addressParts = [
-            user.houseNumber,
-            user.street,
-            user.barangay,
-            user.municipality // (Optional) Include this if you have it in DB
-        ].filter(part => part && part.trim() !== ""); // Remove empty values
+        // 1. Search Official Database First
+        const lguRef = db.collection("solo_parent_records").doc(recordId);
+        const lguSnap = await lguRef.get();
 
-        const fullAddress = addressParts.length > 0 ? addressParts.join(', ') : 'N/A';
+        if (lguSnap.exists) {
+            currentProfileData = lguSnap.data();
+            currentDocId = recordId;
+            isOfficialRecord = true;
+            linkedAuthUid = currentProfileData.auth_uid || null;
+        } else {
+            // 2. Fallback to Users Collection
+            const mobileRef = db.collection("users").doc(recordId);
+            const mobileSnap = await mobileRef.get();
+            
+            if (mobileSnap.exists) {
+                currentProfileData = mobileSnap.data();
+                currentDocId = recordId;
+                isOfficialRecord = false;
+                linkedAuthUid = recordId;
+            } else {
+                // 3. Deep Fallback Query
+                const querySnap = await db.collection("solo_parent_records").where("soloParentIdNumber", "==", recordId).get();
+                if (!querySnap.empty) {
+                    currentProfileData = querySnap.docs[0].data();
+                    currentDocId = querySnap.docs[0].id;
+                    isOfficialRecord = true;
+                    linkedAuthUid = currentProfileData.auth_uid || null;
+                }
+            }
+        }
 
-        setText('profile-address', fullAddress);
-        // -----------------------------------
-        setText('profile-sp-id', user.soloParentIdNumber);
+        // Execute UI Injection
+        if (currentProfileData) {
+            populateUI(currentDocId, currentProfileData);
+        } else {
+            alert(`Error: Record [${recordId}] could not be found.`);
+            window.location.href = 'members.html';
+        }
+    } catch (error) {
+        console.error("Error fetching profile:", error);
+        alert("Failed to load profile. Please check console.");
+    }
+});
+
+// ==========================================
+// UI INJECTION LOGIC
+// ==========================================
+function populateUI(recordId, data) {
+    const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim();
+    const avatarEl = document.getElementById('val-avatar-initial');
+    if(avatarEl) avatarEl.innerText = (data.firstName || "U").charAt(0).toUpperCase();
+
+    const fieldsToMap = {
+        'val-name': fullName,
+        'val-side-name': fullName, 
+        'val-email': data.email || 'N/A',
+        'val-dob': data.dateOfBirth || 'N/A',
+        'val-age': data.age || 'N/A',
+        'val-sex': data.sex || 'N/A',
+        'val-birthplace': data.placeOfBirth || 'N/A',
+        'val-civil': data.civilStatus || 'N/A',
+        'val-ethnicity': data.ethnicity || 'N/A',
+        'val-religion': data.religion || 'N/A',
+        'val-registered': data.registrationDate && data.registrationDate.toDate ? data.registrationDate.toDate().toLocaleDateString() : (data.createdAt && data.createdAt.toDate ? data.createdAt.toDate().toLocaleDateString() : 'N/A'),
         
-        const statusBadge = document.getElementById('profile-status-badge');
-        const approveBtn = document.getElementById('profile-approve-btn');
-        const rejectBtn = document.getElementById('profile-reject-btn');
+        'val-side-email': data.email || 'N/A',
+        'val-side-contact': data.contact || 'N/A',
+        'val-side-address': `${data.barangay || ''}, ${data.municipality || ''}`.trim().replace(/^, | ,$/g, '') || 'N/A',
+        'val-side-id': data.soloParentIdNumber || recordId,
+
+        'val-occupation': data.occupation || 'N/A',
+        'val-company': data.company || 'N/A',
+        'val-income': data.monthlyIncome || 'N/A',
+        'val-children-count': Array.isArray(data.childrenAges) ? data.childrenAges.length : '0',
+        'val-children-ages': Array.isArray(data.childrenAges) ? data.childrenAges.join(', ') : 'N/A',
         
-        if (user.status === 'approved') { statusBadge.textContent = 'Approved'; statusBadge.className = 'px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800'; approveBtn.style.display = 'none'; rejectBtn.style.display = 'none'; }
-        else if (user.status === 'pending') { statusBadge.textContent = 'Pending'; statusBadge.className = 'px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800'; approveBtn.style.display = 'flex'; rejectBtn.style.display = 'flex'; }
-        else { statusBadge.textContent = 'Rejected'; statusBadge.className = 'px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800'; approveBtn.style.display = 'flex'; rejectBtn.style.display = 'none'; }
-        
-        setText('detail-full-name', `${user.firstName} ${user.middleInitial} ${user.lastName}`);
-        setText('detail-email', user.email);
-        setText('detail-dob', user.dateOfBirth);
-        setText('detail-age', user.age);
-        setText('detail-sex', user.sex);
-        setText('detail-pob', user.placeOfBirth);
-        setText('detail-civil-status', user.civilStatus);
-        setText('detail-ethnicity', user.ethnicity);
-        setText('detail-religion', user.religion);
-        setText('detail-created-at', user.createdAt ? user.createdAt.toDate().toLocaleDateString() : 'N/A');
-        setText('detail-occupation', user.occupation);
-        setText('detail-company', user.companyAgency);
-        setText('detail-income', user.monthlyIncome);
-        setText('detail-num-children', user.numberOfChildren);
-        setText('detail-children-ages', user.childrenAges ? user.childrenAges.join(', ') : 'N/A');
-        setText('detail-has-philhealth', user.hasPhilhealth ? 'Yes' : 'No');
-        setText('detail-philhealth-id', user.philhealthIdNumber);
-        
-        setDoc('valid-id', user.proofIdUrl);
-        setDoc('proof', user.proofSoloParentUrl);
-        setDoc('philhealth', user.philhealthIdUrl);
-        
-        approveBtn.addEventListener('click', () => approveUser(userId));
-        rejectBtn.addEventListener('click', () => rejectUser(userId));
-        
-        feather.replace();
-    } catch (error) { console.error("❌ Error fetching user profile:", error); }
+        'val-philhealth-member': data.philhealthIdNumber ? 'Yes' : 'No',
+        'val-philhealth-id': data.philhealthIdNumber || 'N/A'
+    };
+
+    for (const [htmlId, dbValue] of Object.entries(fieldsToMap)) {
+        const element = document.getElementById(htmlId);
+        if (element) { element.innerText = dbValue; }
+    }
+
+    const badge = document.getElementById('val-status-badge');
+    if (badge) {
+        if (data.status === "approved" || data.status === "verified" || data.is_online === true) {
+            badge.innerHTML = `<i data-feather="check-circle" class="w-3 h-3 inline mr-1"></i> App Registered`;
+            badge.className = "inline-block bg-blue-100 text-blue-800 border border-blue-200 text-xs px-2.5 py-1 rounded-full font-bold shadow-sm";
+        } else {
+            badge.innerHTML = `App Unregistered`;
+            badge.className = "inline-block bg-gray-100 text-gray-600 border border-gray-200 text-xs px-2.5 py-1 rounded-full font-bold shadow-sm";
+        }
+    }
+    feather.replace();
+
+    const imgId = document.getElementById('val-img-id');
+    const imgIdNone = document.getElementById('val-img-id-none');
+    if (data.proofIdUrl) { imgId.src = data.proofIdUrl; imgId.classList.remove('hidden'); imgIdNone.classList.add('hidden'); } 
+    else { imgId.classList.add('hidden'); imgIdNone.classList.remove('hidden'); }
+
+    const imgSp = document.getElementById('val-img-sp');
+    const imgSpNone = document.getElementById('val-img-sp-none');
+    if (data.proofSoloParentUrl) { imgSp.src = data.proofSoloParentUrl; imgSp.classList.remove('hidden'); imgSpNone.classList.add('hidden'); } 
+    else { imgSp.classList.add('hidden'); imgSpNone.classList.remove('hidden'); }
 }
 
-document.addEventListener('DOMContentLoaded', initProfilePage);
+// ==========================================
+// EDIT PROFILE LOGIC
+// ==========================================
+window.closeModal = function(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+};
+
+window.showNotification = function(title, message, type = 'success') {
+    document.getElementById('notif-title').innerText = title;
+    document.getElementById('notif-message').innerText = message;
+    
+    const iconContainer = document.getElementById('notif-icon-container');
+    const icon = document.getElementById('notif-icon');
+    
+    if (type === 'success') {
+        iconContainer.className = "mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-green-100 mb-4";
+        icon.setAttribute('data-feather', 'check');
+        icon.className = "h-7 w-7 text-green-600";
+    } else {
+        iconContainer.className = "mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-red-100 mb-4";
+        icon.setAttribute('data-feather', 'x');
+        icon.className = "h-7 w-7 text-red-600";
+    }
+    
+    feather.replace();
+    document.getElementById('notificationModal').classList.remove('hidden');
+};
+
+window.openEditModal = function() {
+    if (!currentProfileData) return;
+
+    // Prefill the form with current data
+    document.getElementById('edit-fname').value = currentProfileData.firstName || '';
+    document.getElementById('edit-lname').value = currentProfileData.lastName || '';
+    document.getElementById('edit-contact').value = currentProfileData.contact || '';
+    document.getElementById('edit-email').value = currentProfileData.email || '';
+    document.getElementById('edit-dob').value = currentProfileData.dateOfBirth || '';
+    document.getElementById('edit-age').value = currentProfileData.age || '';
+    document.getElementById('edit-sex').value = currentProfileData.sex || 'Female';
+    document.getElementById('edit-civil').value = currentProfileData.civilStatus || '';
+    document.getElementById('edit-ethnicity').value = currentProfileData.ethnicity || '';
+    document.getElementById('edit-religion').value = currentProfileData.religion || '';
+    document.getElementById('edit-municipality').value = currentProfileData.municipality || '';
+    document.getElementById('edit-barangay').value = currentProfileData.barangay || '';
+    document.getElementById('edit-occupation').value = currentProfileData.occupation || '';
+    document.getElementById('edit-company').value = currentProfileData.company || '';
+    document.getElementById('edit-income').value = currentProfileData.monthlyIncome || '';
+    document.getElementById('edit-philhealth').value = currentProfileData.philhealthIdNumber || '';
+
+    document.getElementById('editProfileModal').classList.remove('hidden');
+};
+
+window.saveProfileEdits = async function() {
+    const btn = document.getElementById('btn-save-edits');
+    btn.innerHTML = '<i data-feather="loader" class="animate-spin w-4 h-4 mr-2"></i> Saving...';
+    btn.disabled = true;
+    feather.replace();
+
+    // 1. Gather all inputs
+    const updates = {
+        firstName: document.getElementById('edit-fname').value.trim(),
+        lastName: document.getElementById('edit-lname').value.trim(),
+        contact: document.getElementById('edit-contact').value.trim(),
+        email: document.getElementById('edit-email').value.trim(),
+        dateOfBirth: document.getElementById('edit-dob').value.trim(),
+        age: document.getElementById('edit-age').value.trim(),
+        sex: document.getElementById('edit-sex').value,
+        civilStatus: document.getElementById('edit-civil').value.trim(),
+        ethnicity: document.getElementById('edit-ethnicity').value.trim(),
+        religion: document.getElementById('edit-religion').value.trim(),
+        municipality: document.getElementById('edit-municipality').value.trim(),
+        barangay: document.getElementById('edit-barangay').value.trim(),
+        occupation: document.getElementById('edit-occupation').value.trim(),
+        company: document.getElementById('edit-company').value.trim(),
+        monthlyIncome: document.getElementById('edit-income').value.trim(),
+        philhealthIdNumber: document.getElementById('edit-philhealth').value.trim(),
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp() // Audit trail
+    };
+
+    try {
+        const batch = window.db.batch();
+
+        // 2. Queue updates to the correct databases
+        if (isOfficialRecord) {
+            const officialRef = window.db.collection("solo_parent_records").doc(currentDocId);
+            batch.update(officialRef, updates);
+
+            // If linked to app, sync the typo fix to their mobile app too!
+            if (linkedAuthUid) {
+                const userRef = window.db.collection("users").doc(linkedAuthUid);
+                batch.update(userRef, updates);
+            }
+        } else {
+            // Backup fallback (if modifying a pending/unmerged user directly)
+            const userRef = window.db.collection("users").doc(currentDocId);
+            batch.update(userRef, updates);
+        }
+
+        // 3. Execute
+        await batch.commit();
+
+        // 4. Update the screen immediately without reloading the page
+        currentProfileData = { ...currentProfileData, ...updates }; // Merge new data into memory
+        populateUI(currentDocId, currentProfileData);
+
+        closeModal('editProfileModal');
+        showNotification("Update Successful", "The applicant's information has been successfully corrected.", "success");
+
+    } catch (error) {
+        console.error("Error updating profile:", error);
+        showNotification("Save Failed", "Could not update the database. Please check console.", "error");
+    } finally {
+        btn.innerHTML = '<i data-feather="save" class="w-4 h-4 mr-2"></i> Save Changes';
+        btn.disabled = false;
+        feather.replace();
+    }
+};

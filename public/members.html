@@ -108,17 +108,27 @@
                             <option value="No">No</option>
                         </select>
                     </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="text-xs text-gray-500 font-bold uppercase">Mobile App Status</label>
+                        <select id="f-app-status" class="w-full border rounded px-3 py-2 text-sm text-gray-600 bg-white" onchange="applyFilters()">
+                            <option value="">All</option>
+                            <option value="Registered">Mobile App Registered</option>
+                            <option value="Unregistered">Mobile App Unregistered</option>
+                        </select>
+                    </div>
+
                     <div class="md:col-span-2">
                         <label class="text-xs text-gray-500 font-bold uppercase">Min Age</label>
-                        <input type="number" id="f-age-min" placeholder="18" class="w-full border rounded px-3 py-2 text-sm" oninput="applyFilters()">
+                        <input type="number" id="f-age-min" placeholder="e.g: 18" class="w-full border rounded px-3 py-2 text-sm" oninput="applyFilters()">
                     </div>
                     <div class="md:col-span-2">
                         <label class="text-xs text-gray-500 font-bold uppercase">Max Age</label>
-                        <input type="number" id="f-age-max" placeholder="60" class="w-full border rounded px-3 py-2 text-sm" oninput="applyFilters()">
+                        <input type="number" id="f-age-max" placeholder="e.g: 60" class="w-full border rounded px-3 py-2 text-sm" oninput="applyFilters()">
                     </div>
                     
-                    <div class="md:col-span-4 flex items-end gap-2">
-                        <button class="flex-1 bg-gray-100 text-gray-700 border border-gray-300 rounded px-3 py-2 text-sm font-bold hover:bg-gray-200 transition" onclick="resetFilters()">Reset All</button>
+                    <div class="md:col-span-2 flex items-end gap-2">
+                        <button class="flex-1 bg-gray-100 text-gray-700 border border-gray-300 rounded px-3 py-2 text-sm font-bold hover:bg-gray-200 transition" onclick="resetFilters()">Reset</button>
                     </div>
 
                     <div class="md:col-span-3">
@@ -150,7 +160,7 @@
 
                 <div class="w-full lg:w-3/4">
                     <div class="flex justify-between items-center mb-4">
-                        <p class="text-sm text-gray-500">Reminders: Per list will only show <span class="font-bold text-gray-00">100</span> members of solo parent for optimazation</p>
+                        <p class="text-sm text-gray-500">Showing <span class="font-bold text-gray-800">100</span> members per page</p>
                         <div class="flex gap-2">
                             <button id="btn-prev" onclick="changePage('prev')" disabled class="px-4 py-2 bg-white border border-gray-300 text-gray-500 rounded text-xs font-medium cursor-not-allowed hover:bg-gray-50 transition">
                                 <i data-feather="chevron-left" class="inline w-3 h-3 mr-1"></i> Previous

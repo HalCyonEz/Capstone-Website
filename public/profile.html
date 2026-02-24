@@ -3,190 +3,219 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPDA Member Profile</title>
-    
-    <link rel="stylesheet" href="style.css">
-    
+    <title>Applicant Profile</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/feather-icons"></script>
-    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style> 
+        body { font-family: 'Inter', sans-serif; } 
+        .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+        .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        
+        @media print {
+            .no-print { display: none !important; }
+            body, html { background: white !important; overflow: visible !important; height: auto !important; }
+            .print-full { width: 100% !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; height: auto !important; }
+            ::-webkit-scrollbar { display: none !important; }
+            .page-break-inside-avoid { break-inside: avoid; }
+        }
+    </style>
 </head>
-<body class="bg-gray-50 font-sans">
-    <div class="flex flex-col sm:flex-row h-screen">
-        
-        <div class="w-64 bg-white border-r border-gray-200 flex-col hidden sm:flex" id="sidebar">
-            <div class="p-4 flex items-center space-x-2">
-                <div class="bg-blue-100 p-2 rounded-lg">
-                    <i data-feather="users" class="text-blue-600"></i>
+<body class="bg-gray-50 font-sans relative h-screen overflow-hidden flex">
+
+    <div class="w-64 bg-white border-r border-gray-200 flex-col hidden sm:flex z-10 no-print">
+        <div class="p-4 flex items-center space-x-2"><div class="bg-blue-100 p-2 rounded-lg"><i data-feather="users" class="text-blue-600"></i></div><span class="font-bold text-gray-800">SPDA System</span></div>
+        <nav class="flex-1 px-2 space-y-1 overflow-y-auto">
+            <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100"><i data-feather="home" class="mr-3"></i> Dashboard </a>
+            <a href="reports.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100"><i data-feather="file" class="mr-3"></i> Data Reports </a>
+            <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100"><i data-feather="users" class="mr-3"></i> Members </a>
+            <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100"><i data-feather="file-text" class="mr-3"></i> Applications </a>
+            <a href="renewals.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100"><i data-feather="refresh-cw" class="mr-3"></i> Renewals </a>
+            <a href="announcements.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100"><i data-feather="bell" class="mr-3"></i> Announcements </a>
+        </nav>
+        <div class="p-4 border-t border-gray-200"><button id="logout-btn" class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"><i data-feather="log-out" class="mr-2"></i> Log Out</button></div>
+    </div>
+
+    <div class="flex-1 flex flex-col overflow-auto relative print-full w-full">
+        <div class="p-6 max-w-6xl mx-auto w-full">
+            
+            <div class="mb-6 flex justify-between items-center no-print">
+                <div class="flex items-center gap-4">
+                    <button onclick="window.history.back()" class="flex items-center text-gray-600 hover:text-blue-600 border border-gray-300 bg-white px-3 py-1.5 rounded-md text-sm font-medium shadow-sm transition">
+                        <i data-feather="arrow-left" class="w-4 h-4 mr-2"></i> Go back
+                    </button>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800 leading-tight">Applicant Profile</h1>
+                        <p class="text-gray-500 text-xs uppercase tracking-wider font-semibold">Home / Applications / Profile</p>
+                    </div>
                 </div>
-                <span class="font-bold text-gray-800">SPDA System</span>
-            </div>
-
-            <nav class="flex-1 px-2 space-y-1">
-                <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 sidebar-link">
-                    <i data-feather="home" class="mr-3"></i> Dashboard </a>
-                <a href="reports.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 sidebar-link">
-                    <i data-feather="file" class="mr-3"></i> Data Reports </a>
-                <a href="members.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 sidebar-link">
-                    <i data-feather="users" class="mr-3"></i> Members </a>
-                <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 sidebar-link">
-                    <i data-feather="file-text" class="mr-3"></i> Applications </a>
-                <a href="renewals.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 sidebar-link">
-                    <i data-feather="refresh-cw" class="mr-3"></i> Renewals </a>
-                <a href="announcements.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 sidebar-link">
-                    <i data-feather="bell" class="mr-3"></i> Announcements </a>
-            </nav>
-
-            <div class="p-4 border-t border-gray-200">
-                <button class="mt-4 w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                    <i data-feather="log-out" class="mr-2"></i> Log Out
-                </button>
-            </div>
-        </div>
-
-        <button class="sm:hidden fixed top-4 left-4 z-50 p-2 bg-white border rounded-full" id="sidebar-toggle">
-            <i data-feather="menu"></i>
-        </button>
-
-        <div class="fixed inset-0 bg-black bg-opacity-50 z-40 flex sm:hidden" id="mobile-sidebar" style="display: none;">
-            <div class="w-64 bg-white h-full shadow-lg p-4 overflow-auto">
-                <nav class="flex-1 px-2 space-y-1">
-                    <a href="dashboard.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 sidebar-link"><i data-feather="home" class="mr-3"></i> Dashboard</a>
-                </nav>
-            </div>
-        </div>
-
-        <div class="flex-1 overflow-auto">
-            <div class="p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <div class="flex items-center gap-4">
-                        <button onclick="history.back()" class="no-print flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors bg-white border border-gray-200 px-3 py-2 rounded-lg shadow-sm hover:shadow-md">
-                            <i data-feather="arrow-left" class="w-4 h-4"></i>
-                            <span class="text-sm font-medium">Go back</span>
-                        </button>
-        
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-800 mb-1">Applicant Profile</h1>
-                    <p id="profile-breadcrumb" class="text-gray-500 text-sm">Home / Applications / Profile</p>
+                <div class="flex gap-2">
+                    <button onclick="openEditModal()" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 hover:bg-gray-50 transition shadow-sm">
+                        <i data-feather="edit-2" class="w-4 h-4"></i> Edit Info
+                    </button>
+                    <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 hover:bg-blue-700 transition shadow-sm">
+                        <i data-feather="printer" class="w-4 h-4"></i> Print to PDF
+                    </button>
                 </div>
             </div>
 
-            <div id="print-button-container">
-                <button id="print-profile-btn" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition">
-                    <i data-feather="printer" class="w-4 h-4"></i> Print to PDF
-                </button>
-                </div>
-        </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col h-full">
+                    <div class="text-center mb-6 pt-4">
+                        <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden border-4 border-white shadow-md">
+                            <span id="val-avatar-initial" class="text-4xl font-bold text-blue-600">...</span>
+                        </div>
+                        <h2 id="val-side-name" class="text-xl font-bold text-gray-900 mb-1">Loading...</h2>
+                        <span id="val-status-badge" class="inline-block bg-gray-100 text-gray-600 text-xs px-2.5 py-1 rounded-full font-medium">Checking Status</span>
+                    </div>
 
-                <div id="main-profile-grid" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="space-y-4 text-sm mb-8 flex-1">
+                        <div><p class="text-xs text-gray-500 font-semibold uppercase mb-0.5">Email</p><p id="val-side-email" class="font-medium text-gray-800 truncate">...</p></div>
+                        <div><p class="text-xs text-gray-500 font-semibold uppercase mb-0.5">Contact</p><p id="val-side-contact" class="font-medium text-gray-800">...</p></div>
+                        <div><p class="text-xs text-gray-500 font-semibold uppercase mb-0.5">Address</p><p id="val-side-address" class="font-medium text-gray-800 leading-snug">...</p></div>
+                        <div><p class="text-xs text-gray-500 font-semibold uppercase mb-0.5">Solo Parent ID</p><p id="val-side-id" class="font-mono font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded inline-block mt-1">...</p></div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-2 space-y-6">
                     
-                    <div id="profile-card-container" class="lg:col-span-1 space-y-6">
-                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-                            <div class="flex flex-col items-center text-center lg:text-left">
-                                <img id="profile-avatar" src="https://placehold.co/128x128/EBF4FF/7F9CF5?text=...&font=inter" class="w-32 h-32 rounded-full mb-4 object-cover">
-                                <h2 id="profile-name" class="text-2xl font-bold text-gray-800">Loading...</h2>
-                                <p id="profile-category" class="text-sm text-gray-500 mb-4">...</p>
-                                <span id="profile-status-badge" class="px-3 py-1 text-xs font-medium rounded-full">...</span>
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Personal Information</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-5 gap-x-8">
+                            <div><p class="text-xs text-gray-500 font-semibold uppercase mb-1">Full Name</p><p id="val-name" class="font-medium text-gray-900">...</p></div>
+                            <div><p class="text-xs text-gray-500 font-semibold uppercase mb-1">Email</p><p id="val-email" class="font-medium text-gray-900 truncate">...</p></div>
+                            <div><p class="text-xs text-gray-500 font-semibold uppercase mb-1">Date of Birth</p><p id="val-dob" class="font-medium text-gray-900">...</p></div>
+                            <div><p class="text-xs text-gray-500 font-semibold uppercase mb-1">Age</p><p id="val-age" class="font-medium text-gray-900">...</p></div>
+                            <div><p class="text-xs text-gray-500 font-semibold uppercase mb-1">Sex</p><p id="val-sex" class="font-medium text-gray-900">...</p></div>
+                            <div><p class="text-xs text-gray-500 font-semibold uppercase mb-1">Place of Birth</p><p id="val-birthplace" class="font-medium text-gray-900">...</p></div>
+                            <div><p class="text-xs text-gray-500 font-semibold uppercase mb-1">Civil Status</p><p id="val-civil" class="font-medium text-gray-900">...</p></div>
+                            <div><p class="text-xs text-gray-500 font-semibold uppercase mb-1">Ethnicity</p><p id="val-ethnicity" class="font-medium text-gray-900">...</p></div>
+                            <div><p class="text-xs text-gray-500 font-semibold uppercase mb-1">Religion</p><p id="val-religion" class="font-medium text-gray-900">...</p></div>
+                            <div><p class="text-xs text-gray-500 font-semibold uppercase mb-1">Date Registered</p><p id="val-registered" class="font-medium text-gray-900">...</p></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 page-break-inside-avoid">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Family & Employment</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-5 gap-x-8">
+                            <div><p class="text-xs text-gray-500 font-semibold uppercase mb-1">Occupation</p><p id="val-occupation" class="font-medium text-gray-900">...</p></div>
+                            <div><p class="text-xs text-gray-500 font-semibold uppercase mb-1">Company / Agency</p><p id="val-company" class="font-medium text-gray-900">...</p></div>
+                            <div><p class="text-xs text-gray-500 font-semibold uppercase mb-1">Monthly Income</p><p id="val-income" class="font-medium text-gray-900">...</p></div>
+                            <div><p class="text-xs text-gray-500 font-semibold uppercase mb-1">Number of Children</p><p id="val-children-count" class="font-medium text-gray-900">...</p></div>
+                            <div class="sm:col-span-2"><p class="text-xs text-gray-500 font-semibold uppercase mb-1">Ages of Children</p><p id="val-children-ages" class="font-medium text-gray-900">...</p></div>
+                            <div><p class="text-xs text-gray-500 font-semibold uppercase mb-1">PhilHealth Member</p><p id="val-philhealth-member" class="font-medium text-gray-900">...</p></div>
+                            <div><p class="text-xs text-gray-500 font-semibold uppercase mb-1">PhilHealth ID Number</p><p id="val-philhealth-id" class="font-mono text-gray-900">...</p></div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 page-break-inside-avoid">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Uploaded Documents</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <p class="text-xs text-gray-500 font-semibold uppercase mb-2">Valid ID</p>
+                                <div class="bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-center overflow-hidden h-48 relative">
+                                    <img id="val-img-id" src="" alt="Valid ID" class="hidden max-h-full max-w-full object-contain cursor-pointer" onclick="window.open(this.src, '_blank')">
+                                    <span id="val-img-id-none" class="text-gray-400 text-sm">No image uploaded</span>
+                                </div>
                             </div>
-                            <hr class="my-6">
-                            <div class="space-y-4">
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Email</h4>
-                                    <p id="profile-email" class="text-sm text-gray-800 break-all">...</p>
+                            <div>
+                                <p class="text-xs text-gray-500 font-semibold uppercase mb-2">Solo Parent Proof</p>
+                                <div class="bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-center overflow-hidden h-48 relative">
+                                    <img id="val-img-sp" src="" alt="Solo Parent Proof" class="hidden max-h-full max-w-full object-contain cursor-pointer" onclick="window.open(this.src, '_blank')">
+                                    <span id="val-img-sp-none" class="text-gray-400 text-sm">No image uploaded</span>
                                 </div>
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Contact</h4>
-                                    <p id="profile-contact" class="text-sm text-gray-800">...</p>
-                                </div>
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Address</h4>
-                                    <p id="profile-address" class="text-sm text-gray-800">...</p>
-                                </div>
-                                <div>
-                                    <h4 class="text-xs font-medium text-gray-500 uppercase">Solo Parent ID</h4>
-                                    <p id="profile-sp-id" class="text-sm text-gray-800">...</p>
-                                </div>
-                            </div>
-                            <hr class="my-6">
-                            <div id="profile-actions" class="space-y-3">
-                                <button id="profile-approve-btn" class="w-full flex justify-center items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition">
-                                    <i data-feather="check-circle" class="w-4 h-4"></i> Approve
-                                </button>
-                                <button id="profile-reject-btn" class="w-full flex justify-center items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition">
-                                    <i data-feather="x-circle" class="w-4 h-4"></i> Reject
-                                </button>
                             </div>
                         </div>
                     </div>
 
-                    <div class="lg:col-span-2 space-y-6">
-                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Personal Information</h3>
-                            <div id="personal-info-grid" class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Full Name</h4><p id="detail-full-name" class="text-sm text-gray-800">...</p></div>
-                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Email</h4><p id="detail-email" class="text-sm text-gray-800">...</p></div>
-                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Date of Birth</h4><p id="detail-dob" class="text-sm text-gray-800">...</p></div>
-                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Age</h4><p id="detail-age" class="text-sm text-gray-800">...</p></div>
-                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Sex</h4><p id="detail-sex" class="text-sm text-gray-800">...</p></div>
-                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Place of Birth</h4><p id="detail-pob" class="text-sm text-gray-800">...</p></div>
-                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Civil Status</h4><p id="detail-civil-status" class="text-sm text-gray-800">...</p></div>
-                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Ethnicity</h4><p id="detail-ethnicity" class="text-sm text-gray-800">...</p></div>
-                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Religion</h4><p id="detail-religion" class="text-sm text-gray-800">...</p></div>
-                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Date Registered</h4><p id="detail-created-at" class="text-sm text-gray-800">...</p></div>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Family & Employment</h3>
-                            <div id="family-info-grid" class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Occupation</h4><p id="detail-occupation" class="text-sm text-gray-800">...</p></div>
-                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Company / Agency</h4><p id="detail-company" class="text-sm text-gray-800">...</p></div>
-                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Monthly Income</h4><p id="detail-income" class="text-sm text-gray-800">...</p></div>
-                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">Number of Children</h4><p id="detail-num-children" class="text-sm text-gray-800">...</p></div>
-                                <div class="md:col-span-2"><h4 class="text-xs font-medium text-gray-500 uppercase">Ages of Children</h4><p id="detail-children-ages" class="text-sm text-gray-800">...</p></div>
-                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">PhilHealth Member</h4><p id="detail-has-philhealth" class="text-sm text-gray-800">...</p></div>
-                                <div><h4 class="text-xs font-medium text-gray-500 uppercase">PhilHealth ID</h4><p id="detail-philhealth-id" class="text-sm text-gray-800">...</p></div>
-                            </div>
-                        </div>
-
-                        <div id="documents-section" class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Uploaded Documents</h3>
-                            <div id="documents-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div id="doc-container-valid-id">
-                                    <h4 class="text-sm font-medium text-gray-800 mb-2">Valid ID</h4>
-                                    <a id="doc-link-valid-id" href="#" target="_blank" class="block border border-gray-200 rounded-lg overflow-hidden hover:border-blue-500 transition">
-                                        <img id="doc-img-valid-id" src="" class="w-full h-40 object-cover">
-                                    </a>
-                                    <p id="doc-error-valid-id" class="text-sm text-gray-500 hidden">Not provided</p>
-                                </div>
-                                <div id="doc-container-proof">
-                                    <h4 class="text-sm font-medium text-gray-800 mb-2">Proof of Status</h4>
-                                    <a id="doc-link-proof" href="#" target="_blank" class="block border border-gray-200 rounded-lg overflow-hidden hover:border-blue-500 transition">
-                                        <img id="doc-img-proof" src="" class="w-full h-40 object-cover">
-                                    </a>
-                                     <p id="doc-error-proof" class="text-sm text-gray-500 hidden">Not provided</p>
-                                </div>
-                                <div id="doc-container-philhealth">
-                                    <h4 class="text-sm font-medium text-gray-500 mb-2">PhilHealth ID</h4>
-                                    <a id="doc-link-philhealth" href="#" target="_blank" class="block border border-gray-200 rounded-lg overflow-hidden hover:border-blue-500 transition">
-                                        <img id="doc-img-philhealth" src="" class="w-full h-40 object-cover">
-                                    </a>
-                                    <p id="doc-error-philhealth" class="text-sm text-gray-500 hidden">Not provided</p>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script type="module" src="profile.js"></script>
-    <script>
-        // Ensure the new icon is rendered
-        feather.replace();
-    </script>
+    <div id="editProfileModal" class="fixed inset-0 bg-gray-900 bg-opacity-70 hidden z-50 flex items-center justify-center px-4 py-6">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-full flex flex-col relative overflow-hidden border border-gray-200">
+            
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                <div>
+                    <h2 class="text-lg font-bold text-gray-800">Edit Member Information</h2>
+                    <p class="text-xs text-gray-500">Correct typos or update outdated user details.</p>
+                </div>
+                <button onclick="closeModal('editProfileModal')" class="text-gray-400 hover:text-gray-600 bg-white border rounded p-1"><i data-feather="x"></i></button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto custom-scroll flex-1 space-y-6">
+                <div>
+                    <h3 class="text-sm font-bold text-blue-800 border-b border-blue-200 pb-1 mb-3">Basic Information</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div><label class="text-xs font-bold text-gray-600">First Name</label><input type="text" id="edit-fname" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none"></div>
+                        <div><label class="text-xs font-bold text-gray-600">Last Name</label><input type="text" id="edit-lname" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none"></div>
+                        <div><label class="text-xs font-bold text-gray-600">Contact Number</label><input type="text" id="edit-contact" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none"></div>
+                        <div><label class="text-xs font-bold text-gray-600">Email Address</label><input type="email" id="edit-email" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none"></div>
+                        <div><label class="text-xs font-bold text-gray-600">Date of Birth</label><input type="text" id="edit-dob" placeholder="mm/dd/yyyy" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none"></div>
+                        <div><label class="text-xs font-bold text-gray-600">Age</label><input type="number" id="edit-age" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-sm font-bold text-blue-800 border-b border-blue-200 pb-1 mb-3">Demographics & Address</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="text-xs font-bold text-gray-600">Sex</label>
+                            <select id="edit-sex" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none">
+                                <option value="Male">Male</option><option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <div><label class="text-xs font-bold text-gray-600">Civil Status</label><input type="text" id="edit-civil" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none"></div>
+                        <div><label class="text-xs font-bold text-gray-600">Ethnicity</label><input type="text" id="edit-ethnicity" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none"></div>
+                        <div><label class="text-xs font-bold text-gray-600">Religion</label><input type="text" id="edit-religion" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none"></div>
+                        <div><label class="text-xs font-bold text-gray-600">Municipality</label><input type="text" id="edit-municipality" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none"></div>
+                        <div><label class="text-xs font-bold text-gray-600">Barangay</label><input type="text" id="edit-barangay" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-sm font-bold text-blue-800 border-b border-blue-200 pb-1 mb-3">Employment & IDs</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div><label class="text-xs font-bold text-gray-600">Occupation</label><input type="text" id="edit-occupation" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none"></div>
+                        <div><label class="text-xs font-bold text-gray-600">Company</label><input type="text" id="edit-company" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none"></div>
+                        <div><label class="text-xs font-bold text-gray-600">Monthly Income</label><input type="text" id="edit-income" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none"></div>
+                        <div class="col-span-2 md:col-span-3"><label class="text-xs font-bold text-gray-600">PhilHealth ID Number</label><input type="text" id="edit-philhealth" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+                <button onclick="closeModal('editProfileModal')" class="px-4 py-2 text-gray-600 bg-white border border-gray-300 hover:bg-gray-100 rounded-md text-sm font-bold transition">Cancel</button>
+                <button id="btn-save-edits" onclick="saveProfileEdits()" class="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-md text-sm font-bold shadow transition flex items-center">
+                    <i data-feather="save" class="w-4 h-4 mr-2"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notificationModal" class="fixed inset-0 bg-gray-900 bg-opacity-70 hidden z-[60] flex items-center justify-center px-4">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-sm p-6 text-center relative">
+            <div id="notif-icon-container" class="mx-auto flex items-center justify-center h-14 w-14 rounded-full mb-4">
+                <i id="notif-icon" data-feather="check" class="h-7 w-7"></i>
+            </div>
+            <h3 id="notif-title" class="text-xl font-bold text-gray-900 mb-2">Success</h3>
+            <p id="notif-message" class="text-sm text-gray-500 mb-6">Action completed successfully.</p>
+            <button onclick="closeModal('notificationModal')" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2.5 bg-blue-600 text-base font-bold text-white hover:bg-blue-700 transition">
+                OK, Got it
+            </button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="profile.js"></script>
+    <script>feather.replace();</script>
 </body>
 </html>
