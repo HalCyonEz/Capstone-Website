@@ -58,46 +58,57 @@ input {
 }
 
 /* =========================================
-   GLOBAL PRINT STYLES (Applies to ALL pages)
+   GLOBAL & DASHBOARD PRINT STYLES
+   ========================================= */
+/* =========================================
+   🛑 AGGRESSIVE PRINT OVERRIDES (FIXES BLANK PAGE)
    ========================================= */
 @media print {
-    body {
-        background: white;
-        /* Standard & Webkit color adjustments */
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-        .no-print {
-        display: none !important;
-    }
+    /* 1. Nuke Tailwind's height and overflow locks on EVERYTHING */
+    html, body, .h-screen, .overflow-hidden, .overflow-y-auto, .flex-1 {
+        display: block !important;
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        position: static !important;
+        background: white !important;
     }
 
-    /* HIDE SIDEBAR AND NAVIGATION ON ALL PAGES */
-    #sidebar, 
-    #sidebar-toggle, 
-    #mobile-sidebar, 
-    .no-print,
-    nav {
+    /* 2. Hide the sidebar, navigation, buttons, and the recent activity table */
+    .w-64, #sidebar, nav, button, .no-print {
         display: none !important;
     }
-    
-    /* Ensure the main content takes full width */
-    .flex-col, .flex-row {
-        display: block !important;
-    }
-    
-    /* Reset main content margins */
-    .flex-1 {
+
+    /* 3. Make sure the main content stretches out naturally */
+    .p-6, .max-w-6xl {
         margin: 0 !important;
         padding: 0 !important;
         width: 100% !important;
-        overflow: visible !important;
+        max-width: 100% !important;
+    }
+
+    /* 4. Force colors to print and prevent cards from splitting across pages */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
     
-    .p-6 {
-        padding: 0 !important;
+    .bg-white, .rounded-lg, .bg-blue-50, .bg-red-50, .bg-green-50, .bg-gray-50 {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+        box-shadow: none !important;
+        border: 1px solid #e5e7eb !important;
+        margin-bottom: 15px !important;
+    }
+
+    /* 5. Ensure charts scale down nicely on paper */
+    canvas {
+        max-width: 100% !important;
+        height: auto !important;
+        page-break-inside: avoid !important;
     }
 }
-
 
 /* =========================================
    PROFILE PAGE PRINT PART
@@ -120,19 +131,14 @@ input {
         width: 100%;
     }
 
-/* Left Column (Photo & ID) */
+    /* Left Column (Photo & ID) */
     #profile-card-container {
         border-right: 1px solid #eee;
         padding-right: 1.5rem;
-        
-        /* ✅ CHANGE: Add left padding to push content to the visual center */
         padding-left: 3.5rem !important; 
-        
-        /* Keep text left-aligned so everything lines up vertically */
         text-align: left !important; 
     }
 
-    /* Target the flex container holding the avatar and name */
     #profile-card-container > div > div:first-child {
         align-items: flex-start !important; 
         text-align: left !important;
@@ -174,55 +180,62 @@ input {
         margin-top: 0 !important;
     }
 
-    /* --- DOCUMENTS SECTION FIXED --- */
-    
     /* Force New Page for Documents */
     #documents-section {
         page-break-before: always !important;
-        margin-top: 0 !important; /* Reduce top margin to save space */
+        margin-top: 0 !important; 
         padding-top: 20px !important;
         display: block !important;
     }
 
-    /* Document Grid Container */
     #documents-grid {
-        display: block !important; /* Stack elements vertically */
+        display: block !important; 
     }
 
-    /* Individual Document Items (Label + Image) */
     #documents-grid > div {
-        margin-bottom: 15px !important; /* Tighter spacing between docs */
-        break-inside: avoid !important; /* Keep Header + Image together */
+        margin-bottom: 15px !important; 
+        break-inside: avoid !important; 
     }
 
-    /* Document Titles (Valid ID, etc) */
     #documents-grid h4 {
         margin-bottom: 5px !important;
         color: #000 !important;
     }
 
-    /* Image Styling - Fixed Height & Left Align */
     #documents-grid img {
-        height: 230px !important;        /* Reduced height so 3 fit on one page */
-        width: auto !important;          /* Natural width */
-        max-width: 100% !important;      /* Don't exceed page width */
-        
-        object-fit: contain !important;  /* Ensure whole ID is visible */
-        object-position: left !important; /* ✅ ALIGN LEFT */
-        
-        border: 1px solid #ccc;          /* Add border to define edge */
-        background-color: #f9f9f9;       /* Light grey background for visibility */
+        height: 230px !important;        
+        width: auto !important;          
+        max-width: 100% !important;      
+        object-fit: contain !important;  
+        object-position: left !important; 
+        border: 1px solid #ccc;          
+        background-color: #f9f9f9;       
     }
 
-    /* Remove the link border/container styling */
     #documents-grid a {
         border: none !important;
         display: block;
     }
 
-    /* Clean up card styling for print */
     .bg-white, .shadow-sm, .border {
         box-shadow: none !important;
         border: none !important;
+    }
+}
+
+/* =========================================
+   DASHBOARD PAGE PRINT PART
+   ========================================= */
+@media print {
+    /* Prevent page breaks inside dashboard cards and recommendation boxes */
+    .rounded-lg, .bg-white, .bg-blue-50, .bg-red-50, .bg-green-50, .bg-gray-50 {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    /* Ensure chart canvases fit on the page and don't overflow */
+    canvas {
+        max-width: 100% !important;
+        page-break-inside: avoid !important;
     }
 }

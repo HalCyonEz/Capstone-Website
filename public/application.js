@@ -1,4 +1,4 @@
-console.log("🎯 application.js loaded - Zero Native Pop-ups");
+console.log("🎯 application.js loaded - Zero Native Pop-ups, Bug-Free Approval");
 
 let pendingUsersCache = {};
 let currentReviewingUid = null; 
@@ -240,6 +240,9 @@ window.openConfirmModal = function(type, targetId) {
     const desc = document.getElementById('confirm-modal-desc');
     const btn = document.getElementById('final-approve-btn');
 
+    // FIX 1: Explicitly unlock the button every time the modal opens
+    btn.disabled = false;
+
     if (type === 'merge') {
         title.innerText = "Confirm Merge & Approval";
         title.className = "text-xl font-bold text-green-800 mb-2";
@@ -314,20 +317,22 @@ window.executeFinalApproval = async function() {
 
         await batch.commit();
         
-        // Hide processing modals
         closeModal('confirmApproveModal');
         closeModal('reviewModal');
         
-        // Reload table in background
         loadPendingApplications(); 
         
-        // Trigger Custom Notification Modal instead of alert()
         showNotification("Approval Successful", "The application was successfully approved and the database has been updated.", "success");
         
     } catch (error) {
         console.error("Action failed: ", error);
         closeModal('confirmApproveModal');
         showNotification("Error", "Failed to update database. Please check console for details.", "error");
+    } finally {
+        // FIX 2: Safely reset the button in case it fails or finishes processing
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+        }
     }
 };
 
@@ -392,7 +397,6 @@ window.executeReject = async function() {
         closeModal('reviewModal');
         loadPendingApplications();
         
-        // Trigger Custom Notification Modal instead of alert()
         showNotification("Application Rejected", "The application has been securely rejected.", "success");
         
     } catch (error) {

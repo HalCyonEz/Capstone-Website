@@ -1,4 +1,17 @@
-console.log("🎯 profile.js loaded - Edit Functionality Active");
+// ==========================================
+// 🚀 IMPORTS & CONSTANTS
+// ==========================================
+import { db } from "./firebase-config.js";
+import { doc, getDoc, getDocs, collection, query, where, updateDoc, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+import { DESCRIPTION_TO_CODE_MAP } from './utils.js';
+
+// Automatically flip the map so we can look up by code (e.g., "a7" -> "Abandonment by the spouse")
+const CODE_TO_DESCRIPTION_MAP = Object.entries(DESCRIPTION_TO_CODE_MAP).reduce((acc, [desc, code]) => {
+    acc[code] = desc;
+    return acc;
+}, {});
+
+console.log("🎯 profile.js loaded - Smart Badge & Legacy Category Cleaner Active");
 
 // Global State Trackers
 let currentProfileData = null;
@@ -6,19 +19,10 @@ let currentDocId = null;
 let isOfficialRecord = false;
 let linkedAuthUid = null;
 
+// ==========================================
+// 🚀 INITIALIZATION
+// ==========================================
 document.addEventListener('DOMContentLoaded', async function() {
-    const firebaseConfig = { 
-        apiKey: "AIzaSyBjO4P1-Ir_iJSkLScTiyshEd28GdskN24", 
-        authDomain: "solo-parent-app.firebaseapp.com", 
-        databaseURL: "https://solo-parent-app-default-rtdb.asia-southeast1.firebasedatabase.app", 
-        projectId: "solo-parent-app", 
-        storageBucket: "solo-parent-app.firebasestorage.app", 
-        messagingSenderId: "292578110807", 
-        appId: "1:292578110807:web:9f5e5c0dcd73c9975e6212" 
-    };
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    window.db = firebase.firestore();
-
     const urlParams = new URLSearchParams(window.location.search);
     const recordId = urlParams.get('id');
 
@@ -28,29 +32,36 @@ document.addEventListener('DOMContentLoaded', async function() {
         return;
     }
 
-    try {
-        // 1. Search Official Database First
-        const lguRef = db.collection("solo_parent_records").doc(recordId);
-        const lguSnap = await lguRef.get();
+    if (!db) {
+        alert("Database connection failed. Please check your firebase-config.");
+        return;
+    }
 
-        if (lguSnap.exists) {
+    try {
+        // 1. Search Official Database
+        const lguRef = doc(db, "solo_parent_records", recordId);
+        const lguSnap = await getDoc(lguRef);
+
+        if (lguSnap.exists()) {
             currentProfileData = lguSnap.data();
             currentDocId = recordId;
             isOfficialRecord = true;
             linkedAuthUid = currentProfileData.auth_uid || null;
         } else {
             // 2. Fallback to Users Collection
-            const mobileRef = db.collection("users").doc(recordId);
-            const mobileSnap = await mobileRef.get();
+            const mobileRef = doc(db, "users", recordId);
+            const mobileSnap = await getDoc(mobileRef);
             
-            if (mobileSnap.exists) {
+            if (mobileSnap.exists()) {
                 currentProfileData = mobileSnap.data();
                 currentDocId = recordId;
                 isOfficialRecord = false;
                 linkedAuthUid = recordId;
             } else {
                 // 3. Deep Fallback Query
-                const querySnap = await db.collection("solo_parent_records").where("soloParentIdNumber", "==", recordId).get();
+                const q = query(collection(db, "solo_parent_records"), where("soloParentIdNumber", "==", recordId));
+                const querySnap = await getDocs(q);
+                
                 if (!querySnap.empty) {
                     currentProfileData = querySnap.docs[0].data();
                     currentDocId = querySnap.docs[0].id;
@@ -60,7 +71,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         }
 
-        // Execute UI Injection
         if (currentProfileData) {
             populateUI(currentDocId, currentProfileData);
         } else {
@@ -74,12 +84,32 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 // ==========================================
-// UI INJECTION LOGIC
+// 🎨 UI INJECTION LOGIC
 // ==========================================
 function populateUI(recordId, data) {
     const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim();
     const avatarEl = document.getElementById('val-avatar-initial');
     if(avatarEl) avatarEl.innerText = (data.firstName || "U").charAt(0).toUpperCase();
+
+    // 💡 SMART CATEGORY MAPPER: Handles both raw codes ("a2") and legacy strings ("a2 - Widow")
+    let rawCategory = (data.category || '').trim();
+    let displayCategory = 'Unspecified Category';
+    
+    if (rawCategory) {
+        // Extract just the code (e.g., grabs 'a2' from 'a2 - Widow/widower')
+        let code = rawCategory.split(/[\s-]/)[0].toLowerCase(); 
+        
+        if (CODE_TO_DESCRIPTION_MAP[code]) {
+            displayCategory = `${code} - ${CODE_TO_DESCRIPTION_MAP[code]}`;
+        } else if (CODE_TO_DESCRIPTION_MAP[rawCategory]) {
+            displayCategory = `${rawCategory} - ${CODE_TO_DESCRIPTION_MAP[rawCategory]}`;
+        } else {
+            displayCategory = rawCategory; // Fallback for purely custom strings
+        }
+    }
+
+    const sideCatEl = document.getElementById('val-side-category');
+    if (sideCatEl) sideCatEl.innerText = displayCategory;
 
     const fieldsToMap = {
         'val-name': fullName,
@@ -114,17 +144,19 @@ function populateUI(recordId, data) {
         if (element) { element.innerText = dbValue; }
     }
 
+    // 💡 FIXED STATUS BADGE: Strictly checks if they are online in the app
     const badge = document.getElementById('val-status-badge');
     if (badge) {
-        if (data.status === "approved" || data.status === "verified" || data.is_online === true) {
+        if (data.is_online === true) {
             badge.innerHTML = `<i data-feather="check-circle" class="w-3 h-3 inline mr-1"></i> App Registered`;
             badge.className = "inline-block bg-blue-100 text-blue-800 border border-blue-200 text-xs px-2.5 py-1 rounded-full font-bold shadow-sm";
         } else {
-            badge.innerHTML = `App Unregistered`;
+            badge.innerHTML = `<i data-feather="x-circle" class="w-3 h-3 inline mr-1"></i> App Unregistered`;
             badge.className = "inline-block bg-gray-100 text-gray-600 border border-gray-200 text-xs px-2.5 py-1 rounded-full font-bold shadow-sm";
         }
     }
-    feather.replace();
+    
+    if (typeof feather !== 'undefined') feather.replace();
 
     const imgId = document.getElementById('val-img-id');
     const imgIdNone = document.getElementById('val-img-id-none');
@@ -138,7 +170,7 @@ function populateUI(recordId, data) {
 }
 
 // ==========================================
-// EDIT PROFILE LOGIC
+// ✏️ EDIT PROFILE LOGIC (Bound to Window)
 // ==========================================
 window.closeModal = function(modalId) {
     document.getElementById(modalId).classList.add('hidden');
@@ -161,14 +193,13 @@ window.showNotification = function(title, message, type = 'success') {
         icon.className = "h-7 w-7 text-red-600";
     }
     
-    feather.replace();
+    if (typeof feather !== 'undefined') feather.replace();
     document.getElementById('notificationModal').classList.remove('hidden');
 };
 
 window.openEditModal = function() {
     if (!currentProfileData) return;
 
-    // Prefill the form with current data
     document.getElementById('edit-fname').value = currentProfileData.firstName || '';
     document.getElementById('edit-lname').value = currentProfileData.lastName || '';
     document.getElementById('edit-contact').value = currentProfileData.contact || '';
@@ -186,6 +217,20 @@ window.openEditModal = function() {
     document.getElementById('edit-income').value = currentProfileData.monthlyIncome || '';
     document.getElementById('edit-philhealth').value = currentProfileData.philhealthIdNumber || '';
 
+    const catSelect = document.getElementById('edit-category');
+    
+    // Smartly grab the code for the edit dropdown even if it's a legacy string
+    let rawCat = (currentProfileData.category || "").toLowerCase();
+    let code = rawCat.split(/[\s-]/)[0]; 
+    
+    if (CODE_TO_DESCRIPTION_MAP[code]) {
+        catSelect.value = code;
+    } else if (CODE_TO_DESCRIPTION_MAP[rawCat]) {
+        catSelect.value = rawCat;
+    } else {
+        catSelect.selectedIndex = 0; 
+    }
+
     document.getElementById('editProfileModal').classList.remove('hidden');
 };
 
@@ -193,9 +238,8 @@ window.saveProfileEdits = async function() {
     const btn = document.getElementById('btn-save-edits');
     btn.innerHTML = '<i data-feather="loader" class="animate-spin w-4 h-4 mr-2"></i> Saving...';
     btn.disabled = true;
-    feather.replace();
+    if (typeof feather !== 'undefined') feather.replace();
 
-    // 1. Gather all inputs
     const updates = {
         firstName: document.getElementById('edit-fname').value.trim(),
         lastName: document.getElementById('edit-lname').value.trim(),
@@ -213,33 +257,29 @@ window.saveProfileEdits = async function() {
         company: document.getElementById('edit-company').value.trim(),
         monthlyIncome: document.getElementById('edit-income').value.trim(),
         philhealthIdNumber: document.getElementById('edit-philhealth').value.trim(),
-        lastUpdated: firebase.firestore.FieldValue.serverTimestamp() // Audit trail
+        category: document.getElementById('edit-category').value, 
+        lastUpdated: serverTimestamp()
     };
 
     try {
-        const batch = window.db.batch();
+        const batch = writeBatch(db);
 
-        // 2. Queue updates to the correct databases
         if (isOfficialRecord) {
-            const officialRef = window.db.collection("solo_parent_records").doc(currentDocId);
+            const officialRef = doc(db, "solo_parent_records", currentDocId);
             batch.update(officialRef, updates);
 
-            // If linked to app, sync the typo fix to their mobile app too!
             if (linkedAuthUid) {
-                const userRef = window.db.collection("users").doc(linkedAuthUid);
+                const userRef = doc(db, "users", linkedAuthUid);
                 batch.update(userRef, updates);
             }
         } else {
-            // Backup fallback (if modifying a pending/unmerged user directly)
-            const userRef = window.db.collection("users").doc(currentDocId);
+            const userRef = doc(db, "users", currentDocId);
             batch.update(userRef, updates);
         }
 
-        // 3. Execute
         await batch.commit();
 
-        // 4. Update the screen immediately without reloading the page
-        currentProfileData = { ...currentProfileData, ...updates }; // Merge new data into memory
+        currentProfileData = { ...currentProfileData, ...updates }; 
         populateUI(currentDocId, currentProfileData);
 
         closeModal('editProfileModal');
@@ -251,6 +291,6 @@ window.saveProfileEdits = async function() {
     } finally {
         btn.innerHTML = '<i data-feather="save" class="w-4 h-4 mr-2"></i> Save Changes';
         btn.disabled = false;
-        feather.replace();
+        if (typeof feather !== 'undefined') feather.replace();
     }
 };

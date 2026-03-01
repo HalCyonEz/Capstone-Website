@@ -55,7 +55,7 @@
                     </div>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="openEditModal()" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 hover:bg-gray-50 transition shadow-sm">
+                    <button onclick="window.openEditModal()" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 hover:bg-gray-50 transition shadow-sm">
                         <i data-feather="edit-2" class="w-4 h-4"></i> Edit Info
                     </button>
                     <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 hover:bg-blue-700 transition shadow-sm">
@@ -72,6 +72,8 @@
                             <span id="val-avatar-initial" class="text-4xl font-bold text-blue-600">...</span>
                         </div>
                         <h2 id="val-side-name" class="text-xl font-bold text-gray-900 mb-1">Loading...</h2>
+                        <p id="val-side-category" class="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg inline-block mb-3 border border-blue-100 w-full text-center">...</p>
+                        <br>
                         <span id="val-status-badge" class="inline-block bg-gray-100 text-gray-600 text-xs px-2.5 py-1 rounded-full font-medium">Checking Status</span>
                     </div>
 
@@ -79,7 +81,7 @@
                         <div><p class="text-xs text-gray-500 font-semibold uppercase mb-0.5">Email</p><p id="val-side-email" class="font-medium text-gray-800 truncate">...</p></div>
                         <div><p class="text-xs text-gray-500 font-semibold uppercase mb-0.5">Contact</p><p id="val-side-contact" class="font-medium text-gray-800">...</p></div>
                         <div><p class="text-xs text-gray-500 font-semibold uppercase mb-0.5">Address</p><p id="val-side-address" class="font-medium text-gray-800 leading-snug">...</p></div>
-                        <div><p class="text-xs text-gray-500 font-semibold uppercase mb-0.5">Solo Parent ID</p><p id="val-side-id" class="font-mono font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded inline-block mt-1">...</p></div>
+                        <div><p class="text-xs text-gray-500 font-semibold uppercase mb-0.5">Solo Parent ID</p><p id="val-side-id" class="font-mono font-bold text-gray-700 mt-1">...</p></div>
                     </div>
                 </div>
 
@@ -141,13 +143,12 @@
 
     <div id="editProfileModal" class="fixed inset-0 bg-gray-900 bg-opacity-70 hidden z-50 flex items-center justify-center px-4 py-6">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-full flex flex-col relative overflow-hidden border border-gray-200">
-            
             <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
                 <div>
                     <h2 class="text-lg font-bold text-gray-800">Edit Member Information</h2>
                     <p class="text-xs text-gray-500">Correct typos or update outdated user details.</p>
                 </div>
-                <button onclick="closeModal('editProfileModal')" class="text-gray-400 hover:text-gray-600 bg-white border rounded p-1"><i data-feather="x"></i></button>
+                <button onclick="window.closeModal('editProfileModal')" class="text-gray-400 hover:text-gray-600 bg-white border rounded p-1"><i data-feather="x"></i></button>
             </div>
             
             <div class="p-6 overflow-y-auto custom-scroll flex-1 space-y-6">
@@ -160,6 +161,26 @@
                         <div><label class="text-xs font-bold text-gray-600">Email Address</label><input type="email" id="edit-email" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none"></div>
                         <div><label class="text-xs font-bold text-gray-600">Date of Birth</label><input type="text" id="edit-dob" placeholder="mm/dd/yyyy" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none"></div>
                         <div><label class="text-xs font-bold text-gray-600">Age</label><input type="number" id="edit-age" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none"></div>
+                        
+                        <div class="col-span-2 md:col-span-3">
+                            <label class="text-xs font-bold text-blue-700">Solo Parent Category</label>
+                            <select id="edit-category" class="w-full border border-blue-300 bg-blue-50 rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none">
+                                <option value="" disabled>Select a category...</option>
+                                <option value="a1">a1 - Birth of a child as a consequence of rape</option>
+                                <option value="a2">a2 - Widow/widower</option>
+                                <option value="a3">a3 - Spouse of person deprived of liberty</option>
+                                <option value="a4">a4 - Spouse of person with physical or mental incapacity</option>
+                                <option value="a5">a5 - Due to legal separation or de facto separation</option>
+                                <option value="a6">a6 - Due to nullity or annulment of marriage</option>
+                                <option value="a7">a7 - Abandonment by the spouse</option>
+                                <option value="b1">b1 - Spouse of OFW</option>
+                                <option value="b2">b2 - Relative of OFW</option>
+                                <option value="c">c - Unmarried person</option>
+                                <option value="d">d - Legal guardian / Adoptive parent / Foster parent</option>
+                                <option value="e">e - Relative within the 4th civil degree of consanguinity of affinity</option>
+                                <option value="f">f - Pregnant Woman</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -192,8 +213,8 @@
             </div>
 
             <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
-                <button onclick="closeModal('editProfileModal')" class="px-4 py-2 text-gray-600 bg-white border border-gray-300 hover:bg-gray-100 rounded-md text-sm font-bold transition">Cancel</button>
-                <button id="btn-save-edits" onclick="saveProfileEdits()" class="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-md text-sm font-bold shadow transition flex items-center">
+                <button onclick="window.closeModal('editProfileModal')" class="px-4 py-2 text-gray-600 bg-white border border-gray-300 hover:bg-gray-100 rounded-md text-sm font-bold transition">Cancel</button>
+                <button id="btn-save-edits" onclick="window.saveProfileEdits()" class="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-md text-sm font-bold shadow transition flex items-center">
                     <i data-feather="save" class="w-4 h-4 mr-2"></i> Save Changes
                 </button>
             </div>
@@ -207,15 +228,16 @@
             </div>
             <h3 id="notif-title" class="text-xl font-bold text-gray-900 mb-2">Success</h3>
             <p id="notif-message" class="text-sm text-gray-500 mb-6">Action completed successfully.</p>
-            <button onclick="closeModal('notificationModal')" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2.5 bg-blue-600 text-base font-bold text-white hover:bg-blue-700 transition">
+            <button onclick="window.closeModal('notificationModal')" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2.5 bg-blue-600 text-base font-bold text-white hover:bg-blue-700 transition">
                 OK, Got it
             </button>
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="profile.js"></script>
-    <script>feather.replace();</script>
+    <script type="module" src="profile.js"></script>
+    <script>
+        // Fallback replacement for hardcoded icons before JS loads
+        if(typeof feather !== 'undefined') feather.replace();
+    </script>
 </body>
 </html>
