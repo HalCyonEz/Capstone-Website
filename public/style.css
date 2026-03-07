@@ -58,184 +58,21 @@ input {
 }
 
 /* =========================================
-   GLOBAL & DASHBOARD PRINT STYLES
-   ========================================= */
-/* =========================================
-   🛑 AGGRESSIVE PRINT OVERRIDES (FIXES BLANK PAGE)
+   PRINT STYLES - CLEAN VERSION
    ========================================= */
 @media print {
-    /* 1. Nuke Tailwind's height and overflow locks on EVERYTHING */
-    html, body, .h-screen, .overflow-hidden, .overflow-y-auto, .flex-1 {
-        display: block !important;
-        height: auto !important;
-        min-height: auto !important;
-        max-height: none !important;
-        overflow: visible !important;
-        position: static !important;
-        background: white !important;
-    }
-
-    /* 2. Hide the sidebar, navigation, buttons, and the recent activity table */
-    .w-64, #sidebar, nav, button, .no-print {
+    /* Hide everything on the main page */
+    body > *:not(#print-report-container) {
         display: none !important;
     }
-
-    /* 3. Make sure the main content stretches out naturally */
-    .p-6, .max-w-6xl {
-        margin: 0 !important;
-        padding: 0 !important;
-        width: 100% !important;
-        max-width: 100% !important;
-    }
-
-    /* 4. Force colors to print and prevent cards from splitting across pages */
-    * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-    }
     
-    .bg-white, .rounded-lg, .bg-blue-50, .bg-red-50, .bg-green-50, .bg-gray-50 {
-        break-inside: avoid !important;
-        page-break-inside: avoid !important;
-        box-shadow: none !important;
-        border: 1px solid #e5e7eb !important;
-        margin-bottom: 15px !important;
-    }
-
-    /* 5. Ensure charts scale down nicely on paper */
-    canvas {
-        max-width: 100% !important;
-        height: auto !important;
-        page-break-inside: avoid !important;
-    }
-}
-
-/* =========================================
-   PROFILE PAGE PRINT PART
-   ========================================= */
-@media print {
-    /* Hide buttons specific to profile page */
-    #print-button-container, 
-    #profile-actions, 
-    #profile-breadcrumb,
-    #profile-approve-btn,
-    #profile-reject-btn {
+    /* Hide the print container itself (we're using iframe now) */
+    #print-report-container {
         display: none !important;
     }
-
-    /* Main Grid Layout */
-    #main-profile-grid {
-        display: grid !important;
-        grid-template-columns: 250px 1fr !important;
-        gap: 2rem !important;
-        width: 100%;
-    }
-
-    /* Left Column (Photo & ID) */
-    #profile-card-container {
-        border-right: 1px solid #eee;
-        padding-right: 1.5rem;
-        padding-left: 3.5rem !important; 
-        text-align: left !important; 
-    }
-
-    #profile-card-container > div > div:first-child {
-        align-items: flex-start !important; 
-        text-align: left !important;
-    }
-
-    #profile-avatar {
-        width: 100px !important;
-        height: 100px !important;
-        margin-left: 0 !important; 
-        margin-right: 0 !important;
-        margin-bottom: 15px !important;
-    }
     
-    #profile-name {
-        text-align: left !important;
-        width: 100%;
-    }
-    
-    #profile-status-badge {
-        margin-top: 5px !important;
-        display: inline-block !important;
-    }
-
-    /* Right Column (Details) */
-    #personal-info-grid, 
-    #family-info-grid {
-        display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 1rem !important;
-    }
-
-    /* Headers */
-    h3 {
-        font-size: 16px !important;
-        border-bottom: 2px solid #3b82f6;
-        padding-bottom: 5px;
-        margin-bottom: 10px !important;
-        color: #000 !important;
-        margin-top: 0 !important;
-    }
-
-    /* Force New Page for Documents */
-    #documents-section {
-        page-break-before: always !important;
-        margin-top: 0 !important; 
-        padding-top: 20px !important;
-        display: block !important;
-    }
-
-    #documents-grid {
-        display: block !important; 
-    }
-
-    #documents-grid > div {
-        margin-bottom: 15px !important; 
-        break-inside: avoid !important; 
-    }
-
-    #documents-grid h4 {
-        margin-bottom: 5px !important;
-        color: #000 !important;
-    }
-
-    #documents-grid img {
-        height: 230px !important;        
-        width: auto !important;          
-        max-width: 100% !important;      
-        object-fit: contain !important;  
-        object-position: left !important; 
-        border: 1px solid #ccc;          
-        background-color: #f9f9f9;       
-    }
-
-    #documents-grid a {
-        border: none !important;
-        display: block;
-    }
-
-    .bg-white, .shadow-sm, .border {
-        box-shadow: none !important;
-        border: none !important;
-    }
-}
-
-/* =========================================
-   DASHBOARD PAGE PRINT PART
-   ========================================= */
-@media print {
-    /* Prevent page breaks inside dashboard cards and recommendation boxes */
-    .rounded-lg, .bg-white, .bg-blue-50, .bg-red-50, .bg-green-50, .bg-gray-50 {
-        break-inside: avoid !important;
-        page-break-inside: avoid !important;
-    }
-
-    /* Ensure chart canvases fit on the page and don't overflow */
-    canvas {
-        max-width: 100% !important;
-        page-break-inside: avoid !important;
+    /* Ensure iframe prints properly */
+    iframe {
+        display: none !important;
     }
 }

@@ -166,7 +166,7 @@ window.reviewApplication = async function(authUid) {
             if (!nameQuery.empty) officialDoc = nameQuery.docs[0];
         }
 
-        const btnReject = `<button onclick="openRejectModal()" class="w-full bg-red-100 text-red-700 py-2.5 rounded-md font-bold hover:bg-red-200 transition flex items-center justify-center shadow-sm"><i data-feather="x-circle" class="w-4 h-4 mr-2"></i> Reject App</button>`;
+        const btnReject = `<button onclick="openRejectModal()" class="w-full bg-red-100 text-red-700 py-2.5 rounded-md font-bold hover:bg-red-200 transition flex items-center justify-center shadow-sm"><i data-feather="x-circle" class="w-4 h-4 mr-2"></i> Reject </button>`;
 
         if (officialDoc) {
             officialData = officialDoc.data();
