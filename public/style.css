@@ -1,7 +1,3 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 /* =========================================
    BASE STYLES
    ========================================= */
@@ -58,21 +54,24 @@ input {
 }
 
 /* =========================================
-   PRINT STYLES - CLEAN VERSION
+   PRINT STYLES - FIXED VERSION
    ========================================= */
 @media print {
-    /* Hide everything on the main page */
+    /* Hide the normal dashboard UI */
     body > *:not(#print-report-container) {
         display: none !important;
     }
     
-    /* Hide the print container itself (we're using iframe now) */
+    /* FORCE the print container to be visible and correctly positioned */
     #print-report-container {
-        display: none !important;
-    }
-    
-    /* Ensure iframe prints properly */
-    iframe {
-        display: none !important;
+        display: block !important;
+        visibility: visible !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background: white;
     }
 }
