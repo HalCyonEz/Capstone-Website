@@ -246,6 +246,9 @@ window.openEditModal = function() {
     document.getElementById('edit-civil').value = currentProfileData.civilStatus || '';
     document.getElementById('edit-ethnicity').value = currentProfileData.ethnicity || '';
     document.getElementById('edit-religion').value = currentProfileData.religion || '';
+    document.getElementById('edit-birthplace').value = currentProfileData.placeOfBirth || '';
+    document.getElementById('edit-street').value = currentProfileData.street || '';
+    document.getElementById('edit-house-number').value = currentProfileData.houseNumber || '';
     document.getElementById('edit-municipality').value = currentProfileData.municipality || '';
     document.getElementById('edit-barangay').value = currentProfileData.barangay || '';
     document.getElementById('edit-occupation').value = currentProfileData.occupation || '';
@@ -283,10 +286,13 @@ window.saveProfileEdits = async function() {
         email: document.getElementById('edit-email').value.trim(),
         dateOfBirth: document.getElementById('edit-dob').value.trim(),
         age: document.getElementById('edit-age').value.trim(),
+        placeOfBirth: document.getElementById('edit-birthplace').value.trim(), // NEW
         sex: document.getElementById('edit-sex').value,
         civilStatus: document.getElementById('edit-civil').value.trim(),
         ethnicity: document.getElementById('edit-ethnicity').value.trim(),
         religion: document.getElementById('edit-religion').value.trim(),
+        houseNumber: document.getElementById('edit-house-number').value.trim(), // NEW
+        street: document.getElementById('edit-street').value.trim(), // NEW
         municipality: document.getElementById('edit-municipality').value.trim(),
         barangay: document.getElementById('edit-barangay').value.trim(),
         occupation: document.getElementById('edit-occupation').value.trim(),

@@ -222,6 +222,44 @@ function applyFiltersLogic(keepPage = false) {
     renderPage();
 }
 
+window.resetFilters = function() {
+    // 1. Clear EVERY input field in the DOM
+    document.getElementById('f-search').value = "";
+    document.getElementById('f-category').value = "";
+    document.getElementById('f-municipality').value = "";
+    document.getElementById('f-gender').value = "";
+    document.getElementById('f-philhealth').value = "";
+    document.getElementById('f-app-status').value = "";
+    document.getElementById('f-age-min').value = "";
+    document.getElementById('f-age-max').value = "";
+    
+    // The newly added fields we forgot to clear:
+    document.getElementById('f-date-from').value = "";
+    document.getElementById('f-date-to').value = "";
+    document.getElementById('f-children-min').value = "";
+
+    // 2. Reset the active filter state object
+    activeFilters = { 
+        category: "", municipality: "", gender: "", 
+        philhealth: "", appStatus: "", search: "", ageMin: "", 
+        ageMax: "", dateFrom: "", dateTo: "", childrenMin: "" 
+    };
+
+    // 3. Reset the UI styling on the Category Sidebar
+    document.querySelectorAll('.cat-item').forEach(el => {
+        el.classList.remove('bg-blue-50', 'border-blue-200');
+    });
+    
+    const allBtn = document.getElementById('cat-all-btn');
+    if (allBtn) {
+        allBtn.classList.add('bg-blue-50', 'text-blue-700');
+    }
+
+    // 4. Clear the saved sessionStorage state and re-render the grid
+    if (typeof clearState === 'function') clearState(); 
+    applyFiltersLogic(false); // Passing false sends the admin back to Page 1
+};
+
 // =============================================
 // 4. PAGINATION & RENDER
 // =============================================

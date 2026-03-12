@@ -67,8 +67,10 @@
                             <div><label class="text-xs font-bold text-gray-600">Email Address (Optional)</label><input type="email" id="create-email" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="juan@example.com"></div>
                             <div><label class="text-xs font-bold text-gray-600">Date of Birth</label><input type="date" id="create-dob" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none text-gray-600"></div>
                             <div><label class="text-xs font-bold text-gray-600">Age</label><input type="number" id="create-age" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="e.g., 35"></div>
+                            <div><label class="text-xs font-bold text-gray-600">Date Registered as Solo Parent <span class="text-red-500">*</span></label><input type="date" id="create-registered-date" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none text-gray-600"></div>
+                            <div class="md:col-span-2"><label class="text-xs font-bold text-gray-600">Place of Birth</label><input type="text" id="create-birthplace" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="e.g., Baguio General Hospital"></div>
                             
-                            <div class="md:col-span-3">
+                            <div class="md:col-span-3 mt-2">
                                 <label class="text-xs font-bold text-blue-700">Solo Parent Category <span class="text-red-500">*</span></label>
                                 <select id="create-category" class="w-full border border-blue-300 bg-blue-50 rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none">
                                     <option value="" disabled selected>Select a category...</option>
@@ -90,7 +92,7 @@
                         </div>
                     </section>
 
-<section>
+                    <section>
                         <h3 class="text-sm font-bold text-blue-800 border-b border-blue-200 pb-2 mb-4">Demographics & Address</h3>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
@@ -101,7 +103,6 @@
                                     <option value="Male">Male</option>
                                 </select>
                             </div>
-                            
                             <div>
                                 <label class="text-xs font-bold text-gray-600">Civil Status <span class="text-red-500">*</span></label>
                                 <select id="create-civil" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none text-gray-700">
@@ -115,7 +116,6 @@
                                     <option value="Live-in partner">Live-in partner</option>
                                 </select>
                             </div>
-                            
                             <div>
                                 <label class="text-xs font-bold text-gray-600">Religion <span class="text-red-500">*</span></label>
                                 <select id="create-religion" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none text-gray-700">
@@ -131,19 +131,32 @@
                                     <option value="Others">Others</option>
                                 </select>
                             </div>
+                            
+                            <div>
+                                <label class="text-xs font-bold text-gray-600">Ethnicity</label>
+                                <input type="text" id="create-ethnicity" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="e.g., Ibaloi, Kankanaey">
+                            </div>
 
                             <div>
                                 <label class="text-xs font-bold text-gray-600">Municipality <span class="text-red-500">*</span></label>
                                 <select id="create-municipality" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none text-gray-700" onchange="window.populateBarangays()">
                                     <option value="" disabled selected>Select municipality...</option>
-                                    </select>
+                                </select>
                             </div>
-                            
-                            <div class="md:col-span-2">
+                            <div>
                                 <label class="text-xs font-bold text-gray-600">Barangay <span class="text-red-500">*</span></label>
                                 <select id="create-barangay" disabled class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none text-gray-400 bg-gray-50">
                                     <option value="" disabled selected>Select municipality first...</option>
                                 </select>
+                            </div>
+                            
+                            <div>
+                                <label class="text-xs font-bold text-gray-600">House / Block / Lot No.</label>
+                                <input type="text" id="create-house-number" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="e.g., 123A">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="text-xs font-bold text-gray-600">Street / Purok / Sitio</label>
+                                <input type="text" id="create-street" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="e.g., Purok 4, Upper Pico">
                             </div>
                         </div>
                     </section>
@@ -152,7 +165,6 @@
                         <h3 class="text-sm font-bold text-blue-800 border-b border-blue-200 pb-2 mb-4">Employment & Family Details</h3>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div><label class="text-xs font-bold text-gray-600">Occupation</label><input type="text" id="create-occupation" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none"></div>
-                            
                             <div>
                                 <label class="text-xs font-bold text-gray-600">Monthly Income <span class="text-red-500">*</span></label>
                                 <select id="create-income" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none text-gray-700">
@@ -167,14 +179,11 @@
                                     <option value="₱35,000 and above">₱35,000 and above</option>
                                 </select>
                             </div>
-                            
                             <div><label class="text-xs font-bold text-gray-600">PhilHealth ID Number</label><input type="text" id="create-philhealth" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="XX-XXXXXXXXX-X"></div>
-                            
                             <div><label class="text-xs font-bold text-gray-600">Number of Children</label><input type="number" id="create-children-count" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="0"></div>
                             <div class="md:col-span-2"><label class="text-xs font-bold text-gray-600">Ages of Children (Comma separated)</label><input type="text" id="create-children-ages" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="e.g., 5, 8, 12"></div>
                         </div>
                     </section>
-                    
                 </div>
             </div>
         </div>

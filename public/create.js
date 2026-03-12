@@ -1,7 +1,7 @@
 import { db } from "./firebase-config.js";
 import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
-console.log("🎯 create.js loaded - Dynamic Dropdowns Active");
+console.log("🎯 create.js loaded - Manual Document Transcription Active");
 
 // 1. Translated Kotlin Map to JS Object
 const municipalityBarangayMap = {
@@ -50,10 +50,8 @@ const municipalityBarangayMap = {
 // 2. Initialize the Municipality Dropdown on Page Load
 document.addEventListener('DOMContentLoaded', () => {
     const munSelect = document.getElementById('create-municipality');
-    // Clear existing options just in case
     munSelect.innerHTML = '<option value="" disabled selected>Select municipality...</option>';
     
-    // Sort keys alphabetically
     Object.keys(municipalityBarangayMap).sort().forEach(mun => {
         const option = document.createElement('option');
         option.value = mun;
@@ -89,7 +87,7 @@ window.populateBarangays = function() {
 };
 
 window.createMemberRecord = async function() {
-    // 4. Updated Validation to include dropdowns
+    // 1. Capture ALL fields (Added the 4 missing ones here)
     const fname = document.getElementById('create-fname').value.trim();
     const lname = document.getElementById('create-lname').value.trim();
     const category = document.getElementById('create-category').value;
@@ -99,8 +97,15 @@ window.createMemberRecord = async function() {
     const municipality = document.getElementById('create-municipality').value;
     const barangay = document.getElementById('create-barangay').value;
     const income = document.getElementById('create-income').value;
+    const regDateInput = document.getElementById('create-registered-date').value;
+    
+    // NEW FIELDS
+    const birthplace = document.getElementById('create-birthplace')?.value.trim() || '';
+    const ethnicity = document.getElementById('create-ethnicity')?.value.trim() || '';
+    const houseNumber = document.getElementById('create-house-number')?.value.trim() || '';
+    const street = document.getElementById('create-street')?.value.trim() || '';
 
-    if (!fname || !lname || !category || !sex || !civil || !religion || !municipality || !barangay || !income) {
+    if (!fname || !lname || !category || !sex || !civil || !religion || !municipality || !barangay || !income || !regDateInput) {
         alert("Please fill out all required fields marked with a red asterisk (*).");
         return;
     }
@@ -120,6 +125,9 @@ window.createMemberRecord = async function() {
             ? rawChildrenAges.split(',').map(age => age.trim()).filter(age => age !== "") 
             : [];
 
+        const officialRegistrationDate = new Date(regDateInput);
+
+        // 2. Add the missing fields to the Firestore payload
         const newRecordData = {
             soloParentIdNumber: customId,
             firstName: fname,
@@ -128,10 +136,14 @@ window.createMemberRecord = async function() {
             email: document.getElementById('create-email').value.trim(),
             dateOfBirth: document.getElementById('create-dob').value.trim(),
             age: document.getElementById('create-age').value.trim(),
+            placeOfBirth: birthplace, // NEW
             category: category,
             sex: sex,
             civilStatus: civil,
+            ethnicity: ethnicity,       // NEW
             religion: religion,
+            houseNumber: houseNumber,   // NEW
+            street: street,             // NEW
             municipality: municipality,
             barangay: barangay,
             occupation: document.getElementById('create-occupation').value.trim(),
@@ -145,7 +157,7 @@ window.createMemberRecord = async function() {
             proofSoloParentUrl: null,
             philhealthIdUrl: null,
             
-            registrationDate: serverTimestamp(),
+            registrationDate: officialRegistrationDate, 
             lastUpdated: serverTimestamp()
         };
 
