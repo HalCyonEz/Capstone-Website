@@ -41,9 +41,15 @@
                     <h1 class="text-2xl font-bold text-gray-800 mb-1">Members Directory</h1>
                     <p class="text-gray-500 text-sm">Advanced filtering and master list management.</p>
                 </div>
-                <button onclick="generateReport()" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 hover:bg-blue-700 transition shadow-sm">
-                    <i data-feather="file-text" class="w-4 h-4"></i> Generate Report
-                </button>
+                <div class="flex gap-3">
+                    <button onclick="window.location.href='create.html'" class="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 hover:bg-green-700 transition shadow-sm">
+                        <i data-feather="user-plus" class="w-4 h-4"></i> Create Member
+                    </button>
+                    
+                    <button onclick="generateReport()" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 hover:bg-blue-700 transition shadow-sm">
+                        <i data-feather="file-text" class="w-4 h-4"></i> Generate Report
+                    </button>
+                </div>
             </div>
 
             <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100 mb-6">
