@@ -125,66 +125,57 @@ window.applyFilters = function() {
         activeFilters.ageMin = document.getElementById('f-age-min').value;
         activeFilters.ageMax = document.getElementById('f-age-max').value;
         
+        // ADD THESE THREE LINES:
+        activeFilters.dateFrom = document.getElementById('f-date-from').value;
+        activeFilters.dateTo = document.getElementById('f-date-to').value;
+        activeFilters.childrenMin = document.getElementById('f-children-min').value;
+        
         applyFiltersLogic(false); 
     }, 300);
 };
 
-window.filterByCategory = function(categoryCode) {
-    document.getElementById('f-category').value = categoryCode || "";
-    document.querySelectorAll('.cat-item').forEach(el => el.classList.remove('bg-blue-50', 'border-blue-200'));
-    const allBtn = document.getElementById('cat-all-btn');
-    if(categoryCode) {
-        const row = document.getElementById(`cat-row-${categoryCode}`);
-        if(row) row.classList.add('bg-blue-50', 'border-blue-200');
-        allBtn.classList.remove('bg-blue-50', 'text-blue-700');
-    } else {
-        allBtn.classList.add('bg-blue-50', 'text-blue-700');
-    }
-    window.applyFilters();
-};
-
-window.resetFilters = function() {
-    document.getElementById('f-search').value = "";
-    document.getElementById('f-category').selectedIndex = 0;
-    document.getElementById('f-municipality').selectedIndex = 0;
-    document.getElementById('f-gender').selectedIndex = 0;
-    document.getElementById('f-philhealth').selectedIndex = 0;
-    document.getElementById('f-app-status').selectedIndex = 0;
-    document.getElementById('f-age-min').value = "";
-    document.getElementById('f-age-max').value = "";
-    
-    activeFilters = { category: "", municipality: "", gender: "", philhealth: "", appStatus: "", search: "", ageMin: "", ageMax: "", dateFrom: "", dateTo: "", childrenMin: "" };
-    
-    document.querySelectorAll('.cat-item').forEach(el => el.classList.remove('bg-blue-50', 'border-blue-200'));
-    document.getElementById('cat-all-btn').classList.add('bg-blue-50', 'text-blue-700');
-
-    clearState(); 
-    applyFiltersLogic(false);
-};
-
 function applyFiltersLogic(keepPage = false) {
     filteredMembers = allMembersCache.filter(user => {
-        // Universal Search
-        if (activeFilters.search) {
-            const s = activeFilters.search;
-            const fName = (user.firstName || "").toLowerCase();
-            const lName = (user.lastName || "").toLowerCase();
-            const idNum = (user.soloParentIdNumber || user.id || "").toLowerCase();
-            if (!fName.includes(s) && !lName.includes(s) && !idNum.includes(s)) return false;
-        }
-
-        if (activeFilters.category && (!user.category || !user.category.startsWith(activeFilters.category))) return false;
-        if (activeFilters.municipality && user.municipality !== activeFilters.municipality) return false;
-        if (activeFilters.gender && user.sex !== activeFilters.gender) return false;
-        if (activeFilters.philhealth === 'Yes' && !user.philhealthIdNumber) return false;
-        if (activeFilters.philhealth === 'No' && user.philhealthIdNumber) return false;
-        
-        if (activeFilters.appStatus === 'Registered' && user.is_online !== true) return false;
-        if (activeFilters.appStatus === 'Unregistered' && user.is_online === true) return false;
+        // ... (keep your existing search, category, municipality, etc. filters) ...
 
         let age = parseInt(user.age);
         if (activeFilters.ageMin && (isNaN(age) || age < parseInt(activeFilters.ageMin))) return false;
         if (activeFilters.ageMax && (isNaN(age) || age > parseInt(activeFilters.ageMax))) return false;
+
+        // ADD THIS NEW LOGIC:
+        
+        // 1. Min Children Filter
+        if (activeFilters.childrenMin) {
+            const minKids = parseInt(activeFilters.childrenMin);
+            const childCount = Array.isArray(user.childrenAges) ? user.childrenAges.length : 0;
+            if (childCount < minKids) return false;
+        }
+
+        // 2. Date Registered Filter
+        if (activeFilters.dateFrom || activeFilters.dateTo) {
+            let regDate = null;
+            if (user.registrationDate && user.registrationDate.toDate) {
+                regDate = user.registrationDate.toDate();
+            } else if (user.createdAt && user.createdAt.toDate) {
+                regDate = user.createdAt.toDate();
+            }
+
+            if (!regDate) return false; // Hide records without dates if date filter is active
+
+            // Normalize time to midnight for accurate day comparison
+            regDate.setHours(0,0,0,0); 
+
+            if (activeFilters.dateFrom) {
+                const from = new Date(activeFilters.dateFrom);
+                from.setHours(0,0,0,0);
+                if (regDate < from) return false;
+            }
+            if (activeFilters.dateTo) {
+                const to = new Date(activeFilters.dateTo);
+                to.setHours(0,0,0,0);
+                if (regDate > to) return false;
+            }
+        }
 
         return true;
     });
