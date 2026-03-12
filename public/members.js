@@ -92,21 +92,34 @@ function clearState() {
 }
 
 // =============================================
-// 2. DATA FETCHING (Official Records)
+// 2. DATA FETCHING (Real-Time Official Records)
 // =============================================
-async function fetchAllMembers(isRestoring = false) {
+function fetchAllMembers() {
     const grid = document.getElementById('members-grid');
-    grid.innerHTML = '<div class="col-span-2 text-center py-10 text-blue-500"><i data-feather="loader" class="animate-spin inline w-5 h-5 mr-2"></i> Loading LGU Database...</div>';
-    feather.replace();
+    grid.innerHTML = '<div class="col-span-2 text-center py-10 text-blue-500"><i data-feather="loader" class="animate-spin inline w-5 h-5 mr-2"></i> Syncing Live LGU Database...</div>';
+    if (typeof feather !== 'undefined') feather.replace();
     
     try {
-        const snapshot = await window.db.collection("solo_parent_records").get();
-        allMembersCache = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-        calculateCategoryStats(allMembersCache);
-        applyFiltersLogic(isRestoring);
+        // Listening to the correct merged master database
+        window.db.collection("solo_parent_records").onSnapshot((snapshot) => {
+            allMembersCache = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+            
+            console.log("📡 Live database update received from 'solo_parent_records'. Total records:", allMembersCache.length);
+            
+            // Recalculate sidebar numbers
+            calculateCategoryStats(allMembersCache);
+            
+            // Re-apply filters and keep the admin on their current page (true)
+            applyFiltersLogic(true); 
+            
+        }, (error) => {
+            console.error("Firebase Real-time Sync Error:", error);
+            grid.innerHTML = `<div class="col-span-2 text-center py-10 text-red-500">Live sync interrupted: ${error.message}</div>`;
+        });
+        
     } catch (e) {
         console.error(e);
-        grid.innerHTML = `<div class="col-span-2 text-center py-10 text-red-500">Error loading data: ${e.message}</div>`;
+        grid.innerHTML = `<div class="col-span-2 text-center py-10 text-red-500">Error initializing sync: ${e.message}</div>`;
     }
 }
 
@@ -116,6 +129,7 @@ async function fetchAllMembers(isRestoring = false) {
 window.applyFilters = function() {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
+        // 1. Capture ALL inputs from the UI
         activeFilters.search = document.getElementById('f-search').value.trim().toLowerCase();
         activeFilters.category = document.getElementById('f-category').value;
         activeFilters.municipality = document.getElementById('f-municipality').value;
@@ -124,8 +138,6 @@ window.applyFilters = function() {
         activeFilters.appStatus = document.getElementById('f-app-status').value; 
         activeFilters.ageMin = document.getElementById('f-age-min').value;
         activeFilters.ageMax = document.getElementById('f-age-max').value;
-        
-        // ADD THESE THREE LINES:
         activeFilters.dateFrom = document.getElementById('f-date-from').value;
         activeFilters.dateTo = document.getElementById('f-date-to').value;
         activeFilters.childrenMin = document.getElementById('f-children-min').value;
@@ -136,24 +148,47 @@ window.applyFilters = function() {
 
 function applyFiltersLogic(keepPage = false) {
     filteredMembers = allMembersCache.filter(user => {
-        // ... (keep your existing search, category, municipality, etc. filters) ...
+        // Universal Search
+        if (activeFilters.search) {
+            const s = activeFilters.search;
+            const fName = (user.firstName || "").toLowerCase();
+            const lName = (user.lastName || "").toLowerCase();
+            const idNum = (user.soloParentIdNumber || user.id || "").toLowerCase();
+            if (!fName.includes(s) && !lName.includes(s) && !idNum.includes(s)) return false;
+        }
 
+        // Standard Filters
+        // Category Filter (Case-insensitive and matches sidebar logic)
+        if (activeFilters.category) {
+            const userCat = (user.category || "").toLowerCase();
+            const filterCat = activeFilters.category.toLowerCase();
+            if (!userCat.includes(filterCat)) return false;
+        }
+        if (activeFilters.municipality && user.municipality !== activeFilters.municipality) return false;
+        if (activeFilters.gender && user.sex !== activeFilters.gender) return false;
+        if (activeFilters.philhealth === 'Yes' && !user.philhealthIdNumber) return false;
+        if (activeFilters.philhealth === 'No' && user.philhealthIdNumber) return false;
+        
+        // App Status
+        if (activeFilters.appStatus === 'Registered' && user.is_online !== true) return false;
+        if (activeFilters.appStatus === 'Unregistered' && user.is_online === true) return false;
+
+        // Age Filters
         let age = parseInt(user.age);
         if (activeFilters.ageMin && (isNaN(age) || age < parseInt(activeFilters.ageMin))) return false;
         if (activeFilters.ageMax && (isNaN(age) || age > parseInt(activeFilters.ageMax))) return false;
 
-        // ADD THIS NEW LOGIC:
-        
-        // 1. Min Children Filter
+        // Min Children Filter
         if (activeFilters.childrenMin) {
             const minKids = parseInt(activeFilters.childrenMin);
             const childCount = Array.isArray(user.childrenAges) ? user.childrenAges.length : 0;
             if (childCount < minKids) return false;
         }
 
-        // 2. Date Registered Filter
+        // Date Registered Filter
         if (activeFilters.dateFrom || activeFilters.dateTo) {
             let regDate = null;
+            // Check for both Firebase Timestamp objects and standard dates
             if (user.registrationDate && user.registrationDate.toDate) {
                 regDate = user.registrationDate.toDate();
             } else if (user.createdAt && user.createdAt.toDate) {
@@ -177,9 +212,10 @@ function applyFiltersLogic(keepPage = false) {
             }
         }
 
-        return true;
+        return true; // If it passes all checks, include it in the results
     });
 
+    // Sort alphabetically by Last Name
     filteredMembers.sort((a, b) => (a.lastName || "").localeCompare(b.lastName || ""));
 
     if (!keepPage) currentPage = 1;
@@ -231,22 +267,64 @@ window.changePage = function(dir) {
 function calculateCategoryStats(data) {
     const counts = {};
     for (let key in CATEGORIES) counts[key] = 0;
+    
     data.forEach(user => {
         const cat = (user.category || "").toLowerCase();
-        for(let key in CATEGORIES) { if (cat.includes(key)) { counts[key]++; break; } }
+        for(let key in CATEGORIES) { 
+            if (cat.includes(key)) { counts[key]++; break; } 
+        }
     });
+    
     document.getElementById('total-count-display').innerText = data.length;
     const listContainer = document.getElementById('category-list');
     listContainer.innerHTML = ""; 
+    
     for (let [code, label] of Object.entries(CATEGORIES)) {
         const item = document.createElement('div');
         item.id = `cat-row-${code}`;
-        item.className = "cat-item flex justify-between items-start text-sm text-gray-600 p-2 rounded cursor-pointer hover:bg-gray-50 border border-transparent transition";
-        item.onclick = () => filterByCategory(code);
-        item.innerHTML = `<div class="flex gap-3"><span class="text-gray-400 font-mono text-xs mt-0.5 w-6 shrink-0">${code}</span><span class="leading-tight select-none">${label}</span></div><span class="font-medium text-gray-800 ml-2">${counts[code] || 0}</span>`;
+        // Added 'cursor-pointer' to ensure the CSS shows it as clickable
+        item.className = "cat-item flex justify-between items-start text-sm text-gray-600 p-2 rounded cursor-pointer hover:bg-gray-100 border border-transparent transition";
+        
+        // THE FIX: Explicitly binding the window object and adding a tracer log
+        item.onclick = function() {
+            console.log(`🎯 Sidebar clicked: Category [${code}]`);
+            window.filterByCategory(code);
+        };
+        
+        item.innerHTML = `<div class="flex gap-3"><span class="text-gray-400 font-mono text-xs mt-0.5 w-6 shrink-0">${code}</span><span class="leading-tight select-none pointer-events-none">${label}</span></div><span class="font-medium text-gray-800 ml-2 pointer-events-none">${counts[code] || 0}</span>`;
         listContainer.appendChild(item);
     }
 }
+
+window.filterByCategory = function(categoryCode) {
+    console.log(`🔄 Running filterByCategory for: ${categoryCode || "ALL"}`);
+    
+    const selectEl = document.getElementById('f-category');
+    if (selectEl) selectEl.value = categoryCode || "";
+    
+    // Clear all previous active states
+    document.querySelectorAll('.cat-item').forEach(el => {
+        el.classList.remove('bg-blue-50', 'border-blue-200');
+    });
+    
+    const allBtn = document.getElementById('cat-all-btn');
+    
+    if (categoryCode) {
+        const row = document.getElementById(`cat-row-${categoryCode}`);
+        if (row) {
+            row.classList.add('bg-blue-50', 'border-blue-200');
+            console.log(`✅ Applied active styling to cat-row-${categoryCode}`);
+        } else {
+            console.warn(`⚠️ Could not find row: cat-row-${categoryCode}`);
+        }
+        if (allBtn) allBtn.classList.remove('bg-blue-50', 'text-blue-700');
+    } else {
+        if (allBtn) allBtn.classList.add('bg-blue-50', 'text-blue-700');
+    }
+    
+    // Trigger the main filter logic
+    window.applyFilters();
+};
 
 function createMemberCard(id, data) {
     const div = document.createElement('div');

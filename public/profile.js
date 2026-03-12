@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     try {
-        // 1. Search Official Database
+        // 1. First, check if the URL ID is a direct official record ID (e.g., AG1247271)
         const lguRef = doc(db, "solo_parent_records", recordId);
         const lguSnap = await getDoc(lguRef);
 
@@ -50,25 +50,38 @@ document.addEventListener('DOMContentLoaded', async function() {
             isOfficialRecord = true;
             linkedAuthUid = currentProfileData.auth_uid || null;
         } else {
-            // 2. Fallback to Users Collection
-            const mobileRef = doc(db, "users", recordId);
-            const mobileSnap = await getDoc(mobileRef);
-            
-            if (mobileSnap.exists()) {
-                currentProfileData = mobileSnap.data();
-                currentDocId = recordId;
-                isOfficialRecord = false;
+            // 2. MERGE CHECK: The URL ID might be an auth_uid. 
+            // Let's check if an official record is LINKED to this auth_uid.
+            const qLinked = query(collection(db, "solo_parent_records"), where("auth_uid", "==", recordId));
+            const qLinkedSnap = await getDocs(qLinked);
+
+            if (!qLinkedSnap.empty) {
+                // Found the merged official record! Prioritize this.
+                currentProfileData = qLinkedSnap.docs[0].data();
+                currentDocId = qLinkedSnap.docs[0].id;
+                isOfficialRecord = true;
                 linkedAuthUid = recordId;
             } else {
-                // 3. Deep Fallback Query
-                const q = query(collection(db, "solo_parent_records"), where("soloParentIdNumber", "==", recordId));
-                const querySnap = await getDocs(q);
+                // 3. Fallback to the users collection (An unmerged mobile app user)
+                const mobileRef = doc(db, "users", recordId);
+                const mobileSnap = await getDoc(mobileRef);
                 
-                if (!querySnap.empty) {
-                    currentProfileData = querySnap.docs[0].data();
-                    currentDocId = querySnap.docs[0].id;
-                    isOfficialRecord = true;
-                    linkedAuthUid = currentProfileData.auth_uid || null;
+                if (mobileSnap.exists()) {
+                    currentProfileData = mobileSnap.data();
+                    currentDocId = recordId;
+                    isOfficialRecord = false;
+                    linkedAuthUid = recordId;
+                } else {
+                    // 4. Deep Fallback Query for custom typed ID numbers
+                    const qId = query(collection(db, "solo_parent_records"), where("soloParentIdNumber", "==", recordId));
+                    const qIdSnap = await getDocs(qId);
+                    
+                    if (!qIdSnap.empty) {
+                        currentProfileData = qIdSnap.docs[0].data();
+                        currentDocId = qIdSnap.docs[0].id;
+                        isOfficialRecord = true;
+                        linkedAuthUid = currentProfileData.auth_uid || null;
+                    }
                 }
             }
         }
