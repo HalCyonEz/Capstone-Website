@@ -7,14 +7,22 @@ initLogout();
 
 let allMembers = [];
 let filteredMembers = [];
-const MUNICIPALITY_LIST = ["Atok","Baguio","Bakun","Bokod","Buguias","Itogon","Kabayan","Kapangan","Kibungan","La Trinidad","Mankayan","Sablan","Tuba", "Tublay",];
+const MUNICIPALITY_LIST = ["Atok","Baguio","Bakun","Bokod","Buguias","Itogon","Kabayan","Kapangan","Kibungan","La Trinidad","Mankayan","Sablan","Tuba", "Tublay"];
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // 🔥 Ensure the Print button is hooked up directly!
+    const printBtn = document.getElementById('btn-print-report');
+    if (printBtn) {
+        printBtn.addEventListener('click', window.handlePrint);
+    }
+
     await loadData();
     initUI();
 });
 
-// 1. Load Data
+// ==========================================
+// 1. LOAD DATA
+// ==========================================
 async function loadData() {
     if (!db) return;
     try {
@@ -65,7 +73,9 @@ function createCheckbox(container, labelText, value, nameGroup) {
     container.appendChild(wrapper);
 }
 
-// 2. UI Initialization
+// ==========================================
+// 2. UI INITIALIZATION
+// ==========================================
 function initUI() {
     const periodSelect = document.getElementById('filter-period');
     const customDateBox = document.getElementById('custom-date-container');
@@ -83,7 +93,6 @@ function initUI() {
     }
 
     document.getElementById('btn-apply-filters')?.addEventListener('click', applyFilters);
-    document.getElementById('btn-print-report')?.addEventListener('click', handlePrint);
 
     document.getElementById('btn-reset')?.addEventListener('click', () => {
         document.querySelectorAll('input').forEach(i => {
@@ -97,16 +106,21 @@ function initUI() {
         
         const tbody = document.getElementById('preview-table-body');
         tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-gray-500"><div class="flex flex-col items-center"><i data-feather="filter" class="w-8 h-8 text-gray-300 mb-2"></i><p>Filters reset. Select criteria and click <strong>Apply Filters</strong>.</p></div></td></tr>`;
-        feather.replace();
-        document.getElementById('btn-print-report').disabled = true;
+        
+        if(typeof feather !== 'undefined') feather.replace();
+        
+        const printBtn = document.getElementById('btn-print-report');
+        if (printBtn) printBtn.disabled = true;
+        
         filteredMembers = [];
         document.getElementById('result-count').textContent = "0 Records";
     });
 }
 
-// 3. Filter Engine
+// ==========================================
+// 3. FILTER ENGINE
+// ==========================================
 function applyFilters() {
-    // Safe Element Retrieval
     const getVal = (id) => document.getElementById(id)?.value || '';
     const getChecked = (name) => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value);
 
@@ -115,11 +129,8 @@ function applyFilters() {
 
     const minAge = getVal('filter-age-min');
     const maxAge = getVal('filter-age-max');
-    
-    // ✅ SAFE CHILD RETRIEVAL (Handles missing inputs)
     const minKids = getVal('filter-children-min');
     const maxKids = getVal('filter-children-max');
-    
     const gender = getVal('filter-gender');
     const period = getVal('filter-period');
 
@@ -166,7 +177,7 @@ function applyFilters() {
         if (maxKids && kids > Math.max(0, parseInt(maxKids))) return false;
 
         if (startDate || endDate) {
-            const regDate = m.createdAt ? m.createdAt.toDate() : null;
+            const regDate = m.createdAt ? (typeof m.createdAt.toDate === 'function' ? m.createdAt.toDate() : new Date(m.createdAt)) : null;
             if (!regDate) return false;
             if (startDate && regDate < startDate) return false;
             if (endDate && regDate > endDate) return false;
@@ -196,31 +207,37 @@ function updateTable() {
 
     filteredMembers.forEach(m => {
         const catName = CODE_TO_DESCRIPTION_MAP[m.category] || m.category || "N/A";
-        const regDate = m.createdAt ? m.createdAt.toDate().toLocaleDateString() : "N/A";
+        let regDateStr = "N/A";
+        
+        if (m.createdAt) {
+           try { regDateStr = typeof m.createdAt.toDate === 'function' ? m.createdAt.toDate().toLocaleDateString() : new Date(m.createdAt).toLocaleDateString(); } catch(e) {}
+        }
+        
         const address = m.address || m.municipality || "N/A";
         
         const row = `
             <tr>
                 <td class="px-6 py-2">${m.firstName} ${m.lastName}</td>
-                <td class="px-6 py-2">${m.age}</td>
+                <td class="px-6 py-2">${m.age || 'N/A'}</td>
                 <td class="px-6 py-2">${catName}</td>
                 <td class="px-6 py-2">${address}</td>
-                <td class="px-6 py-2">${m.numberOfChildren}</td>
-                <td class="px-6 py-2">${regDate}</td>
+                <td class="px-6 py-2">${m.numberOfChildren || '0'}</td>
+                <td class="px-6 py-2">${regDateStr}</td>
             </tr>
         `;
         tbody.innerHTML += row;
     });
 }
 
-// 4. Generate PDF (Crash Proof)
-function handlePrint() {
-    const container = document.getElementById('print-report-container');
-    if (!container) return;
+// ==========================================
+// 4. GENERATE PDF (INVISIBLE IFRAME METHOD)
+// ==========================================
+window.handlePrint = function() {
+    if (filteredMembers.length === 0) return;
 
     const date = new Date().toLocaleDateString();
     
-    // Narrative Building
+    // --- Narrative Building ---
     const checkedCats = document.querySelectorAll('input[name="category-filter"]:checked');
     const selectedCategories = Array.from(checkedCats).map(cb => cb.nextElementSibling.textContent.trim());
     
@@ -279,48 +296,103 @@ function handlePrint() {
         description = `This report is a complete master list of all verified solo parent members in the database.`;
     }
     
-    const rows = filteredMembers.map(m => `
-        <tr>
-            <td style="border:1px solid #ddd; padding:5px;">${m.firstName} ${m.lastName}</td>
-            <td style="border:1px solid #ddd; padding:5px;">${m.age}</td>
-            <td style="border:1px solid #ddd; padding:5px;">${CODE_TO_DESCRIPTION_MAP[m.category] || m.category}</td>
-            <td style="border:1px solid #ddd; padding:5px;">${m.numberOfChildren}</td>
-            <td style="border:1px solid #ddd; padding:5px;">${m.address || m.municipality}</td>
-        </tr>
-    `).join('');
+    // --- Table Row Generation ---
+    const rows = filteredMembers.map(m => {
+        const catName = CODE_TO_DESCRIPTION_MAP[m.category] || m.category || "N/A";
+        return `
+            <tr>
+                <td style="border-bottom:1px solid #e5e7eb; padding:10px 8px; color: #374151;">${m.firstName} ${m.lastName}</td>
+                <td style="border-bottom:1px solid #e5e7eb; padding:10px 8px; color: #374151;">${m.age || 'N/A'}</td>
+                <td style="border-bottom:1px solid #e5e7eb; padding:10px 8px; color: #374151;">${catName}</td>
+                <td style="border-bottom:1px solid #e5e7eb; padding:10px 8px; color: #374151;">${m.numberOfChildren || '0'}</td>
+                <td style="border-bottom:1px solid #e5e7eb; padding:10px 8px; color: #374151;">${m.address || m.municipality || 'N/A'}</td>
+            </tr>
+        `;
+    }).join('');
 
-    container.innerHTML = `
-        <div class="letterhead" style="display: flex; align-items: center; border-bottom: 2px solid #3b82f6; padding-bottom: 15px; margin-bottom: 20px;">
-            <img src="LOGO.png" alt="Logo" style="width: 80px; height: 80px; margin-right: 15px; object-fit: contain;">
+    // --- HTML Assembly ---
+    const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>SPDA Data Report</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <style>
+            body { font-family: 'Inter', sans-serif; padding: 40px; color: #1f2937; }
+            .header { display: flex; align-items: center; border-bottom: 2px solid #3b82f6; padding-bottom: 15px; margin-bottom: 20px; }
+            .header img { width: 80px; height: 80px; margin-right: 15px; object-fit: contain; }
+            .header h1 { margin: 0; font-size: 24px; color: #1e3a8a; }
+            .header p { margin: 5px 0 0 0; font-size: 12px; color: #6b7280; }
+            .params-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+            .params-box h3 { margin: 0 0 5px 0; font-size: 14px; font-weight: 600; color: #111827; }
+            .params-box p { margin: 0; font-size: 13px; line-height: 1.5; color: #4b5563; }
+            table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+            th { background: #f3f4f6; padding: 12px 8px; font-weight: 600; color: #374151; border-bottom: 2px solid #d1d5db; }
+            .total { margin-top: 20px; text-align: right; font-size: 14px; font-weight: 700; color: #111827; }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <img src="LOGO.png" alt="Logo" onerror="this.style.display='none'">
             <div>
-                <h1 style="margin: 0; font-size: 22px; font-weight: bold; color: #1e3a8a;">SPDA Data Report</h1>
-                <p style="margin: 0; font-size: 11px; color: #6b7280;">Generated on: ${date}</p>
+                <h1>SPDA Data Report</h1>
+                <p>Generated on: ${date}</p>
             </div>
         </div>
 
-        <div style="margin-bottom: 20px; padding: 15px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 5px;">
-            <h3 style="margin-top:0; font-size: 14px; font-weight: bold;">Report Parameters:</h3>
-            <p style="margin-bottom:0; font-size: 13px; line-height: 1.5;">${description}</p>
+        <div class="params-box">
+            <h3>Report Parameters:</h3>
+            <p>${description}</p>
         </div>
 
-        <table style="width:100%; border-collapse:collapse; font-size:11px;">
+        <table>
             <thead>
-                <tr style="background:#f3f4f6;">
-                    <th style="border:1px solid #ddd; padding:8px;">Name</th>
-                    <th style="border:1px solid #ddd; padding:8px;">Age</th>
-                    <th style="border:1px solid #ddd; padding:8px;">Category</th>
-                    <th style="border:1px solid #ddd; padding:8px;">Children</th>
-                    <th style="border:1px solid #ddd; padding:8px;">Address</th>
+                <tr>
+                    <th>Full Name</th>
+                    <th>Age</th>
+                    <th>Category</th>
+                    <th>Children</th>
+                    <th>Address</th>
                 </tr>
             </thead>
             <tbody>${rows}</tbody>
         </table>
         
-        <div style="margin-top: 20px; text-align: right; font-size: 12px; font-weight: bold;">
+        <div class="total">
             Total Records Found: ${filteredMembers.length}
         </div>
+
+        <script>
+            window.onload = function() {
+                setTimeout(function() { window.print(); }, 800);
+            };
+        </script>
+    </body>
+    </html>
     `;
 
-    container.style.display = 'block';
-    setTimeout(() => window.print(), 500);
-}
+    // CREATE INVISIBLE IFRAME
+    const printFrame = document.createElement('iframe');
+    printFrame.style.position = 'fixed';
+    printFrame.style.top = '-1000px'; 
+    printFrame.style.left = '-1000px';
+    printFrame.style.width = '100%';
+    printFrame.style.height = '100%';
+    printFrame.id = 'reports-print-frame';
+    
+    document.body.appendChild(printFrame);
+
+    // WRITE HTML TO IFRAME
+    const frameDoc = printFrame.contentWindow.document;
+    frameDoc.open();
+    frameDoc.write(html);
+    frameDoc.close();
+
+    // CLEANUP
+    setTimeout(() => {
+        if (document.body.contains(printFrame)) {
+            document.body.removeChild(printFrame);
+        }
+    }, 5000); 
+};

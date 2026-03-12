@@ -361,7 +361,7 @@ window.handleGenerateReport = function() {
     <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>SPDA Analytics Report</title>
+        <title>SPDA Dashboard Report</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
         <style>
             body {

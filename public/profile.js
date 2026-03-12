@@ -4,6 +4,8 @@
 import { db } from "./firebase-config.js";
 import { doc, getDoc, getDocs, collection, query, where, updateDoc, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 import { DESCRIPTION_TO_CODE_MAP } from './utils.js';
+import { storage } from "./firebase-config.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-storage.js";
 
 // Automatically flip the map so we can look up by code (e.g., "a7" -> "Abandonment by the spouse")
 const CODE_TO_DESCRIPTION_MAP = Object.entries(DESCRIPTION_TO_CODE_MAP).reduce((acc, [desc, code]) => {
@@ -139,15 +141,36 @@ function populateUI(recordId, data) {
         'val-philhealth-id': data.philhealthIdNumber || 'N/A'
     };
 
+    const imgPhilContainer = document.getElementById('val-img-philhealth-container');
+    const imgPhil = document.getElementById('val-img-philhealth');
+    const imgPhilNone = document.getElementById('val-img-philhealth-none');
+
+    if (data.philhealthIdUrl) {
+        // If the URL exists, set the source and show the image container
+        imgPhil.src = data.philhealthIdUrl;
+        imgPhilContainer.classList.remove('hidden');
+        imgPhilContainer.classList.add('flex'); // Apply flexbox for centering
+        imgPhilNone.classList.add('hidden'); // Hide the fallback text
+    } else {
+        // If no URL, hide the image container and show the fallback text
+        imgPhilContainer.classList.add('hidden');
+        imgPhilContainer.classList.remove('flex');
+        imgPhilNone.classList.remove('hidden');
+    }
     for (const [htmlId, dbValue] of Object.entries(fieldsToMap)) {
         const element = document.getElementById(htmlId);
         if (element) { element.innerText = dbValue; }
     }
 
-    // 💡 FIXED STATUS BADGE: Strictly checks if they are online in the app
+    // 💡 FIXED STATUS BADGE: Smarter check for mobile app users
     const badge = document.getElementById('val-status-badge');
     if (badge) {
-        if (data.is_online === true) {
+        // A user is "App Registered" if:
+        // 1. They have an explicit is_online flag set to true, OR
+        // 2. The record was fetched directly from the mobile "users" collection (!isOfficialRecord), OR
+        // 3. The official record has a linkedAuthUid (meaning they merged an app account).
+        
+        if (data.is_online === true || !isOfficialRecord || linkedAuthUid) {
             badge.innerHTML = `<i data-feather="check-circle" class="w-3 h-3 inline mr-1"></i> App Registered`;
             badge.className = "inline-block bg-blue-100 text-blue-800 border border-blue-200 text-xs px-2.5 py-1 rounded-full font-bold shadow-sm";
         } else {
@@ -262,19 +285,57 @@ window.saveProfileEdits = async function() {
     };
 
     try {
+        // 1. Grab any selected files from the DOM
+        const fileId = document.getElementById('edit-img-id').files[0];
+        const fileSp = document.getElementById('edit-img-sp').files[0];
+        const filePhil = document.getElementById('edit-img-philhealth').files[0];
+
+        // Change button state to indicate upload time (which takes longer than a database write)
+        if (fileId || fileSp || filePhil) {
+            btn.innerHTML = '<i data-feather="loader" class="animate-spin w-4 h-4 mr-2"></i> Uploading Images...';
+            if (typeof feather !== 'undefined') feather.replace();
+        }
+
+        // Helper function for uploading to Cloud Storage
+        const uploadImage = async (file, documentType) => {
+            if (!file) return null;
+            // THE FIX: Pointing exactly to your unverified_uploads folder
+            // Format: unverified_uploads/user_id_documentType_timestamp
+            const fileRef = ref(storage, `unverified_uploads/${currentDocId}_${documentType}_${Date.now()}`);
+            
+            await uploadBytes(fileRef, file);
+            return await getDownloadURL(fileRef);
+        };
+
+        // 2. Upload files concurrently (if they exist) and get URLs
+        const [newIdUrl, newSpUrl, newPhilUrl] = await Promise.all([
+            uploadImage(fileId, 'valid_id'),
+            uploadImage(fileSp, 'solo_parent_proof'),
+            uploadImage(filePhil, 'philhealth_id')
+        ]);
+
+        // 3. Append new URLs to the Firestore updates object if an upload occurred
+        if (newIdUrl) updates.proofIdUrl = newIdUrl;
+        if (newSpUrl) updates.proofSoloParentUrl = newSpUrl;
+        if (newPhilUrl) updates.philhealthIdUrl = newPhilUrl;
+
+        // 4. Proceed with the standard Firestore Batch Write
+        btn.innerHTML = '<i data-feather="loader" class="animate-spin w-4 h-4 mr-2"></i> Saving Database...';
+        if (typeof feather !== 'undefined') feather.replace();
+        
         const batch = writeBatch(db);
 
         if (isOfficialRecord) {
             const officialRef = doc(db, "solo_parent_records", currentDocId);
-            batch.update(officialRef, updates);
+            batch.set(officialRef, updates, { merge: true });
 
             if (linkedAuthUid) {
                 const userRef = doc(db, "users", linkedAuthUid);
-                batch.update(userRef, updates);
+                batch.set(userRef, updates, { merge: true });
             }
         } else {
             const userRef = doc(db, "users", currentDocId);
-            batch.update(userRef, updates);
+            batch.set(userRef, updates, { merge: true });
         }
 
         await batch.commit();
@@ -282,12 +343,18 @@ window.saveProfileEdits = async function() {
         currentProfileData = { ...currentProfileData, ...updates }; 
         populateUI(currentDocId, currentProfileData);
 
+        // Reset the file inputs so they are clear for the next time the modal opens
+        document.getElementById('edit-img-id').value = "";
+        document.getElementById('edit-img-sp').value = "";
+        document.getElementById('edit-img-philhealth').value = "";
+
         closeModal('editProfileModal');
-        showNotification("Update Successful", "The applicant's information has been successfully corrected.", "success");
+        showNotification("Update Successful", "The applicant's information and documents have been updated.", "success");
 
     } catch (error) {
         console.error("Error updating profile:", error);
-        showNotification("Save Failed", "Could not update the database. Please check console.", "error");
+        // Tip: If it still fails, check your console. It might be a Firestore Security Rules issue!
+        showNotification("Save Failed", "Could not update the database. Please check the browser console for exact details.", "error");
     } finally {
         btn.innerHTML = '<i data-feather="save" class="w-4 h-4 mr-2"></i> Save Changes';
         btn.disabled = false;
