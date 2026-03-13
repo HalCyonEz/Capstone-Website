@@ -87,7 +87,8 @@ window.populateBarangays = function() {
 };
 
 window.createMemberRecord = async function() {
-    // 1. Capture ALL fields (Added the 4 missing ones here)
+    // 1. Capture ALL fields including the new Solo Parent ID
+    const soloParentId = document.getElementById('create-solo-parent-id').value.trim(); // <-- NEW
     const fname = document.getElementById('create-fname').value.trim();
     const lname = document.getElementById('create-lname').value.trim();
     const category = document.getElementById('create-category').value;
@@ -99,14 +100,14 @@ window.createMemberRecord = async function() {
     const income = document.getElementById('create-income').value;
     const regDateInput = document.getElementById('create-registered-date').value;
     
-    // NEW FIELDS
     const birthplace = document.getElementById('create-birthplace')?.value.trim() || '';
     const ethnicity = document.getElementById('create-ethnicity')?.value.trim() || '';
     const houseNumber = document.getElementById('create-house-number')?.value.trim() || '';
     const street = document.getElementById('create-street')?.value.trim() || '';
 
-    if (!fname || !lname || !category || !sex || !civil || !religion || !municipality || !barangay || !income || !regDateInput) {
-        alert("Please fill out all required fields marked with a red asterisk (*).");
+    // 2. Strict Validation Check (Now includes soloParentId)
+    if (!soloParentId || !fname || !lname || !category || !sex || !civil || !religion || !municipality || !barangay || !income || !regDateInput) {
+        alert("Please fill out all required fields marked with a red asterisk (*), including the Solo Parent ID.");
         return;
     }
 
@@ -116,10 +117,6 @@ window.createMemberRecord = async function() {
     if (typeof feather !== 'undefined') feather.replace();
 
     try {
-        const year = new Date().getFullYear();
-        const randomString = Math.random().toString(36).substring(2, 6).toUpperCase();
-        const customId = `SP-${year}-${randomString}`;
-
         const rawChildrenAges = document.getElementById('create-children-ages').value.trim();
         const childrenAgesArray = rawChildrenAges 
             ? rawChildrenAges.split(',').map(age => age.trim()).filter(age => age !== "") 
@@ -127,23 +124,22 @@ window.createMemberRecord = async function() {
 
         const officialRegistrationDate = new Date(regDateInput);
 
-        // 2. Add the missing fields to the Firestore payload
         const newRecordData = {
-            soloParentIdNumber: customId,
+            soloParentIdNumber: soloParentId, // <-- Now uses inputted ID
             firstName: fname,
             lastName: lname,
             contact: document.getElementById('create-contact').value.trim(),
             email: document.getElementById('create-email').value.trim(),
             dateOfBirth: document.getElementById('create-dob').value.trim(),
             age: document.getElementById('create-age').value.trim(),
-            placeOfBirth: birthplace, // NEW
+            placeOfBirth: birthplace, 
             category: category,
             sex: sex,
             civilStatus: civil,
-            ethnicity: ethnicity,       // NEW
+            ethnicity: ethnicity,       
             religion: religion,
-            houseNumber: houseNumber,   // NEW
-            street: street,             // NEW
+            houseNumber: houseNumber,   
+            street: street,             
             municipality: municipality,
             barangay: barangay,
             occupation: document.getElementById('create-occupation').value.trim(),
@@ -161,7 +157,8 @@ window.createMemberRecord = async function() {
             lastUpdated: serverTimestamp()
         };
 
-        const docRef = doc(db, "solo_parent_records", customId);
+        // 3. Write to Firestore using the Official ID as the Document Name
+        const docRef = doc(db, "solo_parent_records", soloParentId);
         await setDoc(docRef, newRecordData);
 
         document.getElementById('notificationModal').classList.remove('hidden');

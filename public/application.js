@@ -144,6 +144,17 @@ window.reviewApplication = async function(authUid) {
     if (userData.proofSoloParentUrl) { imgSp.src = userData.proofSoloParentUrl; imgSp.classList.remove('hidden'); imgSpNone.classList.add('hidden'); } 
     else { imgSp.classList.add('hidden'); imgSpNone.classList.remove('hidden'); }
 
+    const imgPh = document.getElementById('v-img-ph');
+    const imgPhNone = document.getElementById('v-img-ph-none');
+    if (userData.philhealthIdUrl) { 
+        imgPh.src = userData.philhealthIdUrl; 
+        imgPh.classList.remove('hidden'); 
+        imgPhNone.classList.add('hidden'); 
+    } else { 
+        imgPh.classList.add('hidden'); 
+        imgPhNone.classList.remove('hidden'); 
+    }
+
     const vBox = document.getElementById('verification-status-box');
     const actionBtns = document.getElementById('modal-action-buttons');
     
@@ -286,6 +297,7 @@ window.executeFinalApproval = async function() {
                 is_online: true,
                 proofIdUrl: userData.proofIdUrl || null,
                 proofSoloParentUrl: userData.proofSoloParentUrl || null,
+                philhealthIdUrl: userData.philhealthIdUrl || null, // <-- ADD THIS LINE
                 lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
             });
 
