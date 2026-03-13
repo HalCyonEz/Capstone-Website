@@ -5,6 +5,23 @@ let currentReviewingUid = null;
 let pendingApprovalType = null;
 let pendingApprovalTargetId = null;
 
+// Official RA 11861 Solo Parent Categories
+const soloParentCategories = {
+    "a1": "Birth of a child as a consequence of rape",
+    "a2": "Widow/widower (Death of spouse)",
+    "a3": "Spouse of person deprived of liberty (PDL)",
+    "a4": "Spouse of person with physical or mental incapacity",
+    "a5": "Due to legal or de facto separation",
+    "a6": "Due to nullity or annulment of marriage",
+    "a7": "Abandonment of spouse",
+    "b1": "Spouse of an OFW (Overseas Filipino Worker)",
+    "b2": "Relative of an OFW",
+    "c": "Unmarried mother / father",
+    "d": "Legal guardian",
+    "e": "Family member/relative",
+    "f": "Foster parent",
+};
+
 document.addEventListener('DOMContentLoaded', async function() {
     const firebaseConfig = { 
         apiKey: "AIzaSyBjO4P1-Ir_iJSkLScTiyshEd28GdskN24", 
@@ -109,30 +126,22 @@ window.reviewApplication = async function(authUid) {
     const fullName = `${userData.firstName || ''} ${userData.lastName || ''}`.trim();
     document.getElementById('v-avatar').innerText = (userData.firstName || "U").charAt(0).toUpperCase();
     document.getElementById('v-name-side').innerText = fullName;
-    document.getElementById('v-category').innerText = userData.category || 'N/A';
+    // Safely format the category code and fetch its description
+    const rawCategory = userData.category || '';
+    const catKey = rawCategory.toLowerCase().trim();
+    const catDescription = soloParentCategories[catKey];
+    
+    if (catDescription) {
+        // Displays: "a1 - Birth of a child as a consequence of rape"
+        document.getElementById('v-category').innerText = `${rawCategory} - ${catDescription}`;
+    } else {
+        // Fallback just in case the app sends an unexpected code
+        document.getElementById('v-category').innerText = rawCategory || 'N/A';
+    }
     document.getElementById('v-email').innerText = userData.email || 'N/A';
     document.getElementById('v-contact').innerText = userData.contact || 'N/A';
     document.getElementById('v-address').innerText = `${userData.barangay || ''}, ${userData.municipality || ''}`.replace(/^, | ,$/g, '') || 'N/A';
     document.getElementById('v-id-side').innerText = userData.soloParentIdNumber || 'N/A';
-
-    document.getElementById('v-name').innerText = fullName;
-    document.getElementById('v-email-right').innerText = userData.email || 'N/A';
-    document.getElementById('v-dob').innerText = userData.dateOfBirth || 'N/A';
-    document.getElementById('v-age').innerText = userData.age || 'N/A';
-    document.getElementById('v-sex').innerText = userData.sex || 'N/A';
-    document.getElementById('v-birthplace').innerText = userData.placeOfBirth || 'N/A';
-    document.getElementById('v-civil').innerText = userData.civilStatus || 'N/A';
-    document.getElementById('v-ethnicity').innerText = userData.ethnicity || 'N/A';
-    document.getElementById('v-religion').innerText = userData.religion || 'N/A';
-    document.getElementById('v-registered').innerText = userData.createdAt && userData.createdAt.toDate ? userData.createdAt.toDate().toLocaleDateString() : 'N/A';
-
-    document.getElementById('v-occupation').innerText = userData.occupation || 'N/A';
-    document.getElementById('v-company').innerText = userData.company || 'N/A';
-    document.getElementById('v-income').innerText = userData.monthlyIncome || 'N/A';
-    document.getElementById('v-children-count').innerText = Array.isArray(userData.childrenAges) ? userData.childrenAges.length : '0';
-    document.getElementById('v-children-ages').innerText = Array.isArray(userData.childrenAges) ? userData.childrenAges.join(', ') : 'N/A';
-    document.getElementById('v-philhealth-member').innerText = userData.philhealthIdNumber ? 'Yes' : 'No';
-    document.getElementById('v-philhealth-id').innerText = userData.philhealthIdNumber || 'N/A';
 
     const imgId = document.getElementById('v-img-id');
     const imgIdNone = document.getElementById('v-img-id-none');
@@ -234,10 +243,47 @@ window.reviewApplication = async function(authUid) {
         }
         feather.replace();
 
+        applyHighlight('v-name', fullName, officialData ? `${officialData.firstName || ''} ${officialData.lastName || ''}`.trim() : null);
+        applyHighlight('v-email-right', userData.email, officialData ? officialData.email : null);
+        applyHighlight('v-dob', userData.dateOfBirth, officialData ? officialData.dateOfBirth : null);
+        applyHighlight('v-age', userData.age, officialData ? officialData.age : null);
+        applyHighlight('v-sex', userData.sex, officialData ? officialData.sex : null);
+        applyHighlight('v-birthplace', userData.placeOfBirth, officialData ? officialData.placeOfBirth : null);
+        applyHighlight('v-civil', userData.civilStatus, officialData ? officialData.civilStatus : null);
+        applyHighlight('v-ethnicity', userData.ethnicity, officialData ? officialData.ethnicity : null);
+        applyHighlight('v-religion', userData.religion, officialData ? officialData.religion : null);
+        
+        // Format dates before comparing
+        let appRegDate = userData.createdAt && userData.createdAt.toDate ? userData.createdAt.toDate().toLocaleDateString() : 'N/A';
+        let offRegDate = officialData && officialData.registrationDate && officialData.registrationDate.toDate ? officialData.registrationDate.toDate().toLocaleDateString() : null;
+        applyHighlight('v-registered', appRegDate, offRegDate);
+
+        applyHighlight('v-occupation', userData.occupation, officialData ? officialData.occupation : null);
+        applyHighlight('v-company', userData.company, officialData ? officialData.company : null);
+        applyHighlight('v-income', userData.monthlyIncome, officialData ? officialData.monthlyIncome : null);
+        
+        let appChildCount = Array.isArray(userData.childrenAges) ? userData.childrenAges.length.toString() : '0';
+        let offChildCount = officialData && Array.isArray(officialData.childrenAges) ? officialData.childrenAges.length.toString() : null;
+        applyHighlight('v-children-count', appChildCount, offChildCount);
+        
+        let appChildAges = Array.isArray(userData.childrenAges) ? userData.childrenAges.join(', ') : 'N/A';
+        let offChildAges = officialData && Array.isArray(officialData.childrenAges) ? officialData.childrenAges.join(', ') : null;
+        applyHighlight('v-children-ages', appChildAges, offChildAges);
+
+        let appPhMember = userData.philhealthIdNumber ? 'Yes' : 'No';
+        let offPhMember = officialData ? (officialData.philhealthIdNumber ? 'Yes' : 'No') : null;
+        applyHighlight('v-philhealth-member', appPhMember, offPhMember);
+        
+        applyHighlight('v-philhealth-id', userData.philhealthIdNumber, officialData ? officialData.philhealthIdNumber : null);
+
+        feather.replace();
+
     } catch (error) {
         console.error("Database check failed:", error);
         vBox.innerHTML = `<p class="text-red-600 text-sm">Error checking database.</p>`;
     }
+
+
 };
 
 // ==========================================
@@ -419,3 +465,77 @@ window.executeReject = async function() {
         validateRejectForm(); 
     }
 };
+
+// ==========================================
+// 5. HIGHLIGHTING & STRING COMPARISON ENGINE
+// ==========================================
+function calculateSimilarity(appStr, officialStr) {
+    let s1 = String(appStr || "").trim().toLowerCase();
+    let s2 = String(officialStr || "").trim().toLowerCase();
+
+    if (s1 === s2) return 'exact';
+    if (s1 === "" || s2 === "") return 'mismatch';
+
+    // Check for partial inclusions (e.g., "Baguio" vs "Baguio City")
+    if (s1.includes(s2) || s2.includes(s1)) return 'partial';
+
+    // Levenshtein Distance Algorithm for Typo Detection
+    const costs = [];
+    for (let i = 0; i <= s1.length; i++) {
+        let lastValue = i;
+        for (let j = 0; j <= s2.length; j++) {
+            if (i === 0) costs[j] = j;
+            else {
+                if (j > 0) {
+                    let newValue = costs[j - 1];
+                    if (s1.charAt(i - 1) !== s2.charAt(j - 1)) {
+                        newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                    }
+                    costs[j - 1] = lastValue;
+                    lastValue = newValue;
+                }
+            }
+        }
+        if (i > 0) costs[s2.length] = lastValue;
+    }
+    
+    const distance = costs[s2.length];
+    const maxLen = Math.max(s1.length, s2.length);
+    
+    // If the edit distance is 1 or 2 characters on a decent sized word, it's a typo
+    if (distance <= 2 && maxLen >= 4) return 'partial'; 
+
+    return 'mismatch';
+}
+
+function applyHighlight(elementId, appVal, officialVal) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    
+    // Set the base text and remove any previous highlight classes
+    el.innerText = appVal || 'N/A';
+    el.className = "font-medium transition-colors duration-200"; 
+    el.removeAttribute("title"); // clear previous tooltip
+
+    // If there is no official record to compare to (New Member), keep it normal text
+    if (officialVal === undefined || officialVal === null) {
+        el.classList.add("text-gray-900");
+        return;
+    }
+
+    const matchType = calculateSimilarity(appVal, officialVal);
+    
+    if (matchType === 'exact') {
+        el.classList.add("text-gray-900");
+    } 
+    else if (matchType === 'partial') {
+        // Light Yellow-Orange for Typos
+        el.classList.add("bg-orange-100", "text-yellow-800", "px-1.5", "py-0.5", "rounded");
+        el.title = `Official LGU Record: ${officialVal || 'Empty'}`; 
+    } 
+    else {
+        // Solid Yellow-Orange for Mismatch
+        el.classList.add("bg-orange-300", "text-orange-900", "px-1.5", "py-0.5", "rounded");
+        el.title = `Official LGU Record: ${officialVal || 'Empty'}`;
+    }
+}
