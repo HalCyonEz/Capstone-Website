@@ -1,4 +1,4 @@
-console.log("🎯 application.js loaded - Zero Native Pop-ups, Bug-Free Approval");
+console.log("🎯 application.js loaded - Senior Developer Refactored Version");
 
 let pendingUsersCache = {};
 let currentReviewingUid = null; 
@@ -67,6 +67,28 @@ window.showNotification = function(title, message, type = 'success') {
 };
 
 // ==========================================
+// DATE NORMALIZER HELPER
+// ==========================================
+function normalizeDate(dateVal) {
+    if (!dateVal) return null;
+    
+    // If it's a Firestore Timestamp object, convert it
+    if (dateVal.toDate) {
+        dateVal = dateVal.toDate();
+    }
+    
+    // Parse the date (handles both "01/01/2000" strings and standard Date objects)
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return String(dateVal); // Fallback if it's unparseable text
+    
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+}
+
+// ==========================================
 // 1. LOAD PENDING APPLICATIONS
 // ==========================================
 async function loadPendingApplications() {
@@ -126,18 +148,18 @@ window.reviewApplication = async function(authUid) {
     const fullName = `${userData.firstName || ''} ${userData.lastName || ''}`.trim();
     document.getElementById('v-avatar').innerText = (userData.firstName || "U").charAt(0).toUpperCase();
     document.getElementById('v-name-side').innerText = fullName;
+    
     // Safely format the category code and fetch its description
     const rawCategory = userData.category || '';
     const catKey = rawCategory.toLowerCase().trim();
     const catDescription = soloParentCategories[catKey];
     
     if (catDescription) {
-        // Displays: "a1 - Birth of a child as a consequence of rape"
         document.getElementById('v-category').innerText = `${rawCategory} - ${catDescription}`;
     } else {
-        // Fallback just in case the app sends an unexpected code
         document.getElementById('v-category').innerText = rawCategory || 'N/A';
     }
+    
     document.getElementById('v-email').innerText = userData.email || 'N/A';
     document.getElementById('v-contact').innerText = userData.contact || 'N/A';
     document.getElementById('v-address').innerText = `${userData.barangay || ''}, ${userData.municipality || ''}`.replace(/^, | ,$/g, '') || 'N/A';
@@ -243,9 +265,14 @@ window.reviewApplication = async function(authUid) {
         }
         feather.replace();
 
+        // Apply Highlights and Dates
         applyHighlight('v-name', fullName, officialData ? `${officialData.firstName || ''} ${officialData.lastName || ''}`.trim() : null);
         applyHighlight('v-email-right', userData.email, officialData ? officialData.email : null);
-        applyHighlight('v-dob', userData.dateOfBirth, officialData ? officialData.dateOfBirth : null);
+        
+        let appDob = normalizeDate(userData.dateOfBirth);
+        let offDob = officialData ? normalizeDate(officialData.dateOfBirth) : null;
+        applyHighlight('v-dob', appDob, offDob);
+        
         applyHighlight('v-age', userData.age, officialData ? officialData.age : null);
         applyHighlight('v-sex', userData.sex, officialData ? officialData.sex : null);
         applyHighlight('v-birthplace', userData.placeOfBirth, officialData ? officialData.placeOfBirth : null);
@@ -253,9 +280,8 @@ window.reviewApplication = async function(authUid) {
         applyHighlight('v-ethnicity', userData.ethnicity, officialData ? officialData.ethnicity : null);
         applyHighlight('v-religion', userData.religion, officialData ? officialData.religion : null);
         
-        // Format dates before comparing
-        let appRegDate = userData.createdAt && userData.createdAt.toDate ? userData.createdAt.toDate().toLocaleDateString() : 'N/A';
-        let offRegDate = officialData && officialData.registrationDate && officialData.registrationDate.toDate ? officialData.registrationDate.toDate().toLocaleDateString() : null;
+        let appRegDate = userData.createdAt ? normalizeDate(userData.createdAt) : 'N/A';
+        let offRegDate = officialData && officialData.registrationDate ? normalizeDate(officialData.registrationDate) : null;
         applyHighlight('v-registered', appRegDate, offRegDate);
 
         applyHighlight('v-occupation', userData.occupation, officialData ? officialData.occupation : null);
@@ -282,8 +308,6 @@ window.reviewApplication = async function(authUid) {
         console.error("Database check failed:", error);
         vBox.innerHTML = `<p class="text-red-600 text-sm">Error checking database.</p>`;
     }
-
-
 };
 
 // ==========================================
@@ -297,7 +321,6 @@ window.openConfirmModal = function(type, targetId) {
     const desc = document.getElementById('confirm-modal-desc');
     const btn = document.getElementById('final-approve-btn');
 
-    // FIX 1: Explicitly unlock the button every time the modal opens
     btn.disabled = false;
 
     if (type === 'merge') {
@@ -343,7 +366,7 @@ window.executeFinalApproval = async function() {
                 is_online: true,
                 proofIdUrl: userData.proofIdUrl || null,
                 proofSoloParentUrl: userData.proofSoloParentUrl || null,
-                philhealthIdUrl: userData.philhealthIdUrl || null, // <-- ADD THIS LINE
+                philhealthIdUrl: userData.philhealthIdUrl || null,
                 lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
             });
 
@@ -358,8 +381,31 @@ window.executeFinalApproval = async function() {
                 ? window.db.collection("solo_parent_records").doc(cleanId) 
                 : window.db.collection("solo_parent_records").doc(); 
 
+            // Strict Data Mapping for Security Validation
             batch.set(newOfficialRef, {
-                ...userData,
+                firstName: userData.firstName || "",
+                lastName: userData.lastName || "",
+                soloParentIdNumber: searchId || "",
+                category: userData.category || "",
+                email: userData.email || "",
+                contact: userData.contact || "",
+                municipality: userData.municipality || "",
+                barangay: userData.barangay || "",
+                dateOfBirth: userData.dateOfBirth || "",
+                age: userData.age || null,
+                sex: userData.sex || "",
+                placeOfBirth: userData.placeOfBirth || "",
+                civilStatus: userData.civilStatus || "",
+                ethnicity: userData.ethnicity || "",
+                religion: userData.religion || "",
+                occupation: userData.occupation || "",
+                company: userData.company || "",
+                monthlyIncome: userData.monthlyIncome || "",
+                childrenAges: userData.childrenAges || [],
+                philhealthIdNumber: userData.philhealthIdNumber || "",
+                proofIdUrl: userData.proofIdUrl || null,
+                proofSoloParentUrl: userData.proofSoloParentUrl || null,
+                philhealthIdUrl: userData.philhealthIdUrl || null,
                 status: "approved",
                 is_online: true,
                 auth_uid: currentReviewingUid,
@@ -387,10 +433,7 @@ window.executeFinalApproval = async function() {
         closeModal('confirmApproveModal');
         showNotification("Error", "Failed to update database. Please check console for details.", "error");
     } finally {
-        // FIX 2: Safely reset the button in case it fails or finishes processing
-        if (confirmBtn) {
-            confirmBtn.disabled = false;
-        }
+        if (confirmBtn) confirmBtn.disabled = false;
     }
 };
 
@@ -476,10 +519,8 @@ function calculateSimilarity(appStr, officialStr) {
     if (s1 === s2) return 'exact';
     if (s1 === "" || s2 === "") return 'mismatch';
 
-    // Check for partial inclusions (e.g., "Baguio" vs "Baguio City")
     if (s1.includes(s2) || s2.includes(s1)) return 'partial';
 
-    // Levenshtein Distance Algorithm for Typo Detection
     const costs = [];
     for (let i = 0; i <= s1.length; i++) {
         let lastValue = i;
@@ -502,7 +543,6 @@ function calculateSimilarity(appStr, officialStr) {
     const distance = costs[s2.length];
     const maxLen = Math.max(s1.length, s2.length);
     
-    // If the edit distance is 1 or 2 characters on a decent sized word, it's a typo
     if (distance <= 2 && maxLen >= 4) return 'partial'; 
 
     return 'mismatch';
@@ -512,12 +552,10 @@ function applyHighlight(elementId, appVal, officialVal) {
     const el = document.getElementById(elementId);
     if (!el) return;
     
-    // Set the base text and remove any previous highlight classes
     el.innerText = appVal || 'N/A';
     el.className = "font-medium transition-colors duration-200"; 
-    el.removeAttribute("title"); // clear previous tooltip
+    el.removeAttribute("title"); 
 
-    // If there is no official record to compare to (New Member), keep it normal text
     if (officialVal === undefined || officialVal === null) {
         el.classList.add("text-gray-900");
         return;
@@ -529,12 +567,10 @@ function applyHighlight(elementId, appVal, officialVal) {
         el.classList.add("text-gray-900");
     } 
     else if (matchType === 'partial') {
-        // Light Yellow-Orange for Typos
         el.classList.add("bg-orange-100", "text-yellow-800", "px-1.5", "py-0.5", "rounded");
         el.title = `Official LGU Record: ${officialVal || 'Empty'}`; 
     } 
     else {
-        // Solid Yellow-Orange for Mismatch
         el.classList.add("bg-orange-300", "text-orange-900", "px-1.5", "py-0.5", "rounded");
         el.title = `Official LGU Record: ${officialVal || 'Empty'}`;
     }
