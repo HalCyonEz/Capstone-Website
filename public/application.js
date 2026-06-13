@@ -361,9 +361,14 @@ window.executeFinalApproval = async function() {
 
         if (type === 'merge') {
             const officialRecordRef = window.db.collection("solo_parent_records").doc(targetId);
+            
+            // FIX: We are now explicitly passing the email and contact from the mobile app 
+            // to update the legacy offline record.
             batch.update(officialRecordRef, {
                 auth_uid: currentReviewingUid,
                 is_online: true,
+                email: userData.email || "",          // <-- Added this
+                contact: userData.contact || "",      // <-- Added this (highly recommended)
                 proofIdUrl: userData.proofIdUrl || null,
                 proofSoloParentUrl: userData.proofSoloParentUrl || null,
                 philhealthIdUrl: userData.philhealthIdUrl || null,
