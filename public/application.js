@@ -257,7 +257,7 @@ window.reviewApplication = async function(authUid) {
 
         } else {
             vBox.className = "bg-blue-50 border border-blue-200 p-5 rounded-lg shadow-sm";
-            vBox.innerHTML = `<p class="text-blue-800 font-bold flex items-center text-lg"><i data-feather="info" class="mr-2"></i> No Official Record Found</p><p class="text-blue-700 text-sm mt-1">We could not find this ID or Name in the LGU database. Approving will create a brand new official LGU record.</p>`;
+            vBox.innerHTML = `<p class="text-blue-800 font-bold flex items-center text-lg"><i data-feather="info" class="mr-2"></i> No Official Record Found</p><p class="text-blue-700 text-sm mt-1">We could not find this ID or Name in the LGU database. Please double check whether he / she is a registered solo parent.</p>`;
             actionBtns.innerHTML = `
                 <button onclick="openConfirmModal('new', '${searchId}')" class="w-full bg-blue-600 text-white py-2.5 rounded-md font-bold hover:bg-blue-700 shadow-md flex items-center justify-center transition"><i data-feather="user-plus" class="w-4 h-4 mr-2"></i> Approve New Member</button>
                 ${btnReject}
