@@ -86,6 +86,71 @@ window.populateBarangays = function() {
     }
 };
 
+// 4. Auto-calculate Age based on Date of Birth
+document.getElementById('create-dob').addEventListener('change', function() {
+    const dobValue = this.value;
+    const ageInput = document.getElementById('create-age');
+
+    // If the secretary clears the date, clear the age
+    if (!dobValue) {
+        ageInput.value = '';
+        return;
+    }
+
+    const dob = new Date(dobValue);
+    const today = new Date();
+    
+    // Calculate the base year difference
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDifference = today.getMonth() - dob.getMonth();
+
+    // Adjust the age if the current month/day is BEFORE the birth month/day this year
+    if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < dob.getDate())) {
+        age--;
+    }
+
+    // Populate the field (prevent negative numbers just in case of typos)
+    ageInput.value = age >= 0 ? age : 0;
+});
+
+// 5. Solo Parent ID Auto-Formatter (Input Mask)
+document.getElementById('create-solo-parent-id').addEventListener('input', function(e) {
+    // 1. Strip out everything except letters and numbers, force uppercase
+    let rawValue = this.value.replace(/[^A-Z0-9]/ig, '').toUpperCase();
+    let formatted = '';
+
+    // 2. Loop through the raw characters and build the formatted string dynamically
+    for (let i = 0; i < rawValue.length; i++) {
+        let char = rawValue[i];
+
+        // Part 1: Year (First 2 characters MUST be numbers)
+        if (formatted.length < 2) {
+            if (/[0-9]/.test(char)) {
+                formatted += char;
+            }
+        }
+        // Part 2: Category Code (Next 3 characters can be LETTERS or NUMBERS)
+        else if (formatted.length < 6) { // Up to length 5 (including the dash)
+            if (formatted.length === 2) formatted += '-'; // Inject first dash
+            
+            if (/[A-Z0-9]/.test(char)) {
+                formatted += char;
+            }
+        }
+        // Part 3: Sequence Number (Last 5 characters MUST be numbers)
+        else if (formatted.length < 12) { // Up to length 11 (including both dashes)
+            if (formatted.length === 6) formatted += '-'; // Inject second dash
+            
+            if (/[0-9]/.test(char)) {
+                formatted += char;
+            }
+        }
+    }
+
+    // 3. Set the input bar to the perfectly formatted string
+    this.value = formatted;
+});
+
 window.createMemberRecord = async function() {
     // 1. Capture ALL fields including the new Solo Parent ID
     const soloParentId = document.getElementById('create-solo-parent-id').value.trim(); // <-- NEW

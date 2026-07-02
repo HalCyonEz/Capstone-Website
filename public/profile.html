@@ -58,6 +58,9 @@
             <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100"><i data-feather="file-text" class="mr-3"></i> Applications </a>
             <a href="renewals.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100"><i data-feather="refresh-cw" class="mr-3"></i> Renewals </a>
             <a href="announcements.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100"><i data-feather="bell" class="mr-3"></i> Announcements </a>
+            <div class="pt-4 mt-4 border-t border-gray-200"> 
+            <a href="archive.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100"><i data-feather="archive" class="mr-3"></i> Archive </a>
+            </div>
         </nav>
         <div class="p-4 border-t border-gray-200"><button id="logout-btn" class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"><i data-feather="log-out" class="mr-2"></i> Log Out</button></div>
     </div>
@@ -169,7 +172,24 @@
                             </div>
                         </div>
                     </div>
-
+                        <div id="val-img-philhealth-none" class="text-center py-2">
+                            <p class="text-sm text-gray-500 italic">This user doesn't / haven't uploaded their PhilHealth ID.</p>
+                        </div>
+                </div>
+            </div> 
+                    <div class="bg-red-50 p-6 rounded-lg shadow-sm border border-red-200 no-print mt-6">
+                            <h3 class="text-lg font-bold text-red-700 mb-2 flex items-center gap-2">
+                                <i data-feather="alert-triangle" class="w-5 h-5"></i>Add to Archive?</h3>
+                            <p class="text-sm text-red-600 mb-4 opacity-90">Archiving this account will immediately remove it from the active directory and disable mobile app access. This action can be undone from the Archives.</p>
+                            
+                            <button id="btn-archive-account" onclick="window.archiveUserAccount()" class="bg-white text-red-600 border border-red-300 px-4 py-2 rounded-md text-sm font-bold hover:bg-red-600 hover:text-white transition flex items-center gap-2 shadow-sm">
+                                <i data-feather="archive" class="w-4 h-4"></i> Freeze & Archive Account
+                            </button>
+                    </div>
+                </div> 
+            </div> 
+                </div> 
+                    </div>
                 </div>
             </div>
         </div>
@@ -281,6 +301,29 @@
             <button onclick="window.closeModal('notificationModal')" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2.5 bg-blue-600 text-base font-bold text-white hover:bg-blue-700 transition">
                 OK, Got it
             </button>
+        </div>
+    </div>
+    
+    <div id="archiveConfirmModal" class="fixed inset-0 bg-gray-900 bg-opacity-70 hidden z-[70] flex items-center justify-center px-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-red-100">
+            <div class="bg-red-50 p-6 flex flex-col items-center text-center border-b border-red-100">
+                <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-3">
+                    <i data-feather="alert-triangle" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-xl font-bold text-red-700">Archive Account</h3>
+                <p class="text-sm text-red-600 mt-1">This will immediately deactivate the user's access.</p>
+            </div>
+            <div class="p-6 bg-white">
+                <label class="block text-xs font-bold text-gray-700 mb-2 uppercase">Reason for Archiving (Required)</label>
+                <textarea id="archive-reason-input" rows="3" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none resize-none placeholder-gray-400" placeholder="e.g., Passed away, Disqualified as Solo Parent, Moved to another municipality..."></textarea>
+
+                <div class="flex gap-3 mt-6">
+                    <button onclick="window.closeModal('archiveConfirmModal')" class="flex-1 px-4 py-2.5 text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg text-sm font-bold transition">Cancel</button>
+                    <button id="btn-confirm-archive" onclick="window.executeArchive()" class="flex-1 px-4 py-2.5 bg-red-600 text-white hover:bg-red-700 rounded-lg text-sm font-bold shadow-md transition flex items-center justify-center gap-2">
+                        <i data-feather="archive" class="w-4 h-4"></i> Confirm
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 

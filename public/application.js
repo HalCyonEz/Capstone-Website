@@ -265,42 +265,62 @@ window.reviewApplication = async function(authUid) {
         }
         feather.replace();
 
-        // Apply Highlights and Dates
-        applyHighlight('v-name', fullName, officialData ? `${officialData.firstName || ''} ${officialData.lastName || ''}`.trim() : null);
-        applyHighlight('v-email-right', userData.email, officialData ? officialData.email : null);
+        // ==========================================
+        // APPLY HIGHLIGHTS & DATES WITH FALLBACK
+        // ==========================================
         
-        let appDob = normalizeDate(userData.dateOfBirth);
+        // Helper: If mobile data is blank, fallback to official legacy data
+        const getDisplayVal = (appVal, offVal) => {
+            if (appVal !== undefined && appVal !== null && String(appVal).trim() !== "") {
+                return appVal; 
+            }
+            return offVal !== undefined ? offVal : null;
+        };
+
+        let dispName = getDisplayVal(fullName, officialData ? `${officialData.firstName || ''} ${officialData.lastName || ''}`.trim() : null);
+        applyHighlight('v-name', dispName, officialData ? `${officialData.firstName || ''} ${officialData.lastName || ''}`.trim() : null);
+        
+        applyHighlight('v-email-right', getDisplayVal(userData.email, officialData ? officialData.email : null), officialData ? officialData.email : null);
+        
+        let rawAppDob = getDisplayVal(userData.dateOfBirth, officialData ? officialData.dateOfBirth : null);
+        let appDob = normalizeDate(rawAppDob);
         let offDob = officialData ? normalizeDate(officialData.dateOfBirth) : null;
         applyHighlight('v-dob', appDob, offDob);
         
-        applyHighlight('v-age', userData.age, officialData ? officialData.age : null);
-        applyHighlight('v-sex', userData.sex, officialData ? officialData.sex : null);
-        applyHighlight('v-birthplace', userData.placeOfBirth, officialData ? officialData.placeOfBirth : null);
-        applyHighlight('v-civil', userData.civilStatus, officialData ? officialData.civilStatus : null);
-        applyHighlight('v-ethnicity', userData.ethnicity, officialData ? officialData.ethnicity : null);
-        applyHighlight('v-religion', userData.religion, officialData ? officialData.religion : null);
+        applyHighlight('v-age', getDisplayVal(userData.age, officialData ? officialData.age : null), officialData ? officialData.age : null);
+        applyHighlight('v-sex', getDisplayVal(userData.sex, officialData ? officialData.sex : null), officialData ? officialData.sex : null);
+        applyHighlight('v-birthplace', getDisplayVal(userData.placeOfBirth, officialData ? officialData.placeOfBirth : null), officialData ? officialData.placeOfBirth : null);
+        applyHighlight('v-civil', getDisplayVal(userData.civilStatus, officialData ? officialData.civilStatus : null), officialData ? officialData.civilStatus : null);
+        applyHighlight('v-ethnicity', getDisplayVal(userData.ethnicity, officialData ? officialData.ethnicity : null), officialData ? officialData.ethnicity : null);
+        applyHighlight('v-religion', getDisplayVal(userData.religion, officialData ? officialData.religion : null), officialData ? officialData.religion : null);
         
-        let appRegDate = userData.createdAt ? normalizeDate(userData.createdAt) : 'N/A';
+        let rawAppReg = getDisplayVal(userData.createdAt, officialData ? officialData.registrationDate : null);
+        let appRegDate = rawAppReg ? normalizeDate(rawAppReg) : 'N/A';
         let offRegDate = officialData && officialData.registrationDate ? normalizeDate(officialData.registrationDate) : null;
         applyHighlight('v-registered', appRegDate, offRegDate);
 
-        applyHighlight('v-occupation', userData.occupation, officialData ? officialData.occupation : null);
-        applyHighlight('v-company', userData.company, officialData ? officialData.company : null);
-        applyHighlight('v-income', userData.monthlyIncome, officialData ? officialData.monthlyIncome : null);
+        applyHighlight('v-occupation', getDisplayVal(userData.occupation, officialData ? officialData.occupation : null), officialData ? officialData.occupation : null);
+        applyHighlight('v-company', getDisplayVal(userData.company, officialData ? officialData.company : null), officialData ? officialData.company : null);
+        applyHighlight('v-income', getDisplayVal(userData.monthlyIncome, officialData ? officialData.monthlyIncome : null), officialData ? officialData.monthlyIncome : null);
         
-        let appChildCount = Array.isArray(userData.childrenAges) ? userData.childrenAges.length.toString() : '0';
+        // Arrays require a special length check
+        let hasAppChildren = Array.isArray(userData.childrenAges) && userData.childrenAges.length > 0;
+        let finalChildrenArray = hasAppChildren ? userData.childrenAges : (officialData && Array.isArray(officialData.childrenAges) ? officialData.childrenAges : []);
+        
+        let appChildCount = finalChildrenArray.length.toString();
         let offChildCount = officialData && Array.isArray(officialData.childrenAges) ? officialData.childrenAges.length.toString() : null;
         applyHighlight('v-children-count', appChildCount, offChildCount);
         
-        let appChildAges = Array.isArray(userData.childrenAges) ? userData.childrenAges.join(', ') : 'N/A';
+        let appChildAges = finalChildrenArray.length > 0 ? finalChildrenArray.join(', ') : 'N/A';
         let offChildAges = officialData && Array.isArray(officialData.childrenAges) ? officialData.childrenAges.join(', ') : null;
         applyHighlight('v-children-ages', appChildAges, offChildAges);
 
-        let appPhMember = userData.philhealthIdNumber ? 'Yes' : 'No';
+        let rawPhId = getDisplayVal(userData.philhealthIdNumber, officialData ? officialData.philhealthIdNumber : null);
+        let appPhMember = rawPhId ? 'Yes' : 'No';
         let offPhMember = officialData ? (officialData.philhealthIdNumber ? 'Yes' : 'No') : null;
         applyHighlight('v-philhealth-member', appPhMember, offPhMember);
         
-        applyHighlight('v-philhealth-id', userData.philhealthIdNumber, officialData ? officialData.philhealthIdNumber : null);
+        applyHighlight('v-philhealth-id', rawPhId, officialData ? officialData.philhealthIdNumber : null);
 
         feather.replace();
 
@@ -362,64 +382,40 @@ window.executeFinalApproval = async function() {
         if (type === 'merge') {
             const officialRecordRef = window.db.collection("solo_parent_records").doc(targetId);
             
-            // FIX: We are now explicitly passing the email and contact from the mobile app 
-            // to update the legacy offline record.
-            batch.update(officialRecordRef, {
+            // Build an update object dynamically.
+            let updatePayload = {
                 auth_uid: currentReviewingUid,
                 is_online: true,
-                email: userData.email || "",          // <-- Added this
-                contact: userData.contact || "",      // <-- Added this (highly recommended)
-                proofIdUrl: userData.proofIdUrl || null,
-                proofSoloParentUrl: userData.proofSoloParentUrl || null,
-                philhealthIdUrl: userData.philhealthIdUrl || null,
                 lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            };
+
+            // Helper: Only transfer fields if the mobile app actually provided them
+            const safeTransfer = (key) => {
+                if (userData[key] !== undefined && userData[key] !== null && String(userData[key]).trim() !== "") {
+                    updatePayload[key] = userData[key];
+                }
+            };
+
+            safeTransfer('email');
+            safeTransfer('contact');
+            safeTransfer('occupation');
+            safeTransfer('company');
+            safeTransfer('monthlyIncome');
+            safeTransfer('civilStatus');
+            safeTransfer('barangay');
+            safeTransfer('municipality');
+            safeTransfer('philhealthIdNumber');
+            
+            if (userData.proofIdUrl) updatePayload.proofIdUrl = userData.proofIdUrl;
+            if (userData.proofSoloParentUrl) updatePayload.proofSoloParentUrl = userData.proofSoloParentUrl;
+            if (userData.philhealthIdUrl) updatePayload.philhealthIdUrl = userData.philhealthIdUrl;
+
+            // Execute the smart merge
+            batch.update(officialRecordRef, updatePayload);
 
             batch.update(mobileUserRef, {
                 status: "approved",
                 record_id: targetId,
-                approvedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        } else if (type === 'new') {
-            let cleanId = targetId ? targetId.trim() : null;
-            const newOfficialRef = cleanId 
-                ? window.db.collection("solo_parent_records").doc(cleanId) 
-                : window.db.collection("solo_parent_records").doc(); 
-
-            // Strict Data Mapping for Security Validation
-            batch.set(newOfficialRef, {
-                firstName: userData.firstName || "",
-                lastName: userData.lastName || "",
-                soloParentIdNumber: searchId || "",
-                category: userData.category || "",
-                email: userData.email || "",
-                contact: userData.contact || "",
-                municipality: userData.municipality || "",
-                barangay: userData.barangay || "",
-                dateOfBirth: userData.dateOfBirth || "",
-                age: userData.age || null,
-                sex: userData.sex || "",
-                placeOfBirth: userData.placeOfBirth || "",
-                civilStatus: userData.civilStatus || "",
-                ethnicity: userData.ethnicity || "",
-                religion: userData.religion || "",
-                occupation: userData.occupation || "",
-                company: userData.company || "",
-                monthlyIncome: userData.monthlyIncome || "",
-                childrenAges: userData.childrenAges || [],
-                philhealthIdNumber: userData.philhealthIdNumber || "",
-                proofIdUrl: userData.proofIdUrl || null,
-                proofSoloParentUrl: userData.proofSoloParentUrl || null,
-                philhealthIdUrl: userData.philhealthIdUrl || null,
-                status: "approved",
-                is_online: true,
-                auth_uid: currentReviewingUid,
-                registrationDate: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            batch.update(mobileUserRef, {
-                status: "approved",
-                record_id: newOfficialRef.id,
                 approvedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
         }

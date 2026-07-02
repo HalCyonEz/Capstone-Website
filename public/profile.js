@@ -380,3 +380,76 @@ window.saveProfileEdits = async function() {
         if (typeof feather !== 'undefined') feather.replace();
     }
 };
+
+// ==========================================
+// 🚨 DANGER ZONE: ARCHIVE ACCOUNT WITH REASON
+// ==========================================
+
+// 1. Opens the custom modal
+window.archiveUserAccount = function() {
+    if (!currentDocId) {
+        window.showNotification("Error", "Cannot find User ID to archive.", "error");
+        return;
+    }
+    // 🔴 FIXED: Now matching the exact ID in your HTML
+    document.getElementById('archive-reason-input').value = ""; 
+    document.getElementById('archiveConfirmModal').classList.remove('hidden');
+};
+
+// 2. Executes the database update
+// 🔴 FIXED: Renamed to match the onclick="window.executeArchive()" in your HTML
+window.executeArchive = async function() {
+    // 🔴 FIXED: Now matching the exact ID in your HTML
+    const reasonInput = document.getElementById('archive-reason-input').value.trim();
+    
+    // Validate that they typed something
+    if (!reasonInput) {
+        alert("Please provide a reason before archiving.");
+        document.getElementById('archive-reason-input').focus();
+        return;
+    }
+
+    // Set button loading state
+    const btn = document.getElementById('btn-confirm-archive');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i data-feather="loader" class="animate-spin w-4 h-4 mr-2 inline"></i> Processing...';
+    btn.disabled = true;
+    if (typeof feather !== 'undefined') feather.replace();
+
+    try {
+        const batch = writeBatch(db);
+        const archiveData = {
+            isArchived: true,
+            status: 'Archived',
+            archiveReason: reasonInput, // Saving the reason to the database
+            archivedAt: serverTimestamp()
+        };
+
+        if (isOfficialRecord) {
+            const officialRef = doc(db, "solo_parent_records", currentDocId);
+            batch.update(officialRef, archiveData);
+
+            if (linkedAuthUid) {
+                const userRef = doc(db, "users", linkedAuthUid);
+                batch.update(userRef, archiveData);
+            }
+        } else {
+            const userRef = doc(db, "users", currentDocId);
+            batch.update(userRef, archiveData);
+        }
+
+        await batch.commit();
+        
+        alert("Account successfully archived. Redirecting to directory...");
+        window.location.href = 'members.html'; 
+        
+    } catch (error) {
+        console.error("Error archiving account:", error);
+        window.showNotification("Archive Failed", "Failed to archive the account: " + error.message, "error");
+        
+        // Reset button on failure
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        if (typeof feather !== 'undefined') feather.replace();
+    }
+};

@@ -1,19 +1,20 @@
-// public/renewals.js - FULL FIXED VERSION
+// public/renewals.js - FINAL PARITY VERSION (WITH FULL SAVING & HIGHLIGHT FIXES)
 
 console.log("🎯 renewals.js loaded!");
 
 let cachedRenewals = {};
 let rejectTargetId = null;
 let rejectTargetUserId = null;
+let approveId = null;
+let approveUserId = null;
 let pendingRejectReason = "";
 
 document.addEventListener('DOMContentLoaded', async function() {
+    feather.replace();
     const tbody = document.getElementById('renewals-table-body');
     if (!tbody) return;
 
     try {
-        tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">Loading, please wait...</td></tr>';
-
         const firebaseConfig = {
             apiKey: "AIzaSyBjO4P1-Ir_iJSkLScTiyshEd28GdskN24",
             authDomain: "solo-parent-app.firebaseapp.com",
@@ -26,15 +27,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         const db = firebase.firestore();
-        console.log("✅ Firebase initialized");
 
-        // Load Data - Try 'renewal_status' first
+        // Load Data
         let snapshot = await db.collection("renewalSubmissions").where("renewal_status", "==", "pending").get();
-
-        // Fallback for older data
-        if (snapshot.empty) {
-            snapshot = await db.collection("renewalSubmissions").where("status", "==", "pending").get();
-        }
+        if (snapshot.empty) snapshot = await db.collection("renewalSubmissions").where("status", "==", "pending").get();
 
         if (snapshot.empty) {
             tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-yellow-500">ℹ️ No pending renewals.</td></tr>`;
@@ -60,208 +56,334 @@ function displayRenewals(snapshot, tbody) {
         const row = document.createElement('tr');
         row.className = "hover:bg-gray-50 border-b";
         row.innerHTML = `
-            <td class="px-6 py-4 font-bold text-gray-900">${name}</td>
-            <td class="px-6 py-4 text-sm text-gray-600">ID Renewal</td>
-            <td class="px-6 py-4 text-sm text-gray-500">${date}</td>
-            <td class="px-6 py-4"><span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-bold">Pending</span></td>
-            <td class="px-6 py-4 text-right">
-                <button class="bg-blue-600 text-white px-3 py-1 rounded text-xs mr-2 hover:bg-blue-700" onclick="handleView('${doc.id}')">View</button>
-                <button class="bg-green-600 text-white px-3 py-1 rounded text-xs mr-2 hover:bg-green-700" onclick="handleApprove('${doc.id}', '${data.userId}')">Approve</button>
-                <button class="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700" onclick="openRejectModal('${doc.id}', '${data.userId}')">Reject</button>
+            <td class="p-4 font-bold text-gray-900">${name}</td>
+            <td class="p-4 text-sm text-gray-600">ID Renewal</td>
+            <td class="p-4 text-sm text-gray-500">${date}</td>
+            <td class="p-4"><span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full border border-yellow-200 font-bold">Pending</span></td>
+            <td class="p-4 text-right">
+                <button class="bg-blue-600 text-white px-4 py-1.5 rounded text-xs font-medium hover:bg-blue-700 transition shadow-sm" onclick="handleView('${doc.id}')">Review Form</button>
             </td>
         `;
         tbody.appendChild(row);
     });
 }
 
-// --- ACTIONS ---
+// ==========================================
+// STRING COMPARISON ENGINE (Fixed Blank Value Handling)
+// ==========================================
+function calculateSimilarity(appStr, officialStr) {
+    let s1 = String(appStr || "").trim().toLowerCase();
+    let s2 = String(officialStr || "").trim().toLowerCase();
 
-// FULL View Modal Logic
-window.handleView = function(id) {
-    const data = cachedRenewals[id];
-    if (!data) return;
+    if (s1 === s2) return 'exact';
+    if (s1 === "" || s2 === "") return 'mismatch';
 
-    // Helper to safely set text
-    const setText = (id, val) => {
-        const el = document.getElementById(id);
-        if(el) el.textContent = val || "N/A";
-    };
+    if (s1.includes(s2) || s2.includes(s1)) return 'partial';
 
-    // Helper to handle images
+    const costs = [];
+    for (let i = 0; i <= s1.length; i++) {
+        let lastValue = i;
+        for (let j = 0; j <= s2.length; j++) {
+            if (i === 0) costs[j] = j;
+            else {
+                if (j > 0) {
+                    let newValue = costs[j - 1];
+                    if (s1.charAt(i - 1) !== s2.charAt(j - 1)) {
+                        newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                    }
+                    costs[j - 1] = lastValue;
+                    lastValue = newValue;
+                }
+            }
+        }
+        if (i > 0) costs[s2.length] = lastValue;
+    }
+    
+    const distance = costs[s2.length];
+    const maxLen = Math.max(s1.length, s2.length);
+    
+    if (distance <= 2 && maxLen >= 4) return 'partial'; 
+
+    return 'mismatch';
+}
+
+function applyHighlight(elementId, appVal, officialVal) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    
+    let safeApp = appVal !== undefined && appVal !== null ? String(appVal).trim() : "";
+    let safeOld = officialVal !== undefined && officialVal !== null ? String(officialVal).trim() : "";
+
+    el.innerText = safeApp || 'N/A';
+    el.className = "font-medium transition-colors duration-200 cursor-default"; 
+    el.removeAttribute("title"); 
+
+    // If both are exact matches or both are blank, no highlight
+    if (safeApp === safeOld) {
+        el.classList.add("text-gray-900");
+        return;
+    }
+
+    // If old was completely blank, it's a new input, highlight it heavily!
+    if (safeOld === "") {
+        el.classList.add("bg-orange-300", "text-orange-900", "px-1.5", "py-0.5", "rounded");
+        el.title = `Previous Record: Blank / No Data`;
+        return;
+    }
+
+    // Use similarity checker for typos vs entirely new information
+    const matchType = calculateSimilarity(safeApp, safeOld);
+    
+    if (matchType === 'exact') {
+        el.classList.add("text-gray-900");
+    } 
+    else if (matchType === 'partial') {
+        el.classList.add("bg-orange-100", "text-yellow-800", "px-1.5", "py-0.5", "rounded");
+        el.title = `Previous Record: ${safeOld}`; 
+    } 
+    else {
+        el.classList.add("bg-orange-300", "text-orange-900", "px-1.5", "py-0.5", "rounded");
+        el.title = `Previous Record: ${safeOld}`;
+    }
+}
+
+// ==========================================
+// FULL VIEW MODAL LOGIC
+// ==========================================
+window.handleView = async function(id) {
+    const newData = cachedRenewals[id];
+    if (!newData) return;
+
+    document.getElementById('viewModal').classList.remove('hidden');
+    const loadingBox = document.getElementById('verification-status-box');
+    if (loadingBox) loadingBox.classList.remove('hidden');
+
+    const db = firebase.firestore();
+    let oldData = {};
+    try {
+        const userDoc = await db.collection("users").doc(newData.userId).get();
+        if (userDoc.exists) oldData = userDoc.data();
+    } catch (e) {
+        console.error("Could not fetch user profile:", e);
+    }
+    
+    if (loadingBox) loadingBox.classList.add('hidden');
+
     const setImg = (imgId, noImgId, url) => {
         const imgEl = document.getElementById(imgId);
         const txtEl = document.getElementById(noImgId);
-        
         if (url && url.length > 5) {
-            imgEl.src = url;
-            imgEl.classList.remove('hidden');
-            txtEl.classList.add('hidden');
+            imgEl.src = url; imgEl.classList.remove('hidden'); txtEl.classList.add('hidden');
         } else {
-            imgEl.classList.add('hidden');
-            txtEl.classList.remove('hidden');
+            imgEl.classList.add('hidden'); txtEl.classList.remove('hidden');
         }
     };
     
-    // 1. Address Logic
-    let addressParts = [data.houseNumber, data.streetName, data.subdivision].filter(Boolean).join(' ');
-    if (data.barangay) addressParts += (addressParts ? ', ' : '') + data.barangay;
-    if (data.municipality || data.city) addressParts += ', ' + (data.municipality || data.city);
-    // Fallback
-    if (!addressParts && data.address) addressParts = data.address;
+    const fullName = `${newData.firstName || ''} ${newData.middleInitial ? newData.middleInitial + '.' : ''} ${newData.lastName || ''}`.trim();
+    const oldFullName = `${oldData.firstName || ''} ${oldData.middleInitial ? oldData.middleInitial + '.' : ''} ${oldData.lastName || ''}`.trim();
     
-    setText('m-address', addressParts);
-
-    // 2. Personal Info
-    const fullName = `${data.firstName || ''} ${data.middleInitial ? data.middleInitial + '.' : ''} ${data.lastName || ''}`.trim();
-    setText('m-fullname', fullName);
-    setText('m-email', data.email);
-    setText('m-dob', data.dateOfBirth);
-    setText('m-age', data.age);
-    setText('m-sex', data.sex);
-    setText('m-pob', data.placeOfBirth);
-    setText('m-civil', data.civilStatus);
-    setText('m-ethnicity', data.ethnicity);
-    setText('m-religion', data.religion);
-
-    // 3. Family & Employment
-    setText('m-occupation', data.occupation);
-    setText('m-company', data.companyAgency);
-    setText('m-income', data.monthlyIncome);
-    setText('m-numChildren', data.numberOfChildren);
+    document.getElementById('r-name-side').textContent = fullName;
+    document.getElementById('r-avatar').textContent = newData.firstName ? newData.firstName.charAt(0).toUpperCase() : "U";
     
-    let kidsAges = "None";
-    if (Array.isArray(data.childrenAges) && data.childrenAges.length > 0) {
-        kidsAges = data.childrenAges.join(', ');
-    }
-    setText('m-childrenAges', kidsAges);
+    // Sidebar Highlighting
+    applyHighlight('r-email', newData.email, oldData.email);
+    let newAddress = [newData.houseNumber, newData.streetName || newData.street, newData.subdivision, newData.barangay, newData.municipality || newData.city].filter(Boolean).join(', ');
+    let oldAddress = [oldData.houseNumber, oldData.streetName || oldData.street, oldData.subdivision, oldData.barangay, oldData.municipality || oldData.city].filter(Boolean).join(', ');
+    applyHighlight('r-address', newAddress || newData.address, oldAddress || oldData.address);
 
-    setText('m-hasPhilhealth', data.hasPhilhealth ? "Yes" : "No");
-    setText('m-philId', data.philhealthIdNumber);
+    // Personal Information Highlighting
+    applyHighlight('r-name', fullName, oldFullName);
+    applyHighlight('r-email-right', newData.email, oldData.email);
+    applyHighlight('r-dob', newData.dateOfBirth, oldData.dateOfBirth);
+    applyHighlight('r-age', String(newData.age || ''), String(oldData.age || ''));
+    applyHighlight('r-sex', newData.sex, oldData.sex);
+    applyHighlight('r-birthplace', newData.placeOfBirth, oldData.placeOfBirth);
+    applyHighlight('r-civil', newData.civilStatus, oldData.civilStatus);
+    applyHighlight('r-ethnicity', newData.ethnicity, oldData.ethnicity);
+    applyHighlight('r-religion', newData.religion, oldData.religion);
 
-    // 4. Images
-    setImg('img-validId', 'no-img-validId', data.proofIdUrl);
-    setImg('img-soloParent', 'no-img-soloParent', data.proofSoloParentUrl);
-    setImg('img-philhealth', 'no-img-philhealth', data.philhealthIdUrl);
+    const submitDate = newData.submittedAt ? newData.submittedAt.toDate().toLocaleDateString() : 'N/A';
+    document.getElementById('r-registered').textContent = submitDate;
+
+    // Family & Employment Highlighting
+    applyHighlight('r-occupation', newData.occupation, oldData.occupation);
+    applyHighlight('r-company', newData.companyAgency, oldData.companyAgency);
+    applyHighlight('r-income', newData.monthlyIncome, oldData.monthlyIncome);
+    applyHighlight('r-children-count', String(newData.numberOfChildren || ''), String(oldData.numberOfChildren || ''));
     
-    document.getElementById('viewModal').classList.remove('hidden');
+    let newKidsAges = Array.isArray(newData.childrenAges) && newData.childrenAges.length > 0 ? newData.childrenAges.join(', ') : "None";
+    let oldKidsAges = Array.isArray(oldData.childrenAges) && oldData.childrenAges.length > 0 ? oldData.childrenAges.join(', ') : "None";
+    applyHighlight('r-children-ages', newKidsAges, oldKidsAges);
+
+    // Philhealth Fix: Base Member Status purely on whether an ID exists
+    let newPhMember = newData.philhealthIdNumber ? "Yes" : "No";
+    let oldPhMember = oldData.philhealthIdNumber ? "Yes" : "No";
+    applyHighlight('r-philhealth-member', newPhMember, oldPhMember);
+    applyHighlight('r-philhealth-id', newData.philhealthIdNumber, oldData.philhealthIdNumber);
+
+    // Document Images
+    setImg('r-img-id', 'r-img-id-none', newData.proofIdUrl);
+    setImg('r-img-sp', 'r-img-sp-none', newData.proofSoloParentUrl);
+    setImg('r-img-ph', 'r-img-ph-none', newData.philhealthIdUrl);
+    
+    document.getElementById('btn-approve-view').onclick = () => { closeModal(); confirmApprove(id, newData.userId); };
+    document.getElementById('btn-reject-view').onclick = () => { closeModal(); openRejectModal(id, newData.userId); };
 };
 
 window.closeModal = function() { document.getElementById('viewModal').classList.add('hidden'); };
 
-// Approve Logic
-window.handleApprove = async function(submissionId, userId) {
-    if (!confirm("Approve this renewal?")) return;
-    try {
-        const db = firebase.firestore();
-        const batch = db.batch();
+// ==========================================
+// APPROVE LOGIC (Fully saves all profile data to user doc)
+// ==========================================
+window.confirmApprove = function(subId, userId) {
+    approveId = subId; approveUserId = userId;
+    document.getElementById('confirm-title').innerText = "Confirm Approval";
+    document.getElementById('confirm-message').innerText = "Approve renewal? This will UPDATE the user's profile with all new information permanently.";
+    
+    const btn = document.getElementById('confirm-btn-action');
+    btn.className = "px-5 py-2 bg-green-600 text-white hover:bg-green-700 rounded-md text-sm font-bold shadow transition flex items-center";
+    btn.innerHTML = '<i data-feather="check-circle" class="w-4 h-4 mr-2"></i> Yes, Approve';
+    
+    btn.onclick = async () => {
+        btn.innerHTML = '<i data-feather="loader" class="animate-spin w-4 h-4 mr-2 inline"></i> Updating...';
+        btn.disabled = true;
+        feather.replace();
 
-        batch.update(db.collection("renewalSubmissions").doc(submissionId), { status: "approved", renewal_status: "approved", reviewedDate: firebase.firestore.FieldValue.serverTimestamp() });
-        batch.update(db.collection("users").doc(userId), { renewal_status: "approved", lastRenewalDate: firebase.firestore.FieldValue.serverTimestamp() });
+        try {
+            const db = firebase.firestore();
+            const batch = db.batch();
+            const newData = cachedRenewals[approveId];
 
-        await batch.commit();
-        showSuccessModal("Renewal Approved!");
-    } catch (error) { alert("Error: " + error.message); }
+            // 1. Mark Renewal as Approved
+            batch.update(db.collection("renewalSubmissions").doc(approveId), { 
+                status: "approved", 
+                renewal_status: "approved", 
+                reviewedDate: firebase.firestore.FieldValue.serverTimestamp() 
+            });
+
+            // 2. Overwrite User Profile with ALL Incoming Data
+            batch.update(db.collection("users").doc(approveUserId), {
+                renewal_status: "approved",
+                lastRenewalDate: firebase.firestore.FieldValue.serverTimestamp(),
+                
+                // Personal Information
+                firstName: newData.firstName || "",
+                lastName: newData.lastName || "",
+                middleInitial: newData.middleInitial || "",
+                dateOfBirth: newData.dateOfBirth || "",
+                age: newData.age || 0,
+                sex: newData.sex || "",
+                placeOfBirth: newData.placeOfBirth || "",
+                religion: newData.religion || "",
+                ethnicity: newData.ethnicity || "",
+                civilStatus: newData.civilStatus || "",
+                email: newData.email || "",
+                
+                // Employment & Demographics
+                occupation: newData.occupation || "", 
+                monthlyIncome: newData.monthlyIncome || "",
+                companyAgency: newData.companyAgency || "", 
+                
+                // Address
+                houseNumber: newData.houseNumber || "", 
+                streetName: newData.streetName || newData.street || "",
+                subdivision: newData.subdivision || "", 
+                barangay: newData.barangay || "", 
+                municipality: newData.municipality || newData.city || "",
+                
+                // Family
+                numberOfChildren: newData.numberOfChildren || 0, 
+                childrenAges: newData.childrenAges || [],
+                
+                // Official IDs and Proofs
+                philhealthIdNumber: newData.philhealthIdNumber || "",
+                hasPhilhealth: newData.philhealthIdNumber ? true : false,
+                proofIdUrl: newData.proofIdUrl || "",
+                proofSoloParentUrl: newData.proofSoloParentUrl || "",
+                philhealthIdUrl: newData.philhealthIdUrl || ""
+            });
+
+            await batch.commit();
+            document.getElementById('confirmModal').classList.add('hidden');
+            showSuccessModal("Approved & Profile Updated!");
+        } catch (e) {
+            alert("Error: " + e.message);
+            document.getElementById('confirmModal').classList.add('hidden');
+            btn.disabled = false;
+        }
+    };
+    document.getElementById('confirmModal').classList.remove('hidden');
+    feather.replace();
 };
 
-// ============================
-//    REJECT LOGIC (UPDATED)
-// ============================
+// ==========================================
+// REJECT LOGIC
+// ==========================================
+window.openRejectModal = function(subId, userId) { 
+    rejectTargetId = subId; rejectTargetUserId = userId;
+    document.getElementById('reject-select').value = ""; document.getElementById('reject-reason-text').value = "";
+    handleRejectValidation();
+    document.getElementById('rejectModal').classList.remove('hidden'); 
+};
+window.closeRejectModal = () => document.getElementById('rejectModal').classList.add('hidden');
 
-        window.openRejectModal = function(subId, userId) { 
-            rejectTargetId = subId; 
-            rejectUserId = userId;
-            
-            // Reset Fields
-            document.getElementById('reject-select').value = "";
-            document.getElementById('reject-reason-text').value = "";
-            
-            // Reset Button State
-            handleRejectValidation();
-            
-            document.getElementById('rejectModal').classList.remove('hidden'); 
-        };
+window.handleRejectValidation = function() {
+    const selectVal = document.getElementById('reject-select').value;
+    const textVal = document.getElementById('reject-reason-text').value.trim();
+    const btn = document.getElementById('btn-reject-submit');
 
-        window.closeRejectModal = () => document.getElementById('rejectModal').classList.add('hidden');
+    let isValid = false;
+    if (!selectVal) isValid = false;
+    else if (selectVal === "Other") { isValid = textVal.length > 0; if (!isValid) document.getElementById('reject-reason-text').placeholder = "Please explain the reason here..."; } 
+    else { isValid = true; document.getElementById('reject-reason-text').placeholder = "Additional comments (Optional)..."; }
 
-        // Validation Function
-        window.handleRejectValidation = function() {
-            const selectVal = document.getElementById('reject-select').value;
-            const textVal = document.getElementById('reject-reason-text').value.trim();
-            const btn = document.getElementById('btn-reject-submit');
+    if (isValid) { btn.disabled = false; btn.classList.remove('bg-gray-400', 'cursor-not-allowed'); btn.classList.add('bg-red-600', 'hover:bg-red-700', 'shadow'); } 
+    else { btn.disabled = true; btn.classList.add('bg-gray-400', 'cursor-not-allowed'); btn.classList.remove('bg-red-600', 'hover:bg-red-700', 'shadow'); }
+};
 
-            let isValid = false;
+window.confirmRejectSubmission = function() {
+    const selectVal = document.getElementById('reject-select').value;
+    const textVal = document.getElementById('reject-reason-text').value;
+    pendingRejectReason = selectVal === "Other" ? textVal : selectVal + (textVal ? `: ${textVal}` : "");
 
-            if (!selectVal) {
-                isValid = false;
-            } else if (selectVal === "Other") {
-                // Mandatory Text Box for 'Other'
-                isValid = textVal.length > 0;
-                if (!isValid) document.getElementById('reject-reason-text').placeholder = "Please explain the reason here...";
-            } else {
-                isValid = true;
-                document.getElementById('reject-reason-text').placeholder = "Additional comments (Optional)...";
-            }
+    document.getElementById('rejectModal').classList.add('hidden');
+    document.getElementById('confirm-title').innerText = "Confirm Rejection";
+    document.getElementById('confirm-message').innerText = "Are you sure you want to reject this renewal?";
+    
+    const btn = document.getElementById('confirm-btn-action');
+    btn.className = "px-5 py-2 bg-red-600 text-white hover:bg-red-700 rounded-md text-sm font-bold shadow transition flex items-center";
+    btn.innerHTML = '<i data-feather="x-circle" class="w-4 h-4 mr-2"></i> Yes, Reject';
+    btn.onclick = executeRejection;
 
-            if (isValid) {
-                btn.disabled = false;
-                btn.classList.remove('bg-gray-400', 'cursor-not-allowed');
-                btn.classList.add('bg-red-600', 'hover:bg-red-700');
-            } else {
-                btn.disabled = true;
-                btn.classList.add('bg-gray-400', 'cursor-not-allowed');
-                btn.classList.remove('bg-red-600', 'hover:bg-red-700');
-            }
-        };
-        
-        window.confirmRejectSubmission = function() {
-            const selectVal = document.getElementById('reject-select').value;
-            const textVal = document.getElementById('reject-reason-text').value;
-            
-            if (selectVal === "Other") {
-                pendingRejectReason = textVal;
-            } else {
-                pendingRejectReason = selectVal + (textVal ? `: ${textVal}` : "");
-            }
+    document.getElementById('confirmModal').classList.remove('hidden');
+    feather.replace();
+};
 
-            document.getElementById('rejectModal').classList.add('hidden');
-            
-            document.getElementById('confirm-title').innerText = "Confirm Rejection";
-            document.getElementById('confirm-message').innerText = "Are you sure you want to reject this renewal?";
-            const btn = document.getElementById('confirm-btn-action');
-            btn.className = "px-4 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700";
-            btn.innerText = "Yes, Reject";
-            btn.onclick = executeRejection;
+async function executeRejection() {
+    try {
+        const batch = firebase.firestore().batch();
+        batch.update(firebase.firestore().collection("renewalSubmissions").doc(rejectTargetId), { status: "rejected", renewal_status: "rejected", rejectionReason: pendingRejectReason, reviewedDate: firebase.firestore.FieldValue.serverTimestamp() });
+        batch.update(firebase.firestore().collection("users").doc(rejectTargetUserId), { renewal_status: "rejected" });
+        await batch.commit();
+        document.getElementById('confirmModal').classList.add('hidden');
+        showSuccessModal("Renewal Rejected.");
+    } catch (e) {
+        alert("Error: " + e.message);
+        document.getElementById('confirmModal').classList.add('hidden');
+    }
+}
 
-            document.getElementById('confirmModal').classList.remove('hidden');
-        };
+window.closeConfirmModal = function() {
+    document.getElementById('confirmModal').classList.add('hidden');
+    if (rejectTargetId && !approveId) document.getElementById('rejectModal').classList.remove('hidden');
+};
 
-        async function executeRejection() {
-            try {
-                const batch = firebase.firestore().batch();
-                
-                batch.update(firebase.firestore().collection("renewalSubmissions").doc(rejectTargetId), { 
-                    status: "rejected", 
-                    renewal_status: "rejected", 
-                    rejectionReason: pendingRejectReason, 
-                    reviewedDate: firebase.firestore.FieldValue.serverTimestamp() 
-                });
-                
-                batch.update(firebase.firestore().collection("users").doc(rejectUserId), { 
-                    renewal_status: "rejected" 
-                });
-                
-                await batch.commit();
-                document.getElementById('confirmModal').classList.add('hidden');
-                showSuccess("Renewal Rejected.");
-            } catch (e) {
-                alert("Error: " + e.message);
-                document.getElementById('confirmModal').classList.add('hidden');
-            }
-        }
-
-// Success Modal Logic
+// ==========================================
+// NOTIFICATIONS
+// ==========================================
 window.showSuccessModal = function(msg) {
     document.getElementById('success-message').innerText = msg;
     document.getElementById('successModal').classList.remove('hidden');
+    feather.replace(); 
 };
 window.closeSuccessModal = function() { location.reload(); };

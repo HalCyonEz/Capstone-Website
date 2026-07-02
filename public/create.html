@@ -27,6 +27,9 @@
             <a href="applications.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100"><i data-feather="file-text" class="mr-3"></i> Applications </a>
             <a href="renewals.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100"><i data-feather="refresh-cw" class="mr-3"></i> Renewals </a>
             <a href="announcements.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100"><i data-feather="bell" class="mr-3"></i> Announcements </a>
+            <div class="pt-4 mt-4 border-t border-gray-200"> 
+            <a href="archive.html" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100"><i data-feather="archive" class="mr-3"></i> Archive </a>
+            </div>
         </nav>
         <div class="p-4 border-t border-gray-200"><button id="logout-btn" class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"><i data-feather="log-out" class="mr-2"></i> Log Out</button></div>
     </div>
@@ -66,13 +69,13 @@
                             <div><label class="text-xs font-bold text-gray-600">Contact Number</label><input type="text" id="create-contact" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="09XX-XXX-XXXX"></div>
                             <div><label class="text-xs font-bold text-gray-600">Email Address (Optional)</label><input type="email" id="create-email" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="juan@example.com"></div>
                             <div><label class="text-xs font-bold text-gray-600">Date of Birth</label><input type="date" id="create-dob" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none text-gray-600"></div>
-                            <div><label class="text-xs font-bold text-gray-600">Age</label><input type="number" id="create-age" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="e.g., 35"></div>
+                            <div><label class="text-xs font-bold text-gray-600">Age</label><input type="number" id="create-age" readonly class="w-full border rounded p-2 text-sm mt-1 bg-gray-100 text-gray-500 cursor-not-allowed outline-none" placeholder="Input your birthdate"></div>
                             <div><label class="text-xs font-bold text-gray-600">Date Registered as Solo Parent <span class="text-red-500">*</span></label><input type="date" id="create-registered-date" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none text-gray-600"></div>
                             <div class="md:col-span-2"><label class="text-xs font-bold text-gray-600">Place of Birth</label><input type="text" id="create-birthplace" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none" placeholder="e.g., Baguio General Hospital"></div>
     
                             <div class="md:col-span-3 mt-4 border-t border-gray-100 pt-4">
                                 <label class="text-xs font-bold text-gray-600">Solo Parent ID <span class="text-red-500">*</span></label>
-                                <input type="text" id="create-solo-parent-id" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none font-mono text-blue-700 font-bold" placeholder="Enter official ID from the physical card (e.g., SP-2024-001)">
+                                <input type="text" id="create-solo-parent-id" maxlength="12" class="w-full border rounded p-2 text-sm mt-1 focus:ring-1 focus:ring-blue-500 outline-none font-mono text-blue-700 font-bold" placeholder="Input their solo parent physicaal ID number e.g., 26-A01-00010">
                             </div>
 
                             <div class="md:col-span-3 mt-2">

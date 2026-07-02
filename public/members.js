@@ -148,6 +148,7 @@ window.applyFilters = function() {
 
 function applyFiltersLogic(keepPage = false) {
     filteredMembers = allMembersCache.filter(user => {
+
         // Universal Search
         if (activeFilters.search) {
             const s = activeFilters.search;
@@ -366,20 +367,33 @@ window.filterByCategory = function(categoryCode) {
 
 function createMemberCard(id, data) {
     const div = document.createElement('div');
-    div.className = "bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition";
     const name = `${data.firstName || ''} ${data.lastName || ''}`;
     const address = data.municipality || data.city || data.address || "No Address";
     const initial = (data.firstName || "U").charAt(0).toUpperCase();
     const safeData = JSON.stringify({id, ...data}).replace(/"/g, '&quot;');
     
     let appBadgeHTML = "";
-    if (data.is_online === true) {
-        appBadgeHTML = `<span class="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] px-2 py-0.5 rounded-full ml-2 whitespace-nowrap shadow-sm font-semibold tracking-wide">App Registered</span>`;
-    } else {
-        appBadgeHTML = `<span class="bg-gray-50 text-gray-500 border border-gray-200 text-[10px] px-2 py-0.5 rounded-full ml-2 whitespace-nowrap shadow-sm font-medium">App Unregistered</span>`;
+    
+    // 1. Check if the user is deactivated/archived FIRST
+    if (data.isArchived === true || data.status === 'Archived') {
+        appBadgeHTML = `<span class="bg-red-50 text-red-700 border border-red-200 text-[10px] px-2 py-0.5 rounded-full ml-2 whitespace-nowrap shadow-sm font-bold">Deactivated</span>`;
+        // Apply faded, grayed-out styling for deactivated users
+        div.className = "bg-gray-50 opacity-75 p-4 rounded-lg shadow-sm border border-gray-200 flex items-center gap-4 hover:shadow-md transition";
+    } 
+    // 2. If active, check their mobile app registration status
+    else {
+        // Standard styling for active users
+        div.className = "bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition";
+        
+        if (data.is_online === true) {
+            appBadgeHTML = `<span class="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] px-2 py-0.5 rounded-full ml-2 whitespace-nowrap shadow-sm font-semibold tracking-wide">App Registered</span>`;
+        } else {
+            appBadgeHTML = `<span class="bg-gray-50 text-gray-500 border border-gray-200 text-[10px] px-2 py-0.5 rounded-full ml-2 whitespace-nowrap shadow-sm font-medium">App Unregistered</span>`;
+        }
     }
 
-    div.innerHTML = `<div class="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center"><span class="text-lg font-bold text-gray-500">${initial}</span></div><div class="flex-1 min-w-0"><h3 class="text-sm font-bold text-gray-900 truncate flex items-center">${name} ${appBadgeHTML}</h3><p class="text-xs text-gray-500 truncate font-mono mt-0.5">ID: ${data.soloParentIdNumber || id}</p><p class="text-xs text-gray-400 truncate">${address}</p></div><button onclick="openMemberModal(${safeData})" class="px-3 py-1.5 border border-blue-600 text-blue-600 rounded text-xs font-medium hover:bg-blue-50">View</button>`;
+    div.innerHTML = `<div class="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center"><span class="text-lg font-bold text-gray-500">${initial}</span></div><div class="flex-1 min-w-0"><h3 class="text-sm font-bold text-gray-900 truncate flex items-center">${name} ${appBadgeHTML}</h3><p class="text-xs text-gray-500 truncate font-mono mt-0.5">ID: ${data.soloParentIdNumber || id}</p><p class="text-xs text-gray-400 truncate">${address}</p></div><button onclick="openMemberModal(${safeData})" class="px-3 py-1.5 border border-blue-600 text-blue-600 rounded text-xs font-medium hover:bg-blue-50 flex-shrink-0">View</button>`;
+    
     return div;
 }
 
