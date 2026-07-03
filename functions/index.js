@@ -92,7 +92,7 @@ exports.notifyUserOnStatusChange = onDocumentUpdated({
     } else if (newStatus === "rejected") {
         const reason = newValue.rejectReason || "Please review your submitted documents.";
         notificationTitle = "Application Rejected ❌";
-        notificationBody = `Your application was rejected: ${reason}. Bulok ka gamin.`;
+        notificationBody = `Your application was rejected: ${reason}. Please check your profile to update and resubmit.`;
     } else {
         // Ignore other status changes
         return; 
