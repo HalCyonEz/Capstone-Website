@@ -233,12 +233,12 @@ window.handleView = async function(id) {
 window.closeModal = function() { document.getElementById('viewModal').classList.add('hidden'); };
 
 // ==========================================
-// APPROVE LOGIC (Fully saves all profile data to user doc)
+// APPROVE LOGIC (Fully saves all profile data to BOTH databases)
 // ==========================================
 window.confirmApprove = function(subId, userId) {
     approveId = subId; approveUserId = userId;
     document.getElementById('confirm-title').innerText = "Confirm Approval";
-    document.getElementById('confirm-message').innerText = "Approve renewal? This will UPDATE the user's profile with all new information permanently.";
+    document.getElementById('confirm-message').innerText = "Approve renewal? This will UPDATE the user's profile and the official LGU database with the new details permanently.";
     
     const btn = document.getElementById('confirm-btn-action');
     btn.className = "px-5 py-2 bg-green-600 text-white hover:bg-green-700 rounded-md text-sm font-bold shadow transition flex items-center";
@@ -254,58 +254,83 @@ window.confirmApprove = function(subId, userId) {
             const batch = db.batch();
             const newData = cachedRenewals[approveId];
 
-            // 1. Mark Renewal as Approved
+            // 1. Fetch existing user to get their official LGU record_id and fallback data
+            const userDoc = await db.collection("users").doc(approveUserId).get();
+            const oldData = userDoc.exists ? userDoc.data() : {};
+            const officialRecordId = oldData.record_id;
+
+            // Helper to prevent wiping data if the mobile app didn't send a specific field
+            const safeVal = (newVal, existingVal, fallback = "") => {
+                if (newVal !== undefined && newVal !== null && String(newVal).trim() !== "") return newVal;
+                if (existingVal !== undefined && existingVal !== null && String(existingVal).trim() !== "") return existingVal;
+                return fallback;
+            };
+
+            const updatePayload = {
+                renewal_status: "approved",
+                lastRenewalDate: firebase.firestore.FieldValue.serverTimestamp(),
+                
+                // Personal Information
+                firstName: safeVal(newData.firstName, oldData.firstName),
+                lastName: safeVal(newData.lastName, oldData.lastName),
+                middleInitial: safeVal(newData.middleInitial, oldData.middleInitial),
+                dateOfBirth: safeVal(newData.dateOfBirth, oldData.dateOfBirth),
+                age: safeVal(newData.age, oldData.age, 0),
+                sex: safeVal(newData.sex, oldData.sex),
+                placeOfBirth: safeVal(newData.placeOfBirth, oldData.placeOfBirth),
+                religion: safeVal(newData.religion, oldData.religion),
+                ethnicity: safeVal(newData.ethnicity, oldData.ethnicity),
+                civilStatus: safeVal(newData.civilStatus, oldData.civilStatus),
+                email: safeVal(newData.email, oldData.email),
+                
+                // Employment & Demographics
+                occupation: safeVal(newData.occupation, oldData.occupation), 
+                monthlyIncome: safeVal(newData.monthlyIncome, oldData.monthlyIncome),
+                
+                // FIX: Cross-map both 'company' and 'companyAgency' to handle schema mismatches
+                company: safeVal(newData.companyAgency || newData.company, oldData.company || oldData.companyAgency),
+                companyAgency: safeVal(newData.companyAgency || newData.company, oldData.companyAgency || oldData.company),
+                
+                // Address
+                houseNumber: safeVal(newData.houseNumber, oldData.houseNumber), 
+                streetName: safeVal(newData.streetName || newData.street, oldData.streetName || oldData.street),
+                subdivision: safeVal(newData.subdivision, oldData.subdivision), 
+                barangay: safeVal(newData.barangay, oldData.barangay), 
+                municipality: safeVal(newData.municipality || newData.city, oldData.municipality || oldData.city),
+                
+                // Family
+                numberOfChildren: safeVal(newData.numberOfChildren, oldData.numberOfChildren, 0), 
+                childrenAges: newData.childrenAges || oldData.childrenAges || [],
+                
+                // Official IDs and Proofs
+                philhealthIdNumber: safeVal(newData.philhealthIdNumber, oldData.philhealthIdNumber),
+                hasPhilhealth: (newData.philhealthIdNumber || oldData.philhealthIdNumber) ? true : false,
+                proofIdUrl: safeVal(newData.proofIdUrl, oldData.proofIdUrl),
+                proofSoloParentUrl: safeVal(newData.proofSoloParentUrl, oldData.proofSoloParentUrl),
+                philhealthIdUrl: safeVal(newData.philhealthIdUrl, oldData.philhealthIdUrl)
+            };
+
+            // 2. Mark Renewal as Approved
             batch.update(db.collection("renewalSubmissions").doc(approveId), { 
                 status: "approved", 
                 renewal_status: "approved", 
                 reviewedDate: firebase.firestore.FieldValue.serverTimestamp() 
             });
 
-            // 2. Overwrite User Profile with ALL Incoming Data
-            batch.update(db.collection("users").doc(approveUserId), {
-                renewal_status: "approved",
-                lastRenewalDate: firebase.firestore.FieldValue.serverTimestamp(),
-                
-                // Personal Information
-                firstName: newData.firstName || "",
-                lastName: newData.lastName || "",
-                middleInitial: newData.middleInitial || "",
-                dateOfBirth: newData.dateOfBirth || "",
-                age: newData.age || 0,
-                sex: newData.sex || "",
-                placeOfBirth: newData.placeOfBirth || "",
-                religion: newData.religion || "",
-                ethnicity: newData.ethnicity || "",
-                civilStatus: newData.civilStatus || "",
-                email: newData.email || "",
-                
-                // Employment & Demographics
-                occupation: newData.occupation || "", 
-                monthlyIncome: newData.monthlyIncome || "",
-                companyAgency: newData.companyAgency || "", 
-                
-                // Address
-                houseNumber: newData.houseNumber || "", 
-                streetName: newData.streetName || newData.street || "",
-                subdivision: newData.subdivision || "", 
-                barangay: newData.barangay || "", 
-                municipality: newData.municipality || newData.city || "",
-                
-                // Family
-                numberOfChildren: newData.numberOfChildren || 0, 
-                childrenAges: newData.childrenAges || [],
-                
-                // Official IDs and Proofs
-                philhealthIdNumber: newData.philhealthIdNumber || "",
-                hasPhilhealth: newData.philhealthIdNumber ? true : false,
-                proofIdUrl: newData.proofIdUrl || "",
-                proofSoloParentUrl: newData.proofSoloParentUrl || "",
-                philhealthIdUrl: newData.philhealthIdUrl || ""
-            });
+            // 3. Overwrite User Profile (Mobile App Database)
+            batch.update(db.collection("users").doc(approveUserId), updatePayload);
+
+            // 4. Overwrite Official LGU Record (Admin Dashboard Database)
+            if (officialRecordId) {
+                let lguPayload = { ...updatePayload };
+                delete lguPayload.renewal_status; // Keep LGU database clean
+                lguPayload.lastUpdated = firebase.firestore.FieldValue.serverTimestamp();
+                batch.update(db.collection("solo_parent_records").doc(officialRecordId), lguPayload);
+            }
 
             await batch.commit();
             document.getElementById('confirmModal').classList.add('hidden');
-            showSuccessModal("Approved & Profile Updated!");
+            showSuccessModal("Approved & Both Profiles Updated!");
         } catch (e) {
             alert("Error: " + e.message);
             document.getElementById('confirmModal').classList.add('hidden');

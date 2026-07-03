@@ -141,8 +141,16 @@ function populateUI(recordId, data) {
         
         'val-side-email': data.email || 'N/A',
         'val-side-contact': data.contact || 'N/A',
-        'val-side-address': `${data.barangay || ''}, ${data.municipality || ''}`.trim().replace(/^, | ,$/g, '') || 'N/A',
-        'val-side-id': data.soloParentIdNumber || recordId,
+        'val-side-address': [
+            data.houseNumber, 
+            data.streetName || data.street, 
+            data.subdivision, 
+            data.barangay, 
+            data.municipality || data.city
+        ].filter(Boolean).join(', ') || 'N/A',
+        
+        // 🚀 THE FIX: Pointing to the new top ID container
+        'val-side-id-top': data.soloParentIdNumber || recordId,
 
         'val-occupation': data.occupation || 'N/A',
         'val-company': data.company || 'N/A',
@@ -170,6 +178,7 @@ function populateUI(recordId, data) {
         imgPhilContainer.classList.remove('flex');
         imgPhilNone.classList.remove('hidden');
     }
+    
     for (const [htmlId, dbValue] of Object.entries(fieldsToMap)) {
         const element = document.getElementById(htmlId);
         if (element) { element.innerText = dbValue; }
@@ -286,13 +295,13 @@ window.saveProfileEdits = async function() {
         email: document.getElementById('edit-email').value.trim(),
         dateOfBirth: document.getElementById('edit-dob').value.trim(),
         age: document.getElementById('edit-age').value.trim(),
-        placeOfBirth: document.getElementById('edit-birthplace').value.trim(), // NEW
+        placeOfBirth: document.getElementById('edit-birthplace').value.trim(), 
         sex: document.getElementById('edit-sex').value,
         civilStatus: document.getElementById('edit-civil').value.trim(),
         ethnicity: document.getElementById('edit-ethnicity').value.trim(),
         religion: document.getElementById('edit-religion').value.trim(),
-        houseNumber: document.getElementById('edit-house-number').value.trim(), // NEW
-        street: document.getElementById('edit-street').value.trim(), // NEW
+        houseNumber: document.getElementById('edit-house-number').value.trim(), 
+        street: document.getElementById('edit-street').value.trim(), 
         municipality: document.getElementById('edit-municipality').value.trim(),
         barangay: document.getElementById('edit-barangay').value.trim(),
         occupation: document.getElementById('edit-occupation').value.trim(),
@@ -318,8 +327,7 @@ window.saveProfileEdits = async function() {
         // Helper function for uploading to Cloud Storage
         const uploadImage = async (file, documentType) => {
             if (!file) return null;
-            // THE FIX: Pointing exactly to your unverified_uploads folder
-            // Format: unverified_uploads/user_id_documentType_timestamp
+            // Pointing exactly to your unverified_uploads folder
             const fileRef = ref(storage, `unverified_uploads/${currentDocId}_${documentType}_${Date.now()}`);
             
             await uploadBytes(fileRef, file);
@@ -372,7 +380,6 @@ window.saveProfileEdits = async function() {
 
     } catch (error) {
         console.error("Error updating profile:", error);
-        // Tip: If it still fails, check your console. It might be a Firestore Security Rules issue!
         showNotification("Save Failed", "Could not update the database. Please check the browser console for exact details.", "error");
     } finally {
         btn.innerHTML = '<i data-feather="save" class="w-4 h-4 mr-2"></i> Save Changes';
@@ -391,15 +398,12 @@ window.archiveUserAccount = function() {
         window.showNotification("Error", "Cannot find User ID to archive.", "error");
         return;
     }
-    // 🔴 FIXED: Now matching the exact ID in your HTML
     document.getElementById('archive-reason-input').value = ""; 
     document.getElementById('archiveConfirmModal').classList.remove('hidden');
 };
 
 // 2. Executes the database update
-// 🔴 FIXED: Renamed to match the onclick="window.executeArchive()" in your HTML
 window.executeArchive = async function() {
-    // 🔴 FIXED: Now matching the exact ID in your HTML
     const reasonInput = document.getElementById('archive-reason-input').value.trim();
     
     // Validate that they typed something
@@ -421,7 +425,7 @@ window.executeArchive = async function() {
         const archiveData = {
             isArchived: true,
             status: 'Archived',
-            archiveReason: reasonInput, // Saving the reason to the database
+            archiveReason: reasonInput, 
             archivedAt: serverTimestamp()
         };
 

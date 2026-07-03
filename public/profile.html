@@ -25,23 +25,19 @@
             .page-break-inside-avoid { break-inside: avoid; }
             
             /* 🚀 FIX FOR PRINTING IMAGES */
-            /* Override the fixed heights and overflow rules so the print spooler doesn't clip the images */
             .overflow-hidden { overflow: visible !important; }
             .h-48 { height: auto !important; min-height: 150px !important; }
             img { 
                 max-width: 100% !important; 
-                max-height: 250px !important; /* Prevents the image from taking up a whole page */
+                max-height: 250px !important; 
                 height: auto !important; 
                 display: block !important; 
                 margin: 0 auto !important; 
                 object-fit: contain !important;
             }
             /* 🚀 NEW RULES FOR PAGE BREAKING */
-            /* Forces grids to become stacked blocks for predictable printing */
             .print-stack { display: block !important; width: 100% !important; }
-            /* Forces the printer to end the page immediately after this element */
             .print-break-after { break-after: page !important; page-break-after: always !important; margin-bottom: 0 !important; }
-            /* Forces the printer to start a brand new page right before this element */
             .print-break-before { break-before: page !important; page-break-before: always !important; margin-top: 0 !important; }
         }
     </style>
@@ -96,16 +92,23 @@
                             <span id="val-avatar-initial" class="text-4xl font-bold text-blue-600">...</span>
                         </div>
                         <h2 id="val-side-name" class="text-xl font-bold text-gray-900 mb-1">Loading...</h2>
+                        
+                        <!-- 🚀 NEW: Solo Parent ID inserted exactly here -->
+                        <div class="mb-3">
+                            <span class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">ID Number</span><br>
+                            <span id="val-side-id-top" class="font-mono text-sm font-bold text-gray-800">...</span>
+                        </div>
+
                         <p id="val-side-category" class="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg inline-block mb-3 border border-blue-100 w-full text-center">...</p>
                         <br>
                         <span id="val-status-badge" class="inline-block bg-gray-100 text-gray-600 text-xs px-2.5 py-1 rounded-full font-medium">Checking Status</span>
                     </div>
 
+                    <!-- 🚀 REMOVED: Solo Parent ID from the bottom list -->
                     <div class="space-y-4 text-sm mb-8 flex-1">
                         <div><p class="text-xs text-gray-500 font-semibold uppercase mb-0.5">Email</p><p id="val-side-email" class="font-medium text-gray-800 truncate">...</p></div>
                         <div><p class="text-xs text-gray-500 font-semibold uppercase mb-0.5">Contact</p><p id="val-side-contact" class="font-medium text-gray-800">...</p></div>
                         <div><p class="text-xs text-gray-500 font-semibold uppercase mb-0.5">Address</p><p id="val-side-address" class="font-medium text-gray-800 leading-snug">...</p></div>
-                        <div><p class="text-xs text-gray-500 font-semibold uppercase mb-0.5">Solo Parent ID</p><p id="val-side-id" class="font-mono font-bold text-gray-700 mt-1">...</p></div>
                     </div>
                 </div>
 
@@ -172,29 +175,24 @@
                             </div>
                         </div>
                     </div>
-                        <div id="val-img-philhealth-none" class="text-center py-2">
-                            <p class="text-sm text-gray-500 italic">This user doesn't / haven't uploaded their PhilHealth ID.</p>
-                        </div>
-                </div>
-            </div> 
+                    
+                    <!-- Archive Block -->
                     <div class="bg-red-50 p-6 rounded-lg shadow-sm border border-red-200 no-print mt-6">
-                            <h3 class="text-lg font-bold text-red-700 mb-2 flex items-center gap-2">
-                                <i data-feather="alert-triangle" class="w-5 h-5"></i>Add to Archive?</h3>
-                            <p class="text-sm text-red-600 mb-4 opacity-90">Archiving this account will immediately remove it from the active directory and disable mobile app access. This action can be undone from the Archives.</p>
-                            
-                            <button id="btn-archive-account" onclick="window.archiveUserAccount()" class="bg-white text-red-600 border border-red-300 px-4 py-2 rounded-md text-sm font-bold hover:bg-red-600 hover:text-white transition flex items-center gap-2 shadow-sm">
-                                <i data-feather="archive" class="w-4 h-4"></i> Freeze & Archive Account
-                            </button>
+                        <h3 class="text-lg font-bold text-red-700 mb-2 flex items-center gap-2">
+                            <i data-feather="alert-triangle" class="w-5 h-5"></i>Add to Archive?</h3>
+                        <p class="text-sm text-red-600 mb-4 opacity-90">Archiving this account will immediately remove it from the active directory and disable mobile app access. This action can be undone from the Archives.</p>
+                        
+                        <button id="btn-archive-account" onclick="window.archiveUserAccount()" class="bg-white text-red-600 border border-red-300 px-4 py-2 rounded-md text-sm font-bold hover:bg-red-600 hover:text-white transition flex items-center gap-2 shadow-sm">
+                            <i data-feather="archive" class="w-4 h-4"></i> Freeze & Archive Account
+                        </button>
                     </div>
-                </div> 
-            </div> 
-                </div> 
-                    </div>
+
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Modals -->
     <div id="editProfileModal" class="fixed inset-0 bg-gray-900 bg-opacity-70 hidden z-50 flex items-center justify-center px-4 py-6">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-full flex flex-col relative overflow-hidden border border-gray-200">
             <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
@@ -329,7 +327,6 @@
 
     <script type="module" src="profile.js"></script>
     <script>
-        // Fallback replacement for hardcoded icons before JS loads
         if(typeof feather !== 'undefined') feather.replace();
     </script>
 </body>
