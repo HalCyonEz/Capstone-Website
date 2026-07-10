@@ -140,3 +140,76 @@ exports.notifyUserOnStatusChange = onDocumentUpdated({
         console.error(`❌ [SPDA Error] Failed to send FCM notification to ${userId}:`, error);
     }
 });
+
+
+// ==========================================
+// 3. MANUAL RENEWAL CHECK (Safely separated)
+// ==========================================
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+
+exports.manualRenewalCheck = onDocumentCreated({
+    region: "asia-southeast2",
+    document: "system_triggers/{docId}"
+}, async (event) => {
+    const triggerData = event.data.data();
+    if (!triggerData || triggerData.action !== "run_renewal_check") return;
+
+    const now = new Date();
+    const msPerDay = 1000 * 60 * 60 * 24;
+
+    try {
+        // Scan the mobile users collection for approved members
+        const usersSnapshot = await db.collection("users").where("status", "==", "approved").get();
+        if (usersSnapshot.empty) {
+            console.log("No approved users found.");
+            return;
+        }
+
+        const notificationPromises = [];
+
+        usersSnapshot.forEach((doc) => {
+            const data = doc.data();
+            const tokens = data.fcmTokens || [];
+            if (tokens.length === 0) return; 
+
+            // Establish the start date for the 1-year validity
+            const baseTimestamp = data.lastRenewalDate || data.approvedAt || data.createdAt;
+            if (!baseTimestamp) return;
+
+            const baseDate = baseTimestamp.toDate();
+            const expirationDate = new Date(baseDate.getTime());
+            expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+
+            // Calculate exact days remaining
+            const diffTime = expirationDate.getTime() - now.getTime();
+            const daysRemaining = Math.round(diffTime / msPerDay);
+
+            // Trigger ONLY if they are at exactly 30, 14, or 3 days
+            if ([30, 14, 3].includes(daysRemaining)) {
+                
+                // YOUR CUSTOM MESSAGE
+                const message = {
+                    notification: {
+                        title: "Solo Parent ID Renewal Reminder",
+                        body: `Hello! Your solo parent id is expiring in ${daysRemaining} days. You can request a renew on the mobile app as soon as possible to avoid expiration and locking out of the solo parent app`,
+                    },
+                    tokens: tokens, 
+                };
+
+                // Push to the array for sending
+                notificationPromises.push(admin.messaging().sendEachForMulticast(message));
+            }
+        });
+
+        // Send all queued notifications
+        if (notificationPromises.length > 0) {
+            await Promise.all(notificationPromises);
+            console.log(`✅ Renewal check complete. Notifications pushed to expiring users.`);
+        } else {
+            console.log(`✅ Renewal check complete. No users at the 30/14/3 day marks today.`);
+        }
+
+    } catch (error) {
+        console.error("❌ Error running manual renewal check:", error);
+    }
+});

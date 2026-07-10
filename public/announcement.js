@@ -236,4 +236,140 @@ window.deleteCurrentAnnouncement = async () => {
     }
 };
 
-document.addEventListener('DOMContentLoaded', loadAnnouncements);
+document.addEventListener('DOMContentLoaded', () => {
+    loadAnnouncements();
+    loadExpiringUsers();
+});
+
+
+// ==========================================
+// MANUAL RENEWAL NOTIFICATION TRIGGER (With Custom Modal)
+// ==========================================
+const triggerBtn = document.getElementById('trigger-renewals-btn');
+const renewalModal = document.getElementById('renewal-modal');
+const confirmBtn = document.getElementById('modal-confirm-btn');
+const cancelBtn = document.getElementById('modal-cancel-btn');
+
+if (triggerBtn) {
+    triggerBtn.addEventListener('click', () => {
+        // Reset modal to original state
+        document.getElementById('modal-msg-title').textContent = "Send Notifications?";
+        document.getElementById('modal-msg-body').textContent = "Are you sure you want to trigger the renewal check and send notifications to all expiring members?";
+        confirmBtn.classList.remove('hidden'); // Ensure confirm button is visible
+        renewalModal.classList.remove('hidden');
+        feather.replace();
+    });
+}
+
+cancelBtn.addEventListener('click', () => {
+    renewalModal.classList.add('hidden');
+});
+
+confirmBtn.addEventListener('click', async () => {
+    // Visual loading state inside the modal
+    confirmBtn.innerHTML = `<i data-feather="loader" class="w-4 h-4 animate-spin"></i>`;
+    confirmBtn.disabled = true;
+    feather.replace();
+
+    try {
+        await addDoc(collection(db, "system_triggers"), {
+            action: "run_renewal_check",
+            triggeredAt: Timestamp.now()
+        });
+        
+        // Success state
+        document.getElementById('modal-msg-title').textContent = "Success!";
+        document.getElementById('modal-msg-body').textContent = "✅ Renewal checks initiated! Notifications are being sent to expiring users.";
+        confirmBtn.classList.add('hidden'); // Hide confirm so they only see 'Close'
+        cancelBtn.textContent = "Close";
+    } catch (error) {
+        console.error("Error triggering renewals:", error);
+        alert("Failed to initiate check. Ensure you have network connectivity.");
+        renewalModal.classList.add('hidden');
+    } finally {
+        confirmBtn.innerHTML = "Confirm";
+        confirmBtn.disabled = false;
+        feather.replace();
+    }
+});
+
+// --- Load Expiring Users ---
+async function loadExpiringUsers() {
+    const listEl = document.getElementById('expiring-list');
+    if (!listEl || !db) return;
+    
+    try {
+        // Only fetch users who are currently approved
+        const q = query(collection(db, "users")); 
+        const snapshot = await getDocs(q);
+        
+        const now = new Date();
+        const msPerDay = 1000 * 60 * 60 * 24;
+        let expiringUsers = [];
+
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            if (data.status !== "approved") return; // Skip unapproved
+
+            // Find the start date just like the backend does
+            const baseTimestamp = data.lastRenewalDate || data.approvedAt || data.createdAt;
+            if (!baseTimestamp) return;
+
+            // Calculate expiration (1 year later)
+            const baseDate = baseTimestamp.toDate();
+            const expirationDate = new Date(baseDate.getTime());
+            expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+
+            // Calculate exact days remaining
+            const diffTime = expirationDate.getTime() - now.getTime();
+            const daysRemaining = Math.ceil(diffTime / msPerDay); 
+
+            // If they expire within 30 days (and haven't already expired)
+            if (daysRemaining <= 30 && daysRemaining >= 0) {
+                expiringUsers.push({
+                    id: docSnap.id,
+                    name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'Unknown User',
+                    expirationDate: expirationDate,
+                    daysRemaining: daysRemaining
+                });
+            }
+        });
+
+        // Sort by nearest expiration first
+        expiringUsers.sort((a, b) => a.daysRemaining - b.daysRemaining);
+
+        // Render to table
+        listEl.innerHTML = "";
+        if (expiringUsers.length === 0) {
+            listEl.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-400">No IDs expiring within the next 30 days.</td></tr>`;
+            return;
+        }
+
+        expiringUsers.forEach(user => {
+            const dateStr = user.expirationDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+            
+            // Color code the urgency badge
+            let statusBadge = '';
+            if (user.daysRemaining <= 3) {
+                statusBadge = `<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">${user.daysRemaining} days</span>`;
+            } else if (user.daysRemaining <= 14) {
+                statusBadge = `<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold">${user.daysRemaining} days</span>`;
+            } else {
+                statusBadge = `<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">${user.daysRemaining} days</span>`;
+            }
+
+            listEl.innerHTML += `
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="p-4 text-sm font-medium text-gray-800">${user.name}</td>
+                    <td class="p-4 text-sm text-gray-600">${dateStr}</td>
+                    <td class="p-4">${statusBadge}</td>
+                </tr>
+            `;
+        });
+        feather.replace();
+
+    } catch (error) {
+        console.error("❌ Error loading expiring users:", error);
+        listEl.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-red-500">Failed to load data.</td></tr>`;
+    }
+}

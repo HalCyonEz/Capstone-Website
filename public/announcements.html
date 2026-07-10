@@ -48,9 +48,12 @@
 
         <div class="flex-1 overflow-auto">
             <div class="p-6">
-                <div class="mb-6">
-                    <h1 class="text-2xl font-bold text-gray-800 mb-1">Manage Announcements</h1>
-                    <p class="text-gray-500 text-sm">Create updates that will be sent to all app users.</p>
+                <!-- NEW BUTTON SECTION: Flex layout to separate title and button -->
+                <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800 mb-1">Manage Announcements</h1>
+                        <p class="text-gray-500 text-sm">Create updates that will be sent to all app users.</p>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -109,6 +112,33 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h3 class="font-semibold text-gray-800">Upcoming ID Renewals (Next 30 Days)</h3>
+                    <p class="text-xs text-gray-500 mt-1">Mobile members whose IDs are expiring soon.</p>
+                </div>
+                <button id="trigger-renewals-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition font-medium flex items-center justify-center gap-2 text-sm shadow-sm">
+                    <i data-feather="bell" class="w-4 h-4"></i> Notify Expiring IDs
+                </button>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-white border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wider">
+                            <th class="p-4 font-medium">Member Name</th>
+                            <th class="p-4 font-medium">Expiration Date</th>
+                            <th class="p-4 font-medium">Days Left</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expiring-list" class="divide-y divide-gray-50">
+                        <tr><td colspan="3" class="p-6 text-center text-gray-500">Loading expiring IDs...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
             </div>
         </div>
     </div>
@@ -149,9 +179,28 @@
         </div>
     </div>
 
+    <!-- Renewal Confirmation Modal -->
+        <div id="renewal-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-sm overflow-hidden transform transition-all">
+                <div class="p-6 text-center">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                        <i data-feather="bell" class="text-green-600"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900" id="modal-msg-title">Send Notifications?</h3>
+                    <p class="text-sm text-gray-500 mt-2" id="modal-msg-body">Are you sure you want to trigger the renewal check and send notifications to all expiring members?</p>
+                </div>
+                <div class="p-4 border-t border-gray-100 flex gap-3 bg-gray-50">
+                    <button id="modal-cancel-btn" class="flex-1 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition">Cancel</button>
+                    <button id="modal-confirm-btn" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition">Confirm</button>
+                </div>
+            </div>
+        </div>
+
     <script>
         feather.replace();
     </script>
     <script type="module" src="announcement.js"></script>
+
+
 </body>
 </html>
