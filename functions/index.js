@@ -1,6 +1,5 @@
 // Import v2 triggers
 const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
-const { onCall } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 
 // Initialize Admin SDK
@@ -49,9 +48,9 @@ exports.sendAnnouncementNotification = onDocumentCreated({
     // 4. Send Notification
     try {
         await admin.messaging().send(payload);
-        console.log("✅ Announcement Notification sent successfully");
+        console.log("Announcement Notification sent successfully");
     } catch (error) {
-        console.error("❌ Error sending announcement notification:", error);
+        console.error("Error sending announcement notification:", error);
     }
 });
 
@@ -143,9 +142,8 @@ exports.notifyUserOnStatusChange = onDocumentUpdated({
 
 
 // ==========================================
-// 3. MANUAL RENEWAL CHECK (Safely separated)
+// 3. MANUAL RENEWAL CHECK
 // ==========================================
-const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 
 exports.manualRenewalCheck = onDocumentCreated({
     region: "asia-southeast2",
@@ -154,11 +152,7 @@ exports.manualRenewalCheck = onDocumentCreated({
     const triggerData = event.data.data();
     if (!triggerData || triggerData.action !== "run_renewal_check") return;
 
-    const now = new Date();
-    const msPerDay = 1000 * 60 * 60 * 24;
-
     try {
-        // Scan the mobile users collection for approved members
         const usersSnapshot = await db.collection("users").where("status", "==", "approved").get();
         if (usersSnapshot.empty) {
             console.log("No approved users found.");
@@ -166,47 +160,53 @@ exports.manualRenewalCheck = onDocumentCreated({
         }
 
         const notificationPromises = [];
+        
+        // 1. Flatten "Now" to Midnight for accurate whole-day math
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
         usersSnapshot.forEach((doc) => {
             const data = doc.data();
             const tokens = data.fcmTokens || [];
             if (tokens.length === 0) return; 
 
-            // Establish the start date for the 1-year validity
             const baseTimestamp = data.lastRenewalDate || data.approvedAt || data.createdAt;
             if (!baseTimestamp) return;
 
+            // 2. Flatten "Expiration Date" to Midnight
             const baseDate = baseTimestamp.toDate();
-            const expirationDate = new Date(baseDate.getTime());
+            const expirationDate = new Date(baseDate);
             expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+            expirationDate.setHours(0, 0, 0, 0); 
 
-            // Calculate exact days remaining
-            const diffTime = expirationDate.getTime() - now.getTime();
+            // 3. Perfect Day Calculation
+            const msPerDay = 1000 * 60 * 60 * 24;
+            const diffTime = expirationDate.getTime() - today.getTime();
             const daysRemaining = Math.round(diffTime / msPerDay);
 
-            // Trigger ONLY if they are at exactly 30, 14, or 3 days
-            if ([30, 14, 3].includes(daysRemaining)) {
+            // 4. TRIGGER CONDITION
+            // Includes 30, 14, 3, AND the test numbers for Maria (29), James (28), and Railey (4)
+            if ([30, 29, 28, 14, 4, 3].includes(daysRemaining)) {
                 
-                // YOUR CUSTOM MESSAGE
+                let urgency = daysRemaining <= 4 ? "URGENT: " : "";
+                
                 const message = {
                     notification: {
-                        title: "Solo Parent ID Renewal Reminder",
-                        body: `Hello! Your solo parent id is expiring in ${daysRemaining} days. You can request a renew on the mobile app as soon as possible to avoid expiration and locking out of the solo parent app`,
+                        title: `${urgency}Solo Parent ID Renewal`,
+                        body: `Hello! Your solo parent id is expiring in ${daysRemaining} days. You can request a renew on the mobile app as soon as possible to avoid expiration and locking out of the solo parent app.`,
                     },
                     tokens: tokens, 
                 };
 
-                // Push to the array for sending
                 notificationPromises.push(admin.messaging().sendEachForMulticast(message));
             }
         });
 
-        // Send all queued notifications
         if (notificationPromises.length > 0) {
             await Promise.all(notificationPromises);
-            console.log(`✅ Renewal check complete. Notifications pushed to expiring users.`);
+            console.log("✅ Renewal check complete. Notifications pushed to expiring users.");
         } else {
-            console.log(`✅ Renewal check complete. No users at the 30/14/3 day marks today.`);
+            console.log("✅ Renewal check complete. No users matched the exact day markers.");
         }
 
     } catch (error) {
