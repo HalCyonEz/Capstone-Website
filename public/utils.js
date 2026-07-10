@@ -1,6 +1,7 @@
 // utils.js
 import { db } from "./firebase-config.js";
 import { doc, updateDoc, Timestamp, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-functions.js"; // <-- NEW IMPORT
 
 // --- Constants ---
 export const DESCRIPTION_TO_CODE_MAP = {
@@ -143,3 +144,26 @@ export async function rejectRenewal(submissionId, reason) {
         alert("Failed: " + error.message);
     }
 }
+
+// ==========================================
+// SPDA SILENT RENEWAL TRIGGER
+// Runs once in the background when the admin dashboard loads
+// ==========================================
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // Use db.app to grab the existing Firebase config automatically
+        const functions = getFunctions(db.app, "asia-southeast2"); 
+        const processRenewals = httpsCallable(functions, 'processRenewalReminders');
+        
+        // Fire silently without blocking the UI
+        const result = await processRenewals();
+        
+        if (result.data && result.data.status === "success") {
+            console.log(`✅ SPDA Daily Check: ${result.data.sent} renewal reminders sent.`);
+        } else if (result.data && result.data.status === "skipped") {
+            console.log("⚡ SPDA Daily Check: Already up to date for today.");
+        }
+    } catch (error) {
+        console.warn("Background renewal check failed or is offline:", error);
+    }
+});

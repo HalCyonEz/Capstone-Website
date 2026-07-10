@@ -37,7 +37,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
-        displayRenewals(snapshot, tbody);
+        // Await the display function since it now fetches nested user data
+        await displayRenewals(snapshot, tbody, db);
 
     } catch (error) {
         console.error("❌ Error:", error);
@@ -45,27 +46,91 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 });
 
-function displayRenewals(snapshot, tbody) {
+// Made async to fetch expiration dates from both collections
+async function displayRenewals(snapshot, tbody, db) {
     tbody.innerHTML = "";
-    snapshot.forEach(doc => {
+    
+    for (const doc of snapshot.docs) {
         const data = doc.data();
         cachedRenewals[doc.id] = data;
         const name = `${data.firstName || ''} ${data.middleInitial ? data.middleInitial + '.' : ''} ${data.lastName || ''}`.trim() || 'Unknown';
-        const date = data.submittedAt ? data.submittedAt.toDate().toLocaleDateString() : 'N/A';
+        const submitDate = data.submittedAt ? data.submittedAt.toDate().toLocaleDateString() : 'N/A';
+
+        let anchorDateObj = null;
+        try {
+            // 1. Fetch the user's mobile app profile
+            const userDoc = await db.collection("users").doc(data.userId).get();
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                
+                // 2. Check if they have renewed before (users collection)
+                if (userData.lastRenewalDate) {
+                    anchorDateObj = userData.lastRenewalDate.toDate();
+                } 
+                // 3. If no renewal history, fetch original registration date (solo_parent_records collection)
+                else if (userData.record_id) {
+                    const recordDoc = await db.collection("solo_parent_records").doc(userData.record_id).get();
+                    if (recordDoc.exists && recordDoc.data().registrationDate) {
+                        anchorDateObj = recordDoc.data().registrationDate.toDate();
+                    }
+                }
+                
+                // 4. Absolute fallback just in case both are missing
+                if (!anchorDateObj && userData.approvedAt) {
+                    anchorDateObj = userData.approvedAt.toDate();
+                }
+            }
+        } catch (e) {
+            console.error("Could not fetch user anchor date", e);
+        }
+
+        let statusText = "Date Missing";
+        let badgeClass = "bg-gray-100 text-gray-800 border-gray-200";
+
+        if (anchorDateObj) {
+            // Calculate Expiration: Anchor Date + 1 Year (Just for color coding!)
+            const expDate = new Date(anchorDateObj);
+            expDate.setFullYear(expDate.getFullYear() + 1);
+            expDate.setHours(0, 0, 0, 0);
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const diffTime = expDate.getTime() - today.getTime();
+            const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            // Display the ACTUAL DATE ISSUED / RENEWED instead of the future date
+            statusText = anchorDateObj.toLocaleDateString();
+
+            // Color code based on urgency
+            if (daysLeft < 0) {
+                badgeClass = "bg-red-100 text-red-800 border-red-200 animate-pulse"; 
+                statusText += ` (Expired)`;
+            } else if (daysLeft <= 30) {
+                badgeClass = "bg-orange-100 text-orange-800 border-orange-200"; 
+                statusText += ` (Expiring Soon)`;
+            } else {
+                badgeClass = "bg-green-100 text-green-800 border-green-200"; 
+                statusText += ` (Valid)`;
+            }
+        }
 
         const row = document.createElement('tr');
         row.className = "hover:bg-gray-50 border-b";
         row.innerHTML = `
             <td class="p-4 font-bold text-gray-900">${name}</td>
             <td class="p-4 text-sm text-gray-600">ID Renewal</td>
-            <td class="p-4 text-sm text-gray-500">${date}</td>
-            <td class="p-4"><span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full border border-yellow-200 font-bold">Pending</span></td>
+            <td class="p-4 text-sm text-gray-500">${submitDate}</td>
+            <td class="p-4">
+                <span class="${badgeClass} text-xs px-2 py-1 rounded-full border font-bold">
+                    ${statusText}
+                </span>
+            </td>
             <td class="p-4 text-right">
                 <button class="bg-blue-600 text-white px-4 py-1.5 rounded text-xs font-medium hover:bg-blue-700 transition shadow-sm" onclick="handleView('${doc.id}')">Review Form</button>
             </td>
         `;
         tbody.appendChild(row);
-    });
+    }
 }
 
 // ==========================================

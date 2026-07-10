@@ -1,5 +1,6 @@
 // Import v2 triggers
 const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const { onCall } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 
 // Initialize Admin SDK
@@ -137,5 +138,111 @@ exports.notifyUserOnStatusChange = onDocumentUpdated({
         }
     } catch (error) {
         console.error(`❌ [SPDA Error] Failed to send FCM notification to ${userId}:`, error);
+    }
+});
+
+/**
+ * ==========================================
+ * 3. SILENT ADMIN RENEWAL TRIGGER (v2)
+ * Called by the frontend when an admin logs in.
+ * Checks once per day for 30, 14, and 3-day expirations.
+ * ==========================================
+ */
+exports.processRenewalReminders = onCall({ 
+    region: "asia-southeast2", 
+    cors: true 
+}, async (request) => {
+    const now = new Date();
+    
+    // Format the date strictly to Philippine Time so UTC rollovers don't trigger this twice a day
+    const options = { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' };
+    const formatter = new Intl.DateTimeFormat('en-CA', options);
+    const todayString = formatter.format(now); // Outputs: YYYY-MM-DD
+
+    // 1. SPAM PREVENTION: Check if we already sent reminders today
+    const systemRef = db.collection("system_settings").doc("cron_tracker");
+    const systemDoc = await systemRef.get();
+    
+    if (systemDoc.exists && systemDoc.data().lastRenewalRun === todayString) {
+        console.log("Reminders already processed today. Skipping.");
+        return { status: "skipped", message: "Already ran today" };
+    }
+
+    try {
+        const usersSnapshot = await db.collection("users").where("status", "==", "approved").get();
+        if (usersSnapshot.empty) return { status: "no_users" };
+
+        const msPerDay = 1000 * 60 * 60 * 24;
+        const notificationPromises = [];
+        let totalSent = 0;
+
+        // 2. CALCULATE EXACT RENEWAL DATES
+        usersSnapshot.forEach((doc) => {
+            const data = doc.data();
+            const tokens = data.fcmTokens || [];
+            if (tokens.length === 0) return; 
+
+            // Find start date (fallback to approvedAt or createdAt)
+            const baseTimestamp = data.lastRenewalDate || data.approvedAt || data.createdAt;
+            if (!baseTimestamp) return;
+
+            // Add exactly 1 year to the base date
+            const baseDate = baseTimestamp.toDate();
+            const expirationDate = new Date(baseDate.getTime());
+            expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+
+            // Calculate exact days remaining
+            const diffTime = expirationDate.getTime() - now.getTime();
+            const daysRemaining = Math.round(diffTime / msPerDay);
+
+            // 3. TARGET EXACT TIMEFRAMES (1 Month, 2 Weeks, 3 Days)
+            if ([30, 14, 3].includes(daysRemaining)) {
+                totalSent++;
+                
+                let urgency = daysRemaining === 3 ? "URGENT: " : "";
+                
+                const message = {
+                    notification: {
+                        title: `${urgency}Solo Parent ID Renewal`,
+                        body: `Your ID expires in exactly ${daysRemaining} days. Please prepare your renewal documents.`,
+                    },
+                    tokens: tokens, 
+                };
+
+                // Send and include token cleanup
+                const sendPromise = admin.messaging().sendEachForMulticast(message).then(async (response) => {
+                    if (response.failureCount > 0) {
+                        const invalidTokens = [];
+                        response.responses.forEach((resp, idx) => {
+                            if (!resp.success && (resp.error.code === "messaging/invalid-registration-token" || resp.error.code === "messaging/registration-token-not-registered")) {
+                                invalidTokens.push(tokens[idx]);
+                            }
+                        });
+                        if (invalidTokens.length > 0) {
+                            await db.collection("users").doc(doc.id).update({
+                                fcmTokens: admin.firestore.FieldValue.arrayRemove(...invalidTokens)
+                            });
+                        }
+                    }
+                });
+
+                notificationPromises.push(sendPromise);
+            }
+        });
+
+        // 4. EXECUTE & UPDATE TRACKER
+        if (notificationPromises.length > 0) {
+            await Promise.all(notificationPromises);
+        }
+
+        // Lock it so it doesn't run again today
+        await systemRef.set({ lastRenewalRun: todayString }, { merge: true });
+
+        console.log(`Successfully sent ${totalSent} renewal reminders.`);
+        return { status: "success", sent: totalSent };
+
+    } catch (error) {
+        console.error("Error processing renewals:", error);
+        throw new Error("Failed to process renewals");
     }
 });
