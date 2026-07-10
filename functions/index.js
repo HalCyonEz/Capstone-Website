@@ -58,6 +58,7 @@ exports.sendAnnouncementNotification = onDocumentCreated({
  * ==========================================
  * 2. APPROVAL/REJECTION UNICAST NOTIFICATIONS (v2)
  * Triggers when a document is updated in the 'users' collection
+ * Handles BOTH Initial Registrations and Renewals
  * ==========================================
  */
 exports.notifyUserOnStatusChange = onDocumentUpdated({
@@ -68,35 +69,62 @@ exports.notifyUserOnStatusChange = onDocumentUpdated({
     const previousValue = event.data.before.data();
     const userId = event.params.userId;
 
-    // 1. Target Condition: Only trigger if the status has actually changed
-    if (newValue.status === previousValue.status) {
-        return; 
-    }
-
-    const newStatus = newValue.status;
     const tokens = newValue.fcmTokens;
 
-    // 2. Clean Error Handling: Check for missing/empty tokens
+    // 1. Clean Error Handling: Check for missing/empty tokens
     if (!tokens || !Array.isArray(tokens) || tokens.length === 0) {
         console.warn(`[SPDA Notice] Cannot send notification to ${userId}. No FCM tokens available.`);
         return;
     }
 
-    // 3. Construct the Payload conditionally
     let notificationTitle = "";
     let notificationBody = "";
+    let shouldSend = false;
 
-    if (newStatus === "approved") {
-        notificationTitle = "Account Approved! 🎉";
-        notificationBody = "Welcome to the SPDA App. Your solo parent verification is complete and full access is now unlocked.";
-    } else if (newStatus === "rejected") {
-        const reason = newValue.rejectReason || "Please review your submitted documents.";
-        notificationTitle = "Application Rejected ❌";
-        notificationBody = `Your application was rejected: ${reason}. Please check your profile to update and resubmit.`;
-    } else {
-        // Ignore other status changes
-        return; 
+    // ==========================================
+    // SCENARIO A: Initial Account Registration
+    // ==========================================
+    if (newValue.status !== previousValue.status) {
+        if (newValue.status === "approved") {
+            notificationTitle = "Account Approved! 🎉";
+            notificationBody = "Welcome to the SPDA App. Your solo parent verification is complete and full access is now unlocked.";
+            shouldSend = true;
+        } else if (newValue.status === "rejected") {
+            const reason = newValue.rejectReason || "Please review your submitted documents.";
+            notificationTitle = "Application Rejected ❌";
+            notificationBody = `Your application was rejected: ${reason}. Please check your profile to update and resubmit.`;
+            shouldSend = true;
+        }
+    } 
+    // ==========================================
+    // SCENARIO B: ID Renewal Request
+    // ==========================================
+    else if (newValue.renewal_status !== previousValue.renewal_status) {
+        if (newValue.renewal_status === "approved") {
+            notificationTitle = "Renewal Approved! 🎉";
+            notificationBody = "Your Solo Parent ID renewal has been successfully approved and your records are now updated.";
+            shouldSend = true;
+        } else if (newValue.renewal_status === "rejected") {
+            const reason = newValue.renewalRejectReason || "Please review your submitted documents.";
+            const remarks = newValue.renewalRejectRemarks || ""; // Grab the additional comments
+            
+            notificationTitle = "Renewal Rejected ❌";
+            
+            // Format the notification beautifully based on what the admin provided
+            if (reason === "Other" && remarks !== "") {
+                notificationBody = `Your renewal request was rejected. Reason: ${remarks}`;
+            } else if (remarks !== "") {
+                notificationBody = `Your renewal request was rejected. Reason: ${reason}. Comments: ${remarks}`;
+            } else {
+                notificationBody = `Your renewal request was rejected: ${reason}. Please check your profile to update and resubmit.`;
+            }
+            
+            shouldSend = true;
+        }
     }
+
+    // 2. Stop execution if nothing changed
+    if (!shouldSend) return;
 
     const message = {
         notification: {
@@ -107,11 +135,11 @@ exports.notifyUserOnStatusChange = onDocumentUpdated({
     };
 
     try {
-        // 4. Send targeted push notification
+        // 3. Send targeted push notification
         const response = await admin.messaging().sendEachForMulticast(message);
         console.log(`✅ [SPDA Success] Notification sent to ${response.successCount} devices for user ${userId}.`);
 
-        // 5. Token Cleanup: Remove stale, unregistered, or invalid tokens
+        // 4. Token Cleanup: Remove stale, unregistered, or invalid tokens
         if (response.failureCount > 0) {
             const invalidTokens = [];
             

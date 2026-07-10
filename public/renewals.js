@@ -1,4 +1,4 @@
-// public/renewals.js - FINAL PARITY VERSION (WITH FULL SAVING & HIGHLIGHT FIXES)
+// public/renewals.js - COMPLETE AND FIXED VERSION
 
 console.log("🎯 renewals.js loaded!");
 
@@ -8,9 +8,10 @@ let rejectTargetUserId = null;
 let approveId = null;
 let approveUserId = null;
 let pendingRejectReason = "";
+let pendingRejectRemarks = ""; // Added to capture separate comments
 
 document.addEventListener('DOMContentLoaded', async function() {
-    feather.replace();
+    if (typeof feather !== 'undefined') feather.replace();
     const tbody = document.getElementById('renewals-table-body');
     if (!tbody) return;
 
@@ -37,7 +38,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
-        // Await the display function since it now fetches nested user data
         await displayRenewals(snapshot, tbody, db);
 
     } catch (error) {
@@ -46,7 +46,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 });
 
-// Made async to fetch expiration dates from both collections
+// ==========================================
+// TABLE DISPLAY LOGIC (WITH ISSUE DATE CALCULATION)
+// ==========================================
 async function displayRenewals(snapshot, tbody, db) {
     tbody.innerHTML = "";
     
@@ -58,24 +60,17 @@ async function displayRenewals(snapshot, tbody, db) {
 
         let anchorDateObj = null;
         try {
-            // 1. Fetch the user's mobile app profile
             const userDoc = await db.collection("users").doc(data.userId).get();
             if (userDoc.exists) {
                 const userData = userDoc.data();
-                
-                // 2. Check if they have renewed before (users collection)
                 if (userData.lastRenewalDate) {
                     anchorDateObj = userData.lastRenewalDate.toDate();
-                } 
-                // 3. If no renewal history, fetch original registration date (solo_parent_records collection)
-                else if (userData.record_id) {
+                } else if (userData.record_id) {
                     const recordDoc = await db.collection("solo_parent_records").doc(userData.record_id).get();
                     if (recordDoc.exists && recordDoc.data().registrationDate) {
                         anchorDateObj = recordDoc.data().registrationDate.toDate();
                     }
                 }
-                
-                // 4. Absolute fallback just in case both are missing
                 if (!anchorDateObj && userData.approvedAt) {
                     anchorDateObj = userData.approvedAt.toDate();
                 }
@@ -88,7 +83,6 @@ async function displayRenewals(snapshot, tbody, db) {
         let badgeClass = "bg-gray-100 text-gray-800 border-gray-200";
 
         if (anchorDateObj) {
-            // Calculate Expiration: Anchor Date + 1 Year (Just for color coding!)
             const expDate = new Date(anchorDateObj);
             expDate.setFullYear(expDate.getFullYear() + 1);
             expDate.setHours(0, 0, 0, 0);
@@ -98,10 +92,8 @@ async function displayRenewals(snapshot, tbody, db) {
             const diffTime = expDate.getTime() - today.getTime();
             const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-            // Display the ACTUAL DATE ISSUED / RENEWED instead of the future date
             statusText = anchorDateObj.toLocaleDateString();
 
-            // Color code based on urgency
             if (daysLeft < 0) {
                 badgeClass = "bg-red-100 text-red-800 border-red-200 animate-pulse"; 
                 statusText += ` (Expired)`;
@@ -131,10 +123,11 @@ async function displayRenewals(snapshot, tbody, db) {
         `;
         tbody.appendChild(row);
     }
+    if (typeof feather !== 'undefined') feather.replace();
 }
 
 // ==========================================
-// STRING COMPARISON ENGINE (Fixed Blank Value Handling)
+// HIGHLIGHT & SIMILARITY CHECKER
 // ==========================================
 function calculateSimilarity(appStr, officialStr) {
     let s1 = String(appStr || "").trim().toLowerCase();
@@ -142,7 +135,6 @@ function calculateSimilarity(appStr, officialStr) {
 
     if (s1 === s2) return 'exact';
     if (s1 === "" || s2 === "") return 'mismatch';
-
     if (s1.includes(s2) || s2.includes(s1)) return 'partial';
 
     const costs = [];
@@ -166,9 +158,7 @@ function calculateSimilarity(appStr, officialStr) {
     
     const distance = costs[s2.length];
     const maxLen = Math.max(s1.length, s2.length);
-    
     if (distance <= 2 && maxLen >= 4) return 'partial'; 
-
     return 'mismatch';
 }
 
@@ -183,37 +173,32 @@ function applyHighlight(elementId, appVal, officialVal) {
     el.className = "font-medium transition-colors duration-200 cursor-default"; 
     el.removeAttribute("title"); 
 
-    // If both are exact matches or both are blank, no highlight
     if (safeApp === safeOld) {
         el.classList.add("text-gray-900");
         return;
     }
 
-    // If old was completely blank, it's a new input, highlight it heavily!
     if (safeOld === "") {
         el.classList.add("bg-orange-300", "text-orange-900", "px-1.5", "py-0.5", "rounded");
         el.title = `Previous Record: Blank / No Data`;
         return;
     }
 
-    // Use similarity checker for typos vs entirely new information
     const matchType = calculateSimilarity(safeApp, safeOld);
     
     if (matchType === 'exact') {
         el.classList.add("text-gray-900");
-    } 
-    else if (matchType === 'partial') {
+    } else if (matchType === 'partial') {
         el.classList.add("bg-orange-100", "text-yellow-800", "px-1.5", "py-0.5", "rounded");
         el.title = `Previous Record: ${safeOld}`; 
-    } 
-    else {
+    } else {
         el.classList.add("bg-orange-300", "text-orange-900", "px-1.5", "py-0.5", "rounded");
         el.title = `Previous Record: ${safeOld}`;
     }
 }
 
 // ==========================================
-// FULL VIEW MODAL LOGIC
+// VIEW MODAL LOGIC
 // ==========================================
 window.handleView = async function(id) {
     const newData = cachedRenewals[id];
@@ -250,13 +235,11 @@ window.handleView = async function(id) {
     document.getElementById('r-name-side').textContent = fullName;
     document.getElementById('r-avatar').textContent = newData.firstName ? newData.firstName.charAt(0).toUpperCase() : "U";
     
-    // Sidebar Highlighting
     applyHighlight('r-email', newData.email, oldData.email);
     let newAddress = [newData.houseNumber, newData.streetName || newData.street, newData.subdivision, newData.barangay, newData.municipality || newData.city].filter(Boolean).join(', ');
     let oldAddress = [oldData.houseNumber, oldData.streetName || oldData.street, oldData.subdivision, oldData.barangay, oldData.municipality || oldData.city].filter(Boolean).join(', ');
     applyHighlight('r-address', newAddress || newData.address, oldAddress || oldData.address);
 
-    // Personal Information Highlighting
     applyHighlight('r-name', fullName, oldFullName);
     applyHighlight('r-email-right', newData.email, oldData.email);
     applyHighlight('r-dob', newData.dateOfBirth, oldData.dateOfBirth);
@@ -270,7 +253,6 @@ window.handleView = async function(id) {
     const submitDate = newData.submittedAt ? newData.submittedAt.toDate().toLocaleDateString() : 'N/A';
     document.getElementById('r-registered').textContent = submitDate;
 
-    // Family & Employment Highlighting
     applyHighlight('r-occupation', newData.occupation, oldData.occupation);
     applyHighlight('r-company', newData.companyAgency, oldData.companyAgency);
     applyHighlight('r-income', newData.monthlyIncome, oldData.monthlyIncome);
@@ -280,13 +262,11 @@ window.handleView = async function(id) {
     let oldKidsAges = Array.isArray(oldData.childrenAges) && oldData.childrenAges.length > 0 ? oldData.childrenAges.join(', ') : "None";
     applyHighlight('r-children-ages', newKidsAges, oldKidsAges);
 
-    // Philhealth Fix: Base Member Status purely on whether an ID exists
     let newPhMember = newData.philhealthIdNumber ? "Yes" : "No";
     let oldPhMember = oldData.philhealthIdNumber ? "Yes" : "No";
     applyHighlight('r-philhealth-member', newPhMember, oldPhMember);
     applyHighlight('r-philhealth-id', newData.philhealthIdNumber, oldData.philhealthIdNumber);
 
-    // Document Images
     setImg('r-img-id', 'r-img-id-none', newData.proofIdUrl);
     setImg('r-img-sp', 'r-img-sp-none', newData.proofSoloParentUrl);
     setImg('r-img-ph', 'r-img-ph-none', newData.philhealthIdUrl);
@@ -298,7 +278,7 @@ window.handleView = async function(id) {
 window.closeModal = function() { document.getElementById('viewModal').classList.add('hidden'); };
 
 // ==========================================
-// APPROVE LOGIC (Fully saves all profile data to BOTH databases)
+// APPROVE LOGIC
 // ==========================================
 window.confirmApprove = function(subId, userId) {
     approveId = subId; approveUserId = userId;
@@ -312,19 +292,17 @@ window.confirmApprove = function(subId, userId) {
     btn.onclick = async () => {
         btn.innerHTML = '<i data-feather="loader" class="animate-spin w-4 h-4 mr-2 inline"></i> Updating...';
         btn.disabled = true;
-        feather.replace();
+        if (typeof feather !== 'undefined') feather.replace();
 
         try {
             const db = firebase.firestore();
             const batch = db.batch();
             const newData = cachedRenewals[approveId];
 
-            // 1. Fetch existing user to get their official LGU record_id and fallback data
             const userDoc = await db.collection("users").doc(approveUserId).get();
             const oldData = userDoc.exists ? userDoc.data() : {};
             const officialRecordId = oldData.record_id;
 
-            // Helper to prevent wiping data if the mobile app didn't send a specific field
             const safeVal = (newVal, existingVal, fallback = "") => {
                 if (newVal !== undefined && newVal !== null && String(newVal).trim() !== "") return newVal;
                 if (existingVal !== undefined && existingVal !== null && String(existingVal).trim() !== "") return existingVal;
@@ -335,7 +313,6 @@ window.confirmApprove = function(subId, userId) {
                 renewal_status: "approved",
                 lastRenewalDate: firebase.firestore.FieldValue.serverTimestamp(),
                 
-                // Personal Information
                 firstName: safeVal(newData.firstName, oldData.firstName),
                 lastName: safeVal(newData.lastName, oldData.lastName),
                 middleInitial: safeVal(newData.middleInitial, oldData.middleInitial),
@@ -348,26 +325,20 @@ window.confirmApprove = function(subId, userId) {
                 civilStatus: safeVal(newData.civilStatus, oldData.civilStatus),
                 email: safeVal(newData.email, oldData.email),
                 
-                // Employment & Demographics
                 occupation: safeVal(newData.occupation, oldData.occupation), 
                 monthlyIncome: safeVal(newData.monthlyIncome, oldData.monthlyIncome),
-                
-                // FIX: Cross-map both 'company' and 'companyAgency' to handle schema mismatches
                 company: safeVal(newData.companyAgency || newData.company, oldData.company || oldData.companyAgency),
                 companyAgency: safeVal(newData.companyAgency || newData.company, oldData.companyAgency || oldData.company),
                 
-                // Address
                 houseNumber: safeVal(newData.houseNumber, oldData.houseNumber), 
                 streetName: safeVal(newData.streetName || newData.street, oldData.streetName || oldData.street),
                 subdivision: safeVal(newData.subdivision, oldData.subdivision), 
                 barangay: safeVal(newData.barangay, oldData.barangay), 
                 municipality: safeVal(newData.municipality || newData.city, oldData.municipality || oldData.city),
                 
-                // Family
                 numberOfChildren: safeVal(newData.numberOfChildren, oldData.numberOfChildren, 0), 
                 childrenAges: newData.childrenAges || oldData.childrenAges || [],
                 
-                // Official IDs and Proofs
                 philhealthIdNumber: safeVal(newData.philhealthIdNumber, oldData.philhealthIdNumber),
                 hasPhilhealth: (newData.philhealthIdNumber || oldData.philhealthIdNumber) ? true : false,
                 proofIdUrl: safeVal(newData.proofIdUrl, oldData.proofIdUrl),
@@ -375,20 +346,17 @@ window.confirmApprove = function(subId, userId) {
                 philhealthIdUrl: safeVal(newData.philhealthIdUrl, oldData.philhealthIdUrl)
             };
 
-            // 2. Mark Renewal as Approved
             batch.update(db.collection("renewalSubmissions").doc(approveId), { 
                 status: "approved", 
                 renewal_status: "approved", 
                 reviewedDate: firebase.firestore.FieldValue.serverTimestamp() 
             });
 
-            // 3. Overwrite User Profile (Mobile App Database)
             batch.update(db.collection("users").doc(approveUserId), updatePayload);
 
-            // 4. Overwrite Official LGU Record (Admin Dashboard Database)
             if (officialRecordId) {
                 let lguPayload = { ...updatePayload };
-                delete lguPayload.renewal_status; // Keep LGU database clean
+                delete lguPayload.renewal_status; 
                 lguPayload.lastUpdated = firebase.firestore.FieldValue.serverTimestamp();
                 batch.update(db.collection("solo_parent_records").doc(officialRecordId), lguPayload);
             }
@@ -403,7 +371,7 @@ window.confirmApprove = function(subId, userId) {
         }
     };
     document.getElementById('confirmModal').classList.remove('hidden');
-    feather.replace();
+    if (typeof feather !== 'undefined') feather.replace();
 };
 
 // ==========================================
@@ -433,8 +401,10 @@ window.handleRejectValidation = function() {
 
 window.confirmRejectSubmission = function() {
     const selectVal = document.getElementById('reject-select').value;
-    const textVal = document.getElementById('reject-reason-text').value;
-    pendingRejectReason = selectVal === "Other" ? textVal : selectVal + (textVal ? `: ${textVal}` : "");
+    const textVal = document.getElementById('reject-reason-text').value.trim();
+    
+    pendingRejectReason = selectVal;
+    pendingRejectRemarks = textVal;
 
     document.getElementById('rejectModal').classList.add('hidden');
     document.getElementById('confirm-title').innerText = "Confirm Rejection";
@@ -446,20 +416,49 @@ window.confirmRejectSubmission = function() {
     btn.onclick = executeRejection;
 
     document.getElementById('confirmModal').classList.remove('hidden');
-    feather.replace();
+    if (typeof feather !== 'undefined') feather.replace();
 };
 
 async function executeRejection() {
+    // 1. Grab the confirm button and set it to a LOADING state immediately
+    const btn = document.getElementById('confirm-btn-action');
+    btn.innerHTML = '<i data-feather="loader" class="animate-spin w-4 h-4 mr-2 inline"></i> Rejecting...';
+    btn.disabled = true;
+    if (typeof feather !== 'undefined') feather.replace();
+
     try {
         const batch = firebase.firestore().batch();
-        batch.update(firebase.firestore().collection("renewalSubmissions").doc(rejectTargetId), { status: "rejected", renewal_status: "rejected", rejectionReason: pendingRejectReason, reviewedDate: firebase.firestore.FieldValue.serverTimestamp() });
-        batch.update(firebase.firestore().collection("users").doc(rejectTargetUserId), { renewal_status: "rejected" });
+        
+        const safeReason = pendingRejectReason || "No reason provided";
+        const safeRemarks = pendingRejectRemarks || "";
+
+        batch.update(firebase.firestore().collection("renewalSubmissions").doc(rejectTargetId), { 
+            status: "rejected", 
+            renewal_status: "rejected", 
+            rejectionReason: safeReason,
+            rejectionRemarks: safeRemarks, 
+            reviewedDate: firebase.firestore.FieldValue.serverTimestamp() 
+        });
+        
+        batch.update(firebase.firestore().collection("users").doc(rejectTargetUserId), { 
+            renewal_status: "rejected",
+            renewalRejectReason: safeReason,
+            renewalRejectRemarks: safeRemarks 
+        });
+        
+        // 2. Wait for the database save to complete...
         await batch.commit();
+        
+        // 3. Close the modal and show the success screen!
         document.getElementById('confirmModal').classList.add('hidden');
         showSuccessModal("Renewal Rejected.");
     } catch (e) {
+        console.error("Rejection Error: ", e);
         alert("Error: " + e.message);
         document.getElementById('confirmModal').classList.add('hidden');
+        
+        // Safety net: Re-enable the button if an error happens
+        btn.disabled = false; 
     }
 }
 
@@ -474,6 +473,6 @@ window.closeConfirmModal = function() {
 window.showSuccessModal = function(msg) {
     document.getElementById('success-message').innerText = msg;
     document.getElementById('successModal').classList.remove('hidden');
-    feather.replace(); 
+    if (typeof feather !== 'undefined') feather.replace(); 
 };
 window.closeSuccessModal = function() { location.reload(); };
