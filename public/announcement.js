@@ -254,7 +254,7 @@ if (triggerBtn) {
     triggerBtn.addEventListener('click', () => {
         // Reset modal to original state
         document.getElementById('modal-msg-title').textContent = "Send Notifications?";
-        document.getElementById('modal-msg-body').textContent = "Are you sure you want to trigger the renewal check and send notifications to all expiring members?";
+        document.getElementById('modal-msg-body').textContent = "Are you sure you want to send notifications to all expiring members?";
         confirmBtn.classList.remove('hidden'); // Ensure confirm button is visible
         renewalModal.classList.remove('hidden');
         feather.replace();
@@ -279,7 +279,7 @@ confirmBtn.addEventListener('click', async () => {
         
         // Success state
         document.getElementById('modal-msg-title').textContent = "Success!";
-        document.getElementById('modal-msg-body').textContent = "✅ Renewal checks initiated! Notifications are being sent to expiring users.";
+        document.getElementById('modal-msg-body').textContent = "✅ Renewal checks initiated! Notifications are already being sent.";
         confirmBtn.classList.add('hidden'); // Hide confirm so they only see 'Close'
         cancelBtn.textContent = "Close";
     } catch (error) {
