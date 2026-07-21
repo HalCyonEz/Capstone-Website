@@ -1,10 +1,7 @@
 import { db, storage } from "./firebase-config.js";
-import { initSidebar, initLogout } from "./utils.js";
+import { initSidebar, requireAuth } from "./utils.js"; // <-- 1. Swapped initLogout for requireAuth
 import { collection, getDocs, query, orderBy, addDoc, deleteDoc, doc, Timestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-storage.js";
-
-initSidebar();
-initLogout();
 
 const annForm = document.getElementById('create-announcement-form');
 const annListEl = document.getElementById('announcement-list');
@@ -108,20 +105,15 @@ function applyDateFilter() {
         if (!ann.timestamp) return false;
         
         const annDate = ann.timestamp.toDate();
-        // Reset annDate time to compare dates strictly if needed, 
-        // OR compare full timestamps. Here we compare full timestamps roughly.
-        
         let isValid = true;
 
         if (startVal) {
-            // Create date object for start of that day (00:00:00)
             const startDate = new Date(startVal);
             startDate.setHours(0,0,0,0);
             if (annDate < startDate) isValid = false;
         }
 
         if (endVal) {
-            // Create date object for end of that day (23:59:59)
             const endDate = new Date(endVal);
             endDate.setHours(23,59,59,999);
             if (annDate > endDate) isValid = false;
@@ -145,7 +137,7 @@ if (startDateInput && endDateInput) {
     });
 }
 
-// --- Submit Logic (Same as before) ---
+// --- Submit Logic ---
 if (annForm) {
     annForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -192,7 +184,7 @@ if (annForm) {
     });
 }
 
-// --- MODAL FUNCTIONS (Same as before) ---
+// --- MODAL FUNCTIONS ---
 window.openAnnouncementModal = (id) => {
     const ann = cachedAnnouncements.find(a => a.id === id);
     if (!ann) return;
@@ -236,14 +228,8 @@ window.deleteCurrentAnnouncement = async () => {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadAnnouncements();
-    loadExpiringUsers();
-});
-
-
 // ==========================================
-// MANUAL RENEWAL NOTIFICATION TRIGGER (With Custom Modal)
+// MANUAL RENEWAL NOTIFICATION TRIGGER
 // ==========================================
 const triggerBtn = document.getElementById('trigger-renewals-btn');
 const renewalModal = document.getElementById('renewal-modal');
@@ -252,46 +238,47 @@ const cancelBtn = document.getElementById('modal-cancel-btn');
 
 if (triggerBtn) {
     triggerBtn.addEventListener('click', () => {
-        // Reset modal to original state
         document.getElementById('modal-msg-title').textContent = "Send Notifications?";
         document.getElementById('modal-msg-body').textContent = "Are you sure you want to send notifications to all expiring members?";
-        confirmBtn.classList.remove('hidden'); // Ensure confirm button is visible
+        confirmBtn.classList.remove('hidden'); 
         renewalModal.classList.remove('hidden');
         feather.replace();
     });
 }
 
-cancelBtn.addEventListener('click', () => {
-    renewalModal.classList.add('hidden');
-});
-
-confirmBtn.addEventListener('click', async () => {
-    // Visual loading state inside the modal
-    confirmBtn.innerHTML = `<i data-feather="loader" class="w-4 h-4 animate-spin"></i>`;
-    confirmBtn.disabled = true;
-    feather.replace();
-
-    try {
-        await addDoc(collection(db, "system_triggers"), {
-            action: "run_renewal_check",
-            triggeredAt: Timestamp.now()
-        });
-        
-        // Success state
-        document.getElementById('modal-msg-title').textContent = "Success!";
-        document.getElementById('modal-msg-body').textContent = "✅ Renewal checks initiated! Notifications are already being sent.";
-        confirmBtn.classList.add('hidden'); // Hide confirm so they only see 'Close'
-        cancelBtn.textContent = "Close";
-    } catch (error) {
-        console.error("Error triggering renewals:", error);
-        alert("Failed to initiate check. Ensure you have network connectivity.");
+if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
         renewalModal.classList.add('hidden');
-    } finally {
-        confirmBtn.innerHTML = "Confirm";
-        confirmBtn.disabled = false;
+    });
+}
+
+if (confirmBtn) {
+    confirmBtn.addEventListener('click', async () => {
+        confirmBtn.innerHTML = `<i data-feather="loader" class="w-4 h-4 animate-spin"></i>`;
+        confirmBtn.disabled = true;
         feather.replace();
-    }
-});
+
+        try {
+            await addDoc(collection(db, "system_triggers"), {
+                action: "run_renewal_check",
+                triggeredAt: Timestamp.now()
+            });
+            
+            document.getElementById('modal-msg-title').textContent = "Success!";
+            document.getElementById('modal-msg-body').textContent = "✅ Renewal checks initiated! Notifications are already being sent.";
+            confirmBtn.classList.add('hidden'); 
+            cancelBtn.textContent = "Close";
+        } catch (error) {
+            console.error("Error triggering renewals:", error);
+            alert("Failed to initiate check. Ensure you have network connectivity.");
+            renewalModal.classList.add('hidden');
+        } finally {
+            confirmBtn.innerHTML = "Confirm";
+            confirmBtn.disabled = false;
+            feather.replace();
+        }
+    });
+}
 
 // --- Load Expiring Users ---
 async function loadExpiringUsers() {
@@ -299,7 +286,6 @@ async function loadExpiringUsers() {
     if (!listEl || !db) return;
     
     try {
-        // Only fetch users who are currently approved
         const q = query(collection(db, "users")); 
         const snapshot = await getDocs(q);
         
@@ -309,22 +295,18 @@ async function loadExpiringUsers() {
 
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
-            if (data.status !== "approved") return; // Skip unapproved
+            if (data.status !== "approved") return; 
 
-            // Find the start date just like the backend does
             const baseTimestamp = data.lastRenewalDate || data.approvedAt || data.createdAt;
             if (!baseTimestamp) return;
 
-            // Calculate expiration (1 year later)
             const baseDate = baseTimestamp.toDate();
             const expirationDate = new Date(baseDate.getTime());
             expirationDate.setFullYear(expirationDate.getFullYear() + 1);
 
-            // Calculate exact days remaining
             const diffTime = expirationDate.getTime() - now.getTime();
             const daysRemaining = Math.ceil(diffTime / msPerDay); 
 
-            // If they expire within 30 days (and haven't already expired)
             if (daysRemaining <= 30 && daysRemaining >= 0) {
                 expiringUsers.push({
                     id: docSnap.id,
@@ -335,10 +317,8 @@ async function loadExpiringUsers() {
             }
         });
 
-        // Sort by nearest expiration first
         expiringUsers.sort((a, b) => a.daysRemaining - b.daysRemaining);
 
-        // Render to table
         listEl.innerHTML = "";
         if (expiringUsers.length === 0) {
             listEl.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-400">No IDs expiring within the next 30 days.</td></tr>`;
@@ -348,7 +328,6 @@ async function loadExpiringUsers() {
         expiringUsers.forEach(user => {
             const dateStr = user.expirationDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
             
-            // Color code the urgency badge
             let statusBadge = '';
             if (user.daysRemaining <= 3) {
                 statusBadge = `<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">${user.daysRemaining} days</span>`;
@@ -373,3 +352,14 @@ async function loadExpiringUsers() {
         listEl.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-red-500">Failed to load data.</td></tr>`;
     }
 }
+
+// ==========================================
+// 2. INITIALIZATION HOOK (Moved to bottom)
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    initSidebar();
+    requireAuth(); // <-- 3. Calls the new security guard & connects the logout button
+    
+    loadAnnouncements();
+    loadExpiringUsers();
+});

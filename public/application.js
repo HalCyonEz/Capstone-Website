@@ -1,5 +1,10 @@
 console.log("🎯 application.js loaded - Senior Developer Refactored Version");
 
+// 1. IMPORT MODULAR FIREBASE & SECURITY GUARDS
+import { db } from "./firebase-config.js";
+import { initSidebar, requireAuth } from "./utils.js";
+import { collection, getDocs, query, where, doc, updateDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
 let pendingUsersCache = {};
 let currentReviewingUid = null; 
 let pendingApprovalType = null;
@@ -22,18 +27,12 @@ const soloParentCategories = {
     "f": "Foster parent",
 };
 
-document.addEventListener('DOMContentLoaded', async function() {
-    const firebaseConfig = { 
-        apiKey: "AIzaSyBjO4P1-Ir_iJSkLScTiyshEd28GdskN24", 
-        authDomain: "solo-parent-app.firebaseapp.com", 
-        databaseURL: "https://solo-parent-app-default-rtdb.asia-southeast1.firebasedatabase.app", 
-        projectId: "solo-parent-app", 
-        storageBucket: "solo-parent-app.firebasestorage.app", 
-        messagingSenderId: "292578110807", 
-        appId: "1:292578110807:web:9f5e5c0dcd73c9975e6212" 
-    };
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    window.db = firebase.firestore(); 
+// ==========================================
+// INITIALIZATION & AUTH GUARD
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    initSidebar();
+    requireAuth(); // Instantly secures the page and hooks up the Log Out button
     loadPendingApplications();
 });
 
@@ -99,7 +98,9 @@ async function loadPendingApplications() {
     pendingUsersCache = {};
 
     try {
-        const snapshot = await window.db.collection("users").where("status", "==", "pending").get();
+        // Refactored to modular v9 syntax
+        const q = query(collection(db, "users"), where("status", "==", "pending"));
+        const snapshot = await getDocs(q);
 
         if (snapshot.empty) {
             tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">No pending applications.</td></tr>';
@@ -107,9 +108,9 @@ async function loadPendingApplications() {
         }
 
         tableBody.innerHTML = "";
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            pendingUsersCache[doc.id] = data; 
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            pendingUsersCache[docSnap.id] = data; 
             
             tableBody.innerHTML += `
                 <tr class="border-b hover:bg-gray-50">
@@ -118,7 +119,7 @@ async function loadPendingApplications() {
                     <td class="p-3">${data.municipality || 'N/A'}</td>
                     <td class="p-3"><span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full border border-yellow-200">Pending</span></td>
                     <td class="p-3">
-                        <button onclick='reviewApplication("${doc.id}")' class="bg-blue-600 text-white px-4 py-1.5 rounded text-xs font-medium hover:bg-blue-700 transition shadow-sm">
+                        <button onclick='reviewApplication("${docSnap.id}")' class="bg-blue-600 text-white px-4 py-1.5 rounded text-xs font-medium hover:bg-blue-700 transition shadow-sm">
                             Review
                         </button>
                     </td>
@@ -200,12 +201,16 @@ window.reviewApplication = async function(authUid) {
         let officialData = null;
 
         if (searchId) {
-            const idQuery = await window.db.collection("solo_parent_records").where("soloParentIdNumber", "==", searchId).get();
-            if (!idQuery.empty) officialDoc = idQuery.docs[0];
+            // Refactored to modular v9 syntax
+            const idQuery = query(collection(db, "solo_parent_records"), where("soloParentIdNumber", "==", searchId));
+            const idSnapshot = await getDocs(idQuery);
+            if (!idSnapshot.empty) officialDoc = idSnapshot.docs[0];
         }
         if (!officialDoc && userData.firstName && userData.lastName) {
-            const nameQuery = await window.db.collection("solo_parent_records").where("firstName", "==", userData.firstName).where("lastName", "==", userData.lastName).get();
-            if (!nameQuery.empty) officialDoc = nameQuery.docs[0];
+            // Refactored to modular v9 syntax
+            const nameQuery = query(collection(db, "solo_parent_records"), where("firstName", "==", userData.firstName), where("lastName", "==", userData.lastName));
+            const nameSnapshot = await getDocs(nameQuery);
+            if (!nameSnapshot.empty) officialDoc = nameSnapshot.docs[0];
         }
 
         const btnReject = `<button onclick="openRejectModal()" class="w-full bg-red-100 text-red-700 py-2.5 rounded-md font-bold hover:bg-red-200 transition flex items-center justify-center shadow-sm"><i data-feather="x-circle" class="w-4 h-4 mr-2"></i> Reject </button>`;
@@ -375,18 +380,19 @@ window.executeFinalApproval = async function() {
     feather.replace();
 
     try {
-        const batch = window.db.batch();
-        const mobileUserRef = window.db.collection("users").doc(currentReviewingUid);
+        // Refactored to modular v9 batch write syntax
+        const batch = writeBatch(db);
+        const mobileUserRef = doc(db, "users", currentReviewingUid);
         const userData = pendingUsersCache[currentReviewingUid];
 
         if (type === 'merge') {
-            const officialRecordRef = window.db.collection("solo_parent_records").doc(targetId);
+            const officialRecordRef = doc(db, "solo_parent_records", targetId);
             
             // Build an update object dynamically.
             let updatePayload = {
                 auth_uid: currentReviewingUid,
                 is_online: true,
-                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                lastUpdated: serverTimestamp()
             };
 
             // Helper: Only transfer fields if the mobile app actually provided them
@@ -416,7 +422,7 @@ window.executeFinalApproval = async function() {
             batch.update(mobileUserRef, {
                 status: "approved",
                 record_id: targetId,
-                approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+                approvedAt: serverTimestamp()
             });
         }
 
@@ -489,10 +495,11 @@ window.executeReject = async function() {
     confirmBtn.disabled = true;
 
     try {
-        await window.db.collection("users").doc(currentReviewingUid).update({
+        // Refactored to modular v9 updateDoc syntax
+        await updateDoc(doc(db, "users", currentReviewingUid), {
             status: "rejected",
             rejectReason: finalReason,
-            rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
+            rejectedAt: serverTimestamp()
         });
 
         closeModal('rejectModal');

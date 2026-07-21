@@ -1,7 +1,8 @@
 // utils.js
-import { db } from "./firebase-config.js";
+import { db, auth } from "./firebase-config.js"; // <-- Updated to import auth
 import { doc, updateDoc, Timestamp, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-functions.js"; // <-- NEW IMPORT
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-functions.js"; 
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js"; // <-- Added Firebase Auth methods
 
 // --- Constants ---
 export const DESCRIPTION_TO_CODE_MAP = {
@@ -40,7 +41,6 @@ export function initSidebar() {
         const href = link.getAttribute('href');
         
         // 2. Only highlight if the URL matches EXACTLY
-        // We removed the "profile.html" check, so it won't highlight Members anymore
         if (currentPath.endsWith(href)) {
             link.classList.add('bg-blue-50', 'text-blue-700');
             link.classList.remove('text-gray-600');
@@ -62,15 +62,39 @@ export function initSidebar() {
     }
 }
 
-export function initLogout() {
-    const logoutButtons = Array.from(document.querySelectorAll('button')).filter(button =>
-        button.textContent.includes('Log Out') || button.querySelector('i[data-feather="log-out"]')
-    );
-    logoutButtons.forEach(button => {
-        button.addEventListener('click', function (e) {
-            e.preventDefault();
-            window.location.href = 'index.html';
+// --- NEW AUTHENTICATION GUARD & LOGOUT LOGIC ---
+export function requireAuth() {
+    onAuthStateChanged(auth, (user) => {
+        if (!user) {
+            // SECURITY: Not logged in? Instantly bounce them out using replace() to lock the browser history
+            window.location.replace("index.html");
+            return;
+        }
+
+        // 1. Automatically find and secure all Logout buttons using your previous targeting logic
+        const logoutButtons = Array.from(document.querySelectorAll('button')).filter(button =>
+            button.textContent.includes('Log Out') || button.querySelector('i[data-feather="log-out"]')
+        );
+        
+        logoutButtons.forEach(button => {
+            // Replace the old click listeners with the secure Firebase signOut
+            button.addEventListener('click', async (e) => {
+                e.preventDefault();
+                try {
+                    await signOut(auth);
+                    // onAuthStateChanged will detect the logout and trigger the redirect to index.html automatically
+                } catch (error) {
+                    console.error("Logout Error:", error);
+                }
+            });
         });
+
+        // 2. Update the Profile Name dynamically (if the HTML element exists)
+        const adminNameEl = document.getElementById('admin-name-desktop');
+        if (adminNameEl && user.email) {
+            const username = user.email.split('@')[0];
+            adminNameEl.textContent = username.charAt(0).toUpperCase() + username.slice(1);
+        }
     });
 }
 

@@ -6,6 +6,7 @@ import { doc, getDoc, getDocs, collection, query, where, updateDoc, serverTimest
 import { DESCRIPTION_TO_CODE_MAP } from './utils.js';
 import { storage } from "./firebase-config.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-storage.js";
+import { initSidebar, requireAuth } from "./utils.js"; // <-- 1. Swapped initLogout for requireAuth
 
 // Automatically flip the map so we can look up by code (e.g., "a7" -> "Abandonment by the spouse")
 const CODE_TO_DESCRIPTION_MAP = Object.entries(DESCRIPTION_TO_CODE_MAP).reduce((acc, [desc, code]) => {
@@ -457,3 +458,14 @@ window.executeArchive = async function() {
         if (typeof feather !== 'undefined') feather.replace();
     }
 };
+
+// ==========================================
+// INITIALIZATION HOOK (Moved to bottom)
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    initSidebar();
+    requireAuth(); // <-- 3. Calls the new security guard & connects the logout button
+    
+    loadAnnouncements();
+    loadExpiringUsers();
+});

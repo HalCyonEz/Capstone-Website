@@ -1,6 +1,9 @@
-// public/renewals.js - COMPLETE AND FIXED VERSION
+console.log("🎯 renewals.js loaded - Modular v9/v12 Active");
 
-console.log("🎯 renewals.js loaded!");
+// 1. IMPORT MODULAR FIREBASE & SECURITY GUARDS
+import { db } from "./firebase-config.js";
+import { initSidebar, requireAuth } from "./utils.js";
+import { collection, query, where, getDocs, getDoc, doc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
 let cachedRenewals = {};
 let rejectTargetId = null;
@@ -8,37 +11,36 @@ let rejectTargetUserId = null;
 let approveId = null;
 let approveUserId = null;
 let pendingRejectReason = "";
-let pendingRejectRemarks = ""; // Added to capture separate comments
+let pendingRejectRemarks = ""; 
 
+// ==========================================
+// INITIALIZATION & AUTH GUARD
+// ==========================================
 document.addEventListener('DOMContentLoaded', async function() {
+    initSidebar();
+    requireAuth(); // <-- Locks down the pending renewals instantly
+
     if (typeof feather !== 'undefined') feather.replace();
     const tbody = document.getElementById('renewals-table-body');
     if (!tbody) return;
 
     try {
-        const firebaseConfig = {
-            apiKey: "AIzaSyBjO4P1-Ir_iJSkLScTiyshEd28GdskN24",
-            authDomain: "solo-parent-app.firebaseapp.com",
-            databaseURL: "https://solo-parent-app-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "solo-parent-app",
-            storageBucket: "solo-parent-app.firebasestorage.app",
-            messagingSenderId: "292578110807",
-            appId: "1:292578110807:web:9f5e5c0dcd73c9975e6212"
-        };
+        // Modular Query: Fetching pending renewals
+        let submissionsQuery = query(collection(db, "renewalSubmissions"), where("renewal_status", "==", "pending"));
+        let snapshot = await getDocs(submissionsQuery);
         
-        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-        const db = firebase.firestore();
-
-        // Load Data
-        let snapshot = await db.collection("renewalSubmissions").where("renewal_status", "==", "pending").get();
-        if (snapshot.empty) snapshot = await db.collection("renewalSubmissions").where("status", "==", "pending").get();
+        // Fallback for older records
+        if (snapshot.empty) {
+            submissionsQuery = query(collection(db, "renewalSubmissions"), where("status", "==", "pending"));
+            snapshot = await getDocs(submissionsQuery);
+        }
 
         if (snapshot.empty) {
             tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-yellow-500">ℹ️ No pending renewals.</td></tr>`;
             return;
         }
 
-        await displayRenewals(snapshot, tbody, db);
+        await displayRenewals(snapshot, tbody);
 
     } catch (error) {
         console.error("❌ Error:", error);
@@ -49,25 +51,29 @@ document.addEventListener('DOMContentLoaded', async function() {
 // ==========================================
 // TABLE DISPLAY LOGIC (WITH ISSUE DATE CALCULATION)
 // ==========================================
-async function displayRenewals(snapshot, tbody, db) {
+async function displayRenewals(snapshot, tbody) {
     tbody.innerHTML = "";
     
-    for (const doc of snapshot.docs) {
-        const data = doc.data();
-        cachedRenewals[doc.id] = data;
+    for (const docSnap of snapshot.docs) {
+        const data = docSnap.data();
+        cachedRenewals[docSnap.id] = data;
         const name = `${data.firstName || ''} ${data.middleInitial ? data.middleInitial + '.' : ''} ${data.lastName || ''}`.trim() || 'Unknown';
         const submitDate = data.submittedAt ? data.submittedAt.toDate().toLocaleDateString() : 'N/A';
 
         let anchorDateObj = null;
         try {
-            const userDoc = await db.collection("users").doc(data.userId).get();
-            if (userDoc.exists) {
+            // Modular getDoc for the user
+            const userDocRef = doc(db, "users", data.userId);
+            const userDoc = await getDoc(userDocRef);
+            
+            if (userDoc.exists()) {
                 const userData = userDoc.data();
                 if (userData.lastRenewalDate) {
                     anchorDateObj = userData.lastRenewalDate.toDate();
                 } else if (userData.record_id) {
-                    const recordDoc = await db.collection("solo_parent_records").doc(userData.record_id).get();
-                    if (recordDoc.exists && recordDoc.data().registrationDate) {
+                    // Modular getDoc for the official record
+                    const recordDoc = await getDoc(doc(db, "solo_parent_records", userData.record_id));
+                    if (recordDoc.exists() && recordDoc.data().registrationDate) {
                         anchorDateObj = recordDoc.data().registrationDate.toDate();
                     }
                 }
@@ -118,7 +124,7 @@ async function displayRenewals(snapshot, tbody, db) {
                 </span>
             </td>
             <td class="p-4 text-right">
-                <button class="bg-blue-600 text-white px-4 py-1.5 rounded text-xs font-medium hover:bg-blue-700 transition shadow-sm" onclick="handleView('${doc.id}')">Review Form</button>
+                <button class="bg-blue-600 text-white px-4 py-1.5 rounded text-xs font-medium hover:bg-blue-700 transition shadow-sm" onclick="handleView('${docSnap.id}')">Review Form</button>
             </td>
         `;
         tbody.appendChild(row);
@@ -208,11 +214,11 @@ window.handleView = async function(id) {
     const loadingBox = document.getElementById('verification-status-box');
     if (loadingBox) loadingBox.classList.remove('hidden');
 
-    const db = firebase.firestore();
     let oldData = {};
     try {
-        const userDoc = await db.collection("users").doc(newData.userId).get();
-        if (userDoc.exists) oldData = userDoc.data();
+        // Modular getDoc
+        const userDoc = await getDoc(doc(db, "users", newData.userId));
+        if (userDoc.exists()) oldData = userDoc.data();
     } catch (e) {
         console.error("Could not fetch user profile:", e);
     }
@@ -278,7 +284,7 @@ window.handleView = async function(id) {
 window.closeModal = function() { document.getElementById('viewModal').classList.add('hidden'); };
 
 // ==========================================
-// APPROVE LOGIC
+// APPROVE LOGIC (MODULAR BATCH WRITES)
 // ==========================================
 window.confirmApprove = function(subId, userId) {
     approveId = subId; approveUserId = userId;
@@ -295,12 +301,13 @@ window.confirmApprove = function(subId, userId) {
         if (typeof feather !== 'undefined') feather.replace();
 
         try {
-            const db = firebase.firestore();
-            const batch = db.batch();
+            // Modular batch initialization
+            const batch = writeBatch(db);
             const newData = cachedRenewals[approveId];
 
-            const userDoc = await db.collection("users").doc(approveUserId).get();
-            const oldData = userDoc.exists ? userDoc.data() : {};
+            const userDocRef = doc(db, "users", approveUserId);
+            const userDoc = await getDoc(userDocRef);
+            const oldData = userDoc.exists() ? userDoc.data() : {};
             const officialRecordId = oldData.record_id;
 
             const safeVal = (newVal, existingVal, fallback = "") => {
@@ -311,7 +318,7 @@ window.confirmApprove = function(subId, userId) {
 
             const updatePayload = {
                 renewal_status: "approved",
-                lastRenewalDate: firebase.firestore.FieldValue.serverTimestamp(),
+                lastRenewalDate: serverTimestamp(), // Modular Timestamp
                 
                 firstName: safeVal(newData.firstName, oldData.firstName),
                 lastName: safeVal(newData.lastName, oldData.lastName),
@@ -346,19 +353,22 @@ window.confirmApprove = function(subId, userId) {
                 philhealthIdUrl: safeVal(newData.philhealthIdUrl, oldData.philhealthIdUrl)
             };
 
-            batch.update(db.collection("renewalSubmissions").doc(approveId), { 
+            // 1. Update the submission record
+            batch.update(doc(db, "renewalSubmissions", approveId), { 
                 status: "approved", 
                 renewal_status: "approved", 
-                reviewedDate: firebase.firestore.FieldValue.serverTimestamp() 
+                reviewedDate: serverTimestamp() 
             });
 
-            batch.update(db.collection("users").doc(approveUserId), updatePayload);
+            // 2. Update the Mobile App user account
+            batch.update(userDocRef, updatePayload);
 
+            // 3. Update the Official LGU master record
             if (officialRecordId) {
                 let lguPayload = { ...updatePayload };
                 delete lguPayload.renewal_status; 
-                lguPayload.lastUpdated = firebase.firestore.FieldValue.serverTimestamp();
-                batch.update(db.collection("solo_parent_records").doc(officialRecordId), lguPayload);
+                lguPayload.lastUpdated = serverTimestamp();
+                batch.update(doc(db, "solo_parent_records", officialRecordId), lguPayload);
             }
 
             await batch.commit();
@@ -375,7 +385,7 @@ window.confirmApprove = function(subId, userId) {
 };
 
 // ==========================================
-// REJECT LOGIC
+// REJECT LOGIC (MODULAR BATCH WRITES)
 // ==========================================
 window.openRejectModal = function(subId, userId) { 
     rejectTargetId = subId; rejectTargetUserId = userId;
@@ -420,44 +430,39 @@ window.confirmRejectSubmission = function() {
 };
 
 async function executeRejection() {
-    // 1. Grab the confirm button and set it to a LOADING state immediately
     const btn = document.getElementById('confirm-btn-action');
     btn.innerHTML = '<i data-feather="loader" class="animate-spin w-4 h-4 mr-2 inline"></i> Rejecting...';
     btn.disabled = true;
     if (typeof feather !== 'undefined') feather.replace();
 
     try {
-        const batch = firebase.firestore().batch();
+        const batch = writeBatch(db);
         
         const safeReason = pendingRejectReason || "No reason provided";
         const safeRemarks = pendingRejectRemarks || "";
 
-        batch.update(firebase.firestore().collection("renewalSubmissions").doc(rejectTargetId), { 
+        batch.update(doc(db, "renewalSubmissions", rejectTargetId), { 
             status: "rejected", 
             renewal_status: "rejected", 
             rejectionReason: safeReason,
             rejectionRemarks: safeRemarks, 
-            reviewedDate: firebase.firestore.FieldValue.serverTimestamp() 
+            reviewedDate: serverTimestamp() 
         });
         
-        batch.update(firebase.firestore().collection("users").doc(rejectTargetUserId), { 
+        batch.update(doc(db, "users", rejectTargetUserId), { 
             renewal_status: "rejected",
             renewalRejectReason: safeReason,
             renewalRejectRemarks: safeRemarks 
         });
         
-        // 2. Wait for the database save to complete...
         await batch.commit();
         
-        // 3. Close the modal and show the success screen!
         document.getElementById('confirmModal').classList.add('hidden');
         showSuccessModal("Renewal Rejected.");
     } catch (e) {
         console.error("Rejection Error: ", e);
         alert("Error: " + e.message);
         document.getElementById('confirmModal').classList.add('hidden');
-        
-        // Safety net: Re-enable the button if an error happens
         btn.disabled = false; 
     }
 }

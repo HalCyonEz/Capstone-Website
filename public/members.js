@@ -1,5 +1,9 @@
 console.log("🎯 members.js loaded - App Status Badges & Fast Reporting Active");
-feather.replace();
+
+// 1. IMPORT MODULAR FIREBASE & SECURITY GUARDS
+import { db } from "./firebase-config.js";
+import { initSidebar, requireAuth } from "./utils.js";
+import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
 const ITEMS_PER_PAGE = 100; 
 let currentPage = 1;
@@ -31,18 +35,14 @@ const CATEGORIES = {
     'f': 'Foster parent'
 };
 
-document.addEventListener('DOMContentLoaded', async function() {
-    const firebaseConfig = { 
-        apiKey: "AIzaSyBjO4P1-Ir_iJSkLScTiyshEd28GdskN24", 
-        authDomain: "solo-parent-app.firebaseapp.com", 
-        databaseURL: "https://solo-parent-app-default-rtdb.asia-southeast1.firebasedatabase.app", 
-        projectId: "solo-parent-app", 
-        storageBucket: "solo-parent-app.firebasestorage.app", 
-        messagingSenderId: "292578110807", 
-        appId: "1:292578110807:web:9f5e5c0dcd73c9975e6212" 
-    };
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    window.db = firebase.firestore(); 
+// =============================================
+// INITIALIZATION & AUTH GUARD
+// =============================================
+document.addEventListener('DOMContentLoaded', () => {
+    initSidebar();
+    requireAuth(); // <-- Locks down the master list instantly
+    
+    if (typeof feather !== 'undefined') feather.replace();
 
     const restored = restoreState();
     fetchAllMembers(restored);
@@ -100,9 +100,9 @@ function fetchAllMembers() {
     if (typeof feather !== 'undefined') feather.replace();
     
     try {
-        // Listening to the correct merged master database
-        window.db.collection("solo_parent_records").onSnapshot((snapshot) => {
-            allMembersCache = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        // Refactored to modular v9 syntax
+        onSnapshot(collection(db, "solo_parent_records"), (snapshot) => {
+            allMembersCache = snapshot.docs.map(docSnap => ({id: docSnap.id, ...docSnap.data()}));
             
             console.log("📡 Live database update received from 'solo_parent_records'. Total records:", allMembersCache.length);
             
@@ -432,7 +432,7 @@ window.generateReport = function() {
     const originalText = btn.innerHTML;
     btn.innerHTML = '<i data-feather="loader" class="animate-spin w-4 h-4 mr-2 inline"></i> Generating...';
     btn.disabled = true;
-    feather.replace();
+    if (typeof feather !== 'undefined') feather.replace();
 
     try {
         // Build metadata text to show what filters are active
@@ -563,7 +563,7 @@ window.generateReport = function() {
             iframe.contentWindow.print();
             btn.innerHTML = originalText;
             btn.disabled = false;
-            feather.replace();
+            if (typeof feather !== 'undefined') feather.replace();
         }, 500);
 
     } catch (error) {
@@ -571,6 +571,6 @@ window.generateReport = function() {
         alert("Failed to generate report.");
         btn.innerHTML = originalText;
         btn.disabled = false;
-        feather.replace();
+        if (typeof feather !== 'undefined') feather.replace();
     }
 };

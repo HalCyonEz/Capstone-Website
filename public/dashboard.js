@@ -1,10 +1,14 @@
-import { db } from "./firebase-config.js";
-import { initSidebar, initLogout } from "./utils.js";
+import { db, auth } from "./firebase-config.js";
+import { initSidebar } from "./utils.js";
 import { collection, getDocs, query, where, orderBy, Timestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
 
 // Initialize UI
-initSidebar();
-initLogout();
+try {
+    initSidebar();
+} catch(e) {
+    console.warn("Sidebar initialization warning:", e);
+}
 
 let allUsersData = [];
 let currentFilteredUsers = []; 
@@ -250,41 +254,67 @@ function updateDashboardStats(filter) {
 }
 
 // ==========================================
-// 4. INITIALIZATION
+// 4. INITIALIZATION & AUTH GUARD
 // ==========================================
-document.addEventListener('DOMContentLoaded', async () => {
-    
-    // Connect Print Button securely
-    const reportBtn = document.getElementById('generate-report-btn');
-    if (reportBtn) {
-        reportBtn.addEventListener('click', window.handleGenerateReport);
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Authenticate before loading data
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+            window.location.replace("index.html");
+            return;
+        }
 
-    try { initDonutChart(); } catch (e) {}
-    try { initCategoryChart(); } catch (e) {}
-    
-    const dateSelect = document.getElementById('date-range-select');
-    const customRangeDiv = document.getElementById('custom-date-range');
-    
-    if(dateSelect && customRangeDiv) {
-        dateSelect.addEventListener('change', function() {
-            if (this.value === 'custom') {
-                customRangeDiv.classList.remove('hidden');
-                customRangeDiv.classList.add('flex');
-            } else {
-                customRangeDiv.classList.add('hidden');
-                customRangeDiv.classList.remove('flex');
-                updateDashboardStats(this.value);
-            }
-        });
-    }
-    
-    const applyBtn = document.getElementById('apply-custom-date');
-    if(applyBtn) applyBtn.addEventListener('click', function() { updateDashboardStats('custom'); });
+        // Profile Name Update
+        const adminNameEl = document.getElementById('admin-name-desktop');
+        if (adminNameEl && user.email) {
+            const username = user.email.split('@')[0];
+            adminNameEl.textContent = username.charAt(0).toUpperCase() + username.slice(1);
+        }
 
-    await fetchUpcomingEvents();
-    await fetchAllUsers();
-    updateDashboardStats('this_month');
+        // Logout Hook
+        const logoutBtn = document.getElementById('logout-btn-desktop');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async () => {
+                try {
+                    await signOut(auth);
+                } catch (error) {
+                    console.error("Logout Error:", error);
+                }
+            });
+        }
+
+        // 2. Initialize Dashboard Data
+        const reportBtn = document.getElementById('generate-report-btn');
+        if (reportBtn) {
+            reportBtn.addEventListener('click', window.handleGenerateReport);
+        }
+
+        try { initDonutChart(); } catch (e) {}
+        try { initCategoryChart(); } catch (e) {}
+        
+        const dateSelect = document.getElementById('date-range-select');
+        const customRangeDiv = document.getElementById('custom-date-range');
+        
+        if(dateSelect && customRangeDiv) {
+            dateSelect.addEventListener('change', function() {
+                if (this.value === 'custom') {
+                    customRangeDiv.classList.remove('hidden');
+                    customRangeDiv.classList.add('flex');
+                } else {
+                    customRangeDiv.classList.add('hidden');
+                    customRangeDiv.classList.remove('flex');
+                    updateDashboardStats(this.value);
+                }
+            });
+        }
+        
+        const applyBtn = document.getElementById('apply-custom-date');
+        if(applyBtn) applyBtn.addEventListener('click', function() { updateDashboardStats('custom'); });
+
+        await fetchUpcomingEvents();
+        await fetchAllUsers();
+        updateDashboardStats('this_month');
+    });
 });
 
 // ==========================================
@@ -460,7 +490,7 @@ window.handleGenerateReport = function() {
     // CREATE INVISIBLE IFRAME
     const printFrame = document.createElement('iframe');
     printFrame.style.position = 'fixed';
-    printFrame.style.top = '-1000px'; // Hides it off-screen entirely
+    printFrame.style.top = '-1000px'; 
     printFrame.style.left = '-1000px';
     printFrame.style.width = '100%';
     printFrame.style.height = '100%';
@@ -485,5 +515,5 @@ window.handleGenerateReport = function() {
                 document.body.removeChild(printFrame);
             }
         }, 5000); 
-    }, 800); // 800ms gives Google Fonts time to apply 'Inter'
+    }, 800); 
 };

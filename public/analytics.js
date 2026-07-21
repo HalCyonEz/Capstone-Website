@@ -2,6 +2,8 @@ import { db } from "./firebase-config.js";
 import { CODE_TO_DESCRIPTION_MAP } from "./utils.js";
 // WARNING: Ensure 12.4.0 is actually the version you are using in firebase-config.js. 
 import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+import { initSidebar, requireAuth } from "./utils.js";
+
 
 let allUsersData = [];
 let forecastChartInstance = null;
@@ -390,3 +392,10 @@ function runStrategicForecasting() {
         console.error("Strategic Forecasting Error:", error); 
     }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    initSidebar();
+    requireAuth(); // <-- This instantly secures the page and hooks up the Log Out button!
+
+    // ... the rest of your specific page logic ...
+});

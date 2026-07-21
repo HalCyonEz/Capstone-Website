@@ -3,6 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebas
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-storage.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js"; // 1. Added Auth Import
 
 const firebaseConfig = {
     apiKey: "AIzaSyBjO4P1-Ir_iJSkLScTiyshEd28GdskN24",
@@ -15,17 +16,17 @@ const firebaseConfig = {
     measurementId: "G-QZ9EYD02ZV"
 };
 
-let app, analytics, db, storage;
+let app, analytics, db, storage, auth; // 2. Added auth variable
 
 try {
     app = initializeApp(firebaseConfig);
     analytics = getAnalytics(app);
     db = getFirestore(app);
     storage = getStorage(app);
+    auth = getAuth(app); // 3. Initialized Auth
     console.log("✅ Firebase initialized successfully");
 } catch (error) {
     console.error("❌ Firebase initialization error:", error);
 }
 
-export { app, analytics, db, storage };
-
+export { app, analytics, db, storage, auth }; // 4. Exported Auth

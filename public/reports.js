@@ -1,27 +1,32 @@
 import { db } from "./firebase-config.js";
-import { initSidebar, initLogout, DESCRIPTION_TO_CODE_MAP, CODE_TO_DESCRIPTION_MAP } from "./utils.js";
+import { initSidebar, requireAuth, DESCRIPTION_TO_CODE_MAP, CODE_TO_DESCRIPTION_MAP } from "./utils.js"; // <-- Added missing map imports!
 import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
-
-initSidebar();
-initLogout();
 
 let allMembers = [];
 let filteredMembers = [];
 const MUNICIPALITY_LIST = ["Atok","Baguio","Bakun","Bokod","Buguias","Itogon","Kabayan","Kapangan","Kibungan","La Trinidad","Mankayan","Sablan","Tuba", "Tublay"];
 
+// ==========================================
+// 1. INITIALIZATION & AUTH GUARD
+// ==========================================
 document.addEventListener('DOMContentLoaded', async () => {
-    // 🔥 Ensure the Print button is hooked up directly!
+    // 1. Secure the page and hook up the logout button instantly
+    initSidebar();
+    requireAuth();
+
+    // 2. Hook up the Print button
     const printBtn = document.getElementById('btn-print-report');
     if (printBtn) {
         printBtn.addEventListener('click', window.handlePrint);
     }
 
+    // 3. Load report data and setup the UI
     await loadData();
     initUI();
 });
 
 // ==========================================
-// 1. LOAD DATA
+// 2. LOAD DATA
 // ==========================================
 async function loadData() {
     if (!db) return;
@@ -74,7 +79,7 @@ function createCheckbox(container, labelText, value, nameGroup) {
 }
 
 // ==========================================
-// 2. UI INITIALIZATION
+// 3. UI INITIALIZATION
 // ==========================================
 function initUI() {
     const periodSelect = document.getElementById('filter-period');
@@ -118,7 +123,7 @@ function initUI() {
 }
 
 // ==========================================
-// 3. FILTER ENGINE
+// 4. FILTER ENGINE
 // ==========================================
 function applyFilters() {
     const getVal = (id) => document.getElementById(id)?.value || '';
@@ -230,7 +235,7 @@ function updateTable() {
 }
 
 // ==========================================
-// 4. GENERATE PDF (INVISIBLE IFRAME METHOD)
+// 5. GENERATE PDF (INVISIBLE IFRAME METHOD)
 // ==========================================
 window.handlePrint = function() {
     if (filteredMembers.length === 0) return;

@@ -1,5 +1,6 @@
 import { db } from "./firebase-config.js";
 import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+import { initSidebar, requireAuth } from "./utils.js"; // <-- 1. Swapped initLogout for requireAuth
 
 console.log("🎯 create.js loaded - Manual Document Transcription Active");
 
@@ -237,3 +238,14 @@ window.createMemberRecord = async function() {
         if (typeof feather !== 'undefined') feather.replace();
     }
 };
+
+// ==========================================
+// INITIALIZATION HOOK (Moved to bottom)
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    initSidebar();
+    requireAuth(); // <-- 3. Calls the new security guard & connects the logout button
+    
+    loadAnnouncements();
+    loadExpiringUsers();
+});

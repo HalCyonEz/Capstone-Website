@@ -1,23 +1,19 @@
 console.log("🎯 archive.js loaded - Soft Delete / Restoration Active");
-feather.replace();
+
+import { db } from "./firebase-config.js";
+import { initSidebar, requireAuth } from "./utils.js";
+import { collection, query, where, onSnapshot, doc, getDoc, writeBatch, deleteField } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
 let archivedMembersCache = []; 
 let filteredArchives = []; 
 let searchTimeout = null;
 
+// =============================================
+// INITIALIZATION & AUTH GUARD
+// =============================================
 document.addEventListener('DOMContentLoaded', async function() {
-    const firebaseConfig = { 
-        apiKey: "AIzaSyBjO4P1-Ir_iJSkLScTiyshEd28GdskN24", 
-        authDomain: "solo-parent-app.firebaseapp.com", 
-        databaseURL: "https://solo-parent-app-default-rtdb.asia-southeast1.firebasedatabase.app", 
-        projectId: "solo-parent-app", 
-        storageBucket: "solo-parent-app.firebasestorage.app", 
-        messagingSenderId: "292578110807", 
-        appId: "1:292578110807:web:9f5e5c0dcd73c9975e6212" 
-    };
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    window.db = firebase.firestore(); 
-
+    initSidebar();
+    requireAuth(); // <-- Locks down the page instantly
     fetchArchivedMembers();
 });
 
@@ -27,19 +23,19 @@ document.addEventListener('DOMContentLoaded', async function() {
 function fetchArchivedMembers() {
     const grid = document.getElementById('members-grid');
     grid.innerHTML = '<div class="col-span-2 text-center py-10 text-red-500"><i data-feather="loader" class="animate-spin inline w-5 h-5 mr-2"></i> Syncing Archived Records...</div>';
-    feather.replace();
+    if (typeof feather !== 'undefined') feather.replace();
     
-    // We explicitly query ONLY documents flagged as archived
-    window.db.collection("solo_parent_records")
-        .where("isArchived", "==", true)
-        .onSnapshot((snapshot) => {
-            archivedMembersCache = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-            console.log("📡 Archive database update. Total records:", archivedMembersCache.length);
-            applyArchiveSearch(); 
-        }, (error) => {
-            console.error("Firebase Sync Error:", error);
-            grid.innerHTML = `<div class="col-span-2 text-center py-10 text-red-500">Sync interrupted: ${error.message}</div>`;
-        });
+    // We explicitly query ONLY documents flagged as archived using modular syntax
+    const q = query(collection(db, "solo_parent_records"), where("isArchived", "==", true));
+    
+    onSnapshot(q, (snapshot) => {
+        archivedMembersCache = snapshot.docs.map(docSnap => ({id: docSnap.id, ...docSnap.data()}));
+        console.log("📡 Archive database update. Total records:", archivedMembersCache.length);
+        window.applyArchiveSearch(); 
+    }, (error) => {
+        console.error("Firebase Sync Error:", error);
+        grid.innerHTML = `<div class="col-span-2 text-center py-10 text-red-500">Sync interrupted: ${error.message}</div>`;
+    });
 }
 
 // =============================================
@@ -75,6 +71,8 @@ function renderArchives() {
     filteredArchives.forEach(user => { 
         grid.appendChild(createArchiveCard(user.id, user)); 
     });
+    
+    if (typeof feather !== 'undefined') feather.replace();
 }
 
 // =============================================
@@ -117,35 +115,35 @@ function createArchiveCard(id, data) {
 window.restoreAccount = async function(id) {
     if(confirm("Are you sure you want to restore this account? They will regain mobile app access immediately.")) {
         try {
-            // Setup a batch write (using Firebase v8 Compat syntax for archive.js)
-            const batch = window.db.batch();
+            // Setup a batch write using modular v9 syntax
+            const batch = writeBatch(db);
             
             // The data we are reverting to normal
             const restoreData = {
                 isArchived: false,
                 status: 'approved', // 🔴 Overwrites the 'Archived' status
-                archiveReason: firebase.firestore.FieldValue.delete(), // Completely removes the reason field
-                archivedAt: firebase.firestore.FieldValue.delete()     // Completely removes the timestamp
+                archiveReason: deleteField(), // Completely removes the reason field modularly
+                archivedAt: deleteField()      // Completely removes the timestamp modularly
             };
 
             // 1. Get the official record reference
-            const officialRef = window.db.collection("solo_parent_records").doc(id);
+            const officialRef = doc(db, "solo_parent_records", id);
             
             // We need to fetch the document first to see if they have a linked mobile app account
-            const docSnap = await officialRef.get();
+            const docSnap = await getDoc(officialRef);
             
-            if (docSnap.exists) {
+            if (docSnap.exists()) {
                 // Update the main LGU record
                 batch.update(officialRef, restoreData);
                 
                 // 2. If they have a linked mobile app account, update that too!
                 const data = docSnap.data();
                 if (data.auth_uid) {
-                    const userRef = window.db.collection("users").doc(data.auth_uid);
+                    const userRef = doc(db, "users", data.auth_uid);
                     batch.update(userRef, restoreData);
                 } else if (!data.isOfficialRecord && !data.soloParentIdNumber) {
                      // Fallback just in case this ID *is* the mobile app ID
-                     const userRef = window.db.collection("users").doc(id);
+                     const userRef = doc(db, "users", id);
                      batch.update(userRef, restoreData);
                 }
                 
