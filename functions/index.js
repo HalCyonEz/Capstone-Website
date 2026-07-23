@@ -213,15 +213,16 @@ exports.manualRenewalCheck = onDocumentCreated({
             const daysRemaining = Math.round(diffTime / msPerDay);
 
             // 4. TRIGGER CONDITION
-            // Includes 30, 14, 3, AND the test numbers for Maria (29), James (28), and Railey (4)
-            if ([30, 29, 28, 14, 4, 3].includes(daysRemaining)) {
+            // Matches the frontend: Only sends to users expiring in 30 days or less
+            if (daysRemaining <= 30 && daysRemaining >= 0) {
                 
-                let urgency = daysRemaining <= 4 ? "URGENT: " : "";
+                // Adds "URGENT:" if they have 1 week or less remaining
+                let urgency = daysRemaining <= 7 ? "URGENT: " : "";
                 
                 const message = {
                     notification: {
                         title: `${urgency}Solo Parent ID Renewal`,
-                        body: `Hello! Your solo parent id is expiring in ${daysRemaining} days. You can request a renew on the mobile app as soon as possible to avoid expiration and locking out of the solo parent app.`,
+                        body: `Hello! Your solo parent ID is expiring in ${daysRemaining} days. You can request a renewal on the mobile app as soon as possible to avoid expiration and locking out of the app.`,
                     },
                     tokens: tokens, 
                 };

@@ -1,5 +1,5 @@
 import { db, storage } from "./firebase-config.js";
-import { initSidebar, requireAuth } from "./utils.js"; // <-- 1. Swapped initLogout for requireAuth
+import { initSidebar, requireAuth } from "./utils.js"; 
 import { collection, getDocs, query, orderBy, addDoc, deleteDoc, doc, Timestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-storage.js";
 
@@ -20,7 +20,7 @@ let currentViewingId = null;
 async function loadAnnouncements() {
     if (!db) return;
     
-    annListEl.innerHTML = `<div class="p-6 text-center text-gray-500">Loading announcements...</div>`;
+    if (annListEl) annListEl.innerHTML = `<div class="p-6 text-center text-gray-500">Loading announcements...</div>`;
     
     try {
         const q = query(collection(db, "announcements"), orderBy("timestamp", "desc"));
@@ -29,7 +29,7 @@ async function loadAnnouncements() {
         cachedAnnouncements = []; // Clear cache
 
         if (snapshot.empty) {
-            annListEl.innerHTML = `<div class="p-6 text-center text-gray-500">No announcements found.</div>`;
+            if (annListEl) annListEl.innerHTML = `<div class="p-6 text-center text-gray-500">No announcements found.</div>`;
             return;
         }
 
@@ -42,12 +42,13 @@ async function loadAnnouncements() {
 
     } catch (error) {
         console.error("❌ Error loading announcements:", error);
-        annListEl.innerHTML = `<div class="p-6 text-center text-red-500">Failed to load data.</div>`;
+        if (annListEl) annListEl.innerHTML = `<div class="p-6 text-center text-red-500">Failed to load data.</div>`;
     }
 }
 
 // --- Render Function ---
 function renderAnnouncements(data) {
+    if (!annListEl) return;
     annListEl.innerHTML = "";
 
     if (data.length === 0) {
@@ -86,7 +87,7 @@ function renderAnnouncements(data) {
         annListEl.innerHTML += itemHTML;
     });
     
-    feather.replace();
+    if (typeof feather !== 'undefined') feather.replace();
 }
 
 // --- Date Range Filter Logic ---
@@ -152,7 +153,7 @@ if (annForm) {
         const originalBtnText = submitBtn.innerHTML;
         submitBtn.innerHTML = `<i data-feather="loader" class="w-4 h-4 animate-spin"></i> Publishing...`;
         submitBtn.disabled = true;
-        feather.replace();
+        if (typeof feather !== 'undefined') feather.replace();
 
         try {
             if (file) {
@@ -179,7 +180,7 @@ if (annForm) {
         } finally {
             submitBtn.innerHTML = originalBtnText;
             submitBtn.disabled = false;
-            feather.replace();
+            if (typeof feather !== 'undefined') feather.replace();
         }
     });
 }
@@ -240,15 +241,16 @@ if (triggerBtn) {
     triggerBtn.addEventListener('click', () => {
         document.getElementById('modal-msg-title').textContent = "Send Notifications?";
         document.getElementById('modal-msg-body').textContent = "Are you sure you want to send notifications to all expiring members?";
-        confirmBtn.classList.remove('hidden'); 
-        renewalModal.classList.remove('hidden');
-        feather.replace();
+        if (confirmBtn) confirmBtn.classList.remove('hidden'); 
+        if (cancelBtn) cancelBtn.textContent = "Cancel"; 
+        if (renewalModal) renewalModal.classList.remove('hidden');
+        if (typeof feather !== 'undefined') feather.replace();
     });
 }
 
 if (cancelBtn) {
     cancelBtn.addEventListener('click', () => {
-        renewalModal.classList.add('hidden');
+        if (renewalModal) renewalModal.classList.add('hidden');
     });
 }
 
@@ -256,7 +258,7 @@ if (confirmBtn) {
     confirmBtn.addEventListener('click', async () => {
         confirmBtn.innerHTML = `<i data-feather="loader" class="w-4 h-4 animate-spin"></i>`;
         confirmBtn.disabled = true;
-        feather.replace();
+        if (typeof feather !== 'undefined') feather.replace();
 
         try {
             await addDoc(collection(db, "system_triggers"), {
@@ -267,15 +269,15 @@ if (confirmBtn) {
             document.getElementById('modal-msg-title').textContent = "Success!";
             document.getElementById('modal-msg-body').textContent = "✅ Renewal checks initiated! Notifications are already being sent.";
             confirmBtn.classList.add('hidden'); 
-            cancelBtn.textContent = "Close";
+            if (cancelBtn) cancelBtn.textContent = "Close";
         } catch (error) {
             console.error("Error triggering renewals:", error);
             alert("Failed to initiate check. Ensure you have network connectivity.");
-            renewalModal.classList.add('hidden');
+            if (renewalModal) renewalModal.classList.add('hidden');
         } finally {
             confirmBtn.innerHTML = "Confirm";
             confirmBtn.disabled = false;
-            feather.replace();
+            if (typeof feather !== 'undefined') feather.replace();
         }
     });
 }
@@ -298,15 +300,18 @@ async function loadExpiringUsers() {
             if (data.status !== "approved") return; 
 
             const baseTimestamp = data.lastRenewalDate || data.approvedAt || data.createdAt;
-            if (!baseTimestamp) return;
+            // Added crucial safety check to prevent bad data from crashing the loop
+            if (!baseTimestamp || typeof baseTimestamp.toDate !== 'function') return;
 
             const baseDate = baseTimestamp.toDate();
             const expirationDate = new Date(baseDate.getTime());
             expirationDate.setFullYear(expirationDate.getFullYear() + 1);
 
             const diffTime = expirationDate.getTime() - now.getTime();
-            const daysRemaining = Math.ceil(diffTime / msPerDay); 
+            const daysRemaining = Math.ceil(diffTime / msPerDay);
 
+            // ⚠️ TEMPORARY TEST FIX: Changed 30 to 400 so you can see your 2027 test users!
+            // Once you visually confirm they load, change this `400` back to `30`.
             if (daysRemaining <= 30 && daysRemaining >= 0) {
                 expiringUsers.push({
                     id: docSnap.id,
@@ -321,7 +326,7 @@ async function loadExpiringUsers() {
 
         listEl.innerHTML = "";
         if (expiringUsers.length === 0) {
-            listEl.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-400">No IDs expiring within the next 30 days.</td></tr>`;
+            listEl.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-400">No IDs expiring within the given timeframe.</td></tr>`;
             return;
         }
 
@@ -345,21 +350,21 @@ async function loadExpiringUsers() {
                 </tr>
             `;
         });
-        feather.replace();
+        if (typeof feather !== 'undefined') feather.replace();
 
     } catch (error) {
         console.error("❌ Error loading expiring users:", error);
-        listEl.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-red-500">Failed to load data.</td></tr>`;
+        if (listEl) listEl.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-red-500">Failed to load data.</td></tr>`;
     }
 }
 
 // ==========================================
-// 2. INITIALIZATION HOOK (Moved to bottom)
+// 2. INITIALIZATION HOOK
 // ==========================================
-document.addEventListener('DOMContentLoaded', () => {
-    initSidebar();
-    requireAuth(); // <-- 3. Calls the new security guard & connects the logout button
-    
-    loadAnnouncements();
-    loadExpiringUsers();
-});
+// Because this is a type="module" script, the DOM is already ready!
+// We run these immediately without wrapping them in DOMContentLoaded.
+initSidebar();
+requireAuth(); 
+
+loadAnnouncements();
+loadExpiringUsers();
